@@ -1,31 +1,47 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 
 namespace LongTuong;
 
 /// <summary>
-/// Phase 2.6 hero/equipment screen, fixed-size layout (popup 1180x660):
-/// - Left (260px, scrollable): ALL equipment the user owns — bag items plus
-///   items equipped on any hero. An item button shows ONLY slot name + level,
-///   never stats. It can be equipped to ANY hero: double-click a bag item to
-///   equip it to the currently selected hero, double-click an equipped item
-///   to unequip it back to the bag.
-/// - Center (500px): selected hero detail — hero selector row, portrait,
-///   4 equipped slots (name only, no stats), unequip-all, EXP, skills.
-/// - Right (340px): selected hero's detailed stats + a fixed tooltip panel.
-/// Hovering any equipment item shows its full detail + stats in the tooltip;
-/// single click only selects/highlights, never equips/unequips.
+/// Phase 2.7 hero/equipment screen (popup 1180x660, all sizes fixed):
+/// - Vertical tabs: one tab button per hero stacked in a left column (the
+///   2.4 tab-per-hero pattern, but tabs stacked vertically on the left
+///   instead of horizontally on top). Godot 4.7 TabContainer only supports
+///   Top/Bottom tabs, so vertical tabs are a button column + a shared detail
+///   panel — same look and behavior. Clicking a tab shows that hero's detail.
+/// - Right panel: equipment grid, 4 columns, 7 rows (28 cells) of 64x64
+///   square icon-only cells; rows grow past 7 inside a ScrollContainer when
+///   the bag holds more than 28 items (Phase 2.7 approved option).
+/// - The grid holds ONLY bag items. Items equipped on a hero are NOT in the
+///   grid — they only appear on that hero's 4 equipped icon slots.
+/// - Cells show ONLY an icon (a slot-type color square until real sprites
+///   exist): no name, no level, no stats, no text at all. Hovering a cell or
+///   an equipped slot shows a floating tooltip BESIDE it (right side first,
+///   flipped left when there is no room, Y clamped inside the popup).
+/// - Single click only selects/highlights; double-click equips (grid -> tab
+///   hero, any hero including locked) or unequips (equipped slot -> bag).
 /// </summary>
 [GlobalClass]
 public partial class HeroListScene : Control
 {
-    private const string DefaultTooltip = "Hover vào trang bị để xem chi tiết.";
+    private static readonly Dictionary<string, Color> SlotColors = new()
+    {
+        ["weapon"] = new Color(0.65f, 0.25f, 0.20f),
+        ["armor"] = new Color(0.20f, 0.35f, 0.60f),
+        ["helmet"] = new Color(0.25f, 0.55f, 0.30f),
+        ["boots"] = new Color(0.65f, 0.55f, 0.20f),
+    };
+    private static readonly Color EmptyColor = new(0.12f, 0.12f, 0.16f);
+
+    private VBoxContainer? _tabButtons;
+    private VBoxContainer? _detailBox;
     private string _selectedHeroId = "";
-    private string _selectedSlot = "";
-    private string _lastSelectedDetail = DefaultTooltip;
+    private GridContainer? _grid;
+    private Label? _gridTitle;
+    private PanelContainer? _tooltipPanel;
     private Label? _tooltipLabel;
-    private readonly List<Button> _ownedButtons = new();
-    private readonly List<Button> _equippedButtons = new();
 
     public override void _Ready()
     {
@@ -34,12 +50,19 @@ public partial class HeroListScene : Control
         ProgressionService.EnsureDefaults(gm.Save);
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
-        _tooltipLabel = GetNode<Label>("RightBox/TooltipPanel/TooltipLabel");
-        _tooltipLabel.SizeFlagsHorizontal = Control.SizeFlags.Fill;
-        _tooltipLabel.CustomMinimumSize = new Vector2(320, 0);
+        _tabButtons = GetNode<VBoxContainer>("TabButtons");
+        _detailBox = GetNode<VBoxContainer>("DetailBox");
+        _grid = GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
+        _gridTitle = GetNode<Label>("GridPanel/GridTitleLabel");
+        UiTheme.StyleBody(_gridTitle, 17);
+        _tooltipPanel = GetNode<PanelContainer>("TooltipPanel");
+        _tooltipLabel = GetNode<Label>("TooltipPanel/TooltipLabel");
         UiTheme.StyleBody(_tooltipLabel, 14);
-        var tooltipPanel = GetNode<PanelContainer>("RightBox/TooltipPanel");
-        tooltipPanel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        _tooltipLabel.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        _tooltipLabel.CustomMinimumSize = new Vector2(280, 0);
+        _tooltipPanel.MouseFilter = MouseFilterEnum.Ignore;
+        _tooltipLabel.MouseFilter = MouseFilterEnum.Ignore;
+        _tooltipPanel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
             BgColor = UiTheme.Panel, BorderColor = UiTheme.Gold,
             BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2,
@@ -47,8 +70,11 @@ public partial class HeroListScene : Control
         });
         _selectedHeroId = gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId) ? gm.SelectedHeroId
             : gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : HeroDatabase.Heroes[0].Id;
-        BuildAll();
+        BuildTabs();
+        BuildGrid();
     }
+
+    private string CurrentHeroId() => _selectedHeroId;
 
     private static void ClearBox(Node box)
     {
@@ -59,172 +85,148 @@ public partial class HeroListScene : Control
         }
     }
 
-    // Phase 2.6 layout fix: a Label with autowrap inside a VBoxContainer
-    // collapses to width 1 and a huge wrapped height unless it is forced to
-    // fill the column width. Always give labels the column width + Fill flag.
-    private Label MakeLabel(string text, int size = 15, float width = 480)
+    // 2.6 layout lesson: autowrap labels inside a VBoxContainer need Fill +
+    // the column width, otherwise they collapse to width 1 with huge height.
+    private Label MakeLabel(string text, int size = 15, float width = 540)
     {
         var l = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = Control.SizeFlags.Fill, CustomMinimumSize = new Vector2(width, 0) };
         UiTheme.StyleBody(l, size);
         return l;
     }
 
-    private void SetTooltip(string text)
+    private Button MakeIconButton(Color bg, bool filled)
     {
-        if (_tooltipLabel != null) _tooltipLabel.Text = text;
+        var btn = new Button { Text = "", CustomMinimumSize = new Vector2(64, 64) };
+        var normal = new StyleBoxFlat
+        {
+            BgColor = bg, BorderColor = filled ? UiTheme.Gold : UiTheme.Muted,
+            BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2,
+            CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+            ContentMarginLeft = 0, ContentMarginRight = 0, ContentMarginTop = 0, ContentMarginBottom = 0,
+        };
+        var hover = (StyleBoxFlat)normal.Duplicate();
+        hover.BgColor = new Color(Math.Min(bg.R * 1.3f, 1f), Math.Min(bg.G * 1.3f, 1f), Math.Min(bg.B * 1.3f, 1f));
+        btn.AddThemeStyleboxOverride("normal", normal);
+        btn.AddThemeStyleboxOverride("hover", hover);
+        btn.AddThemeStyleboxOverride("pressed", normal);
+        btn.AddThemeStyleboxOverride("disabled", normal);
+        return btn;
     }
 
-    private void BuildAll()
+    private void ShowTooltip(Control cell, string text)
     {
-        if (!IsInsideTree()) return;
+        if (_tooltipPanel == null || _tooltipLabel == null) return;
+        _tooltipLabel.Text = text;
+        // Detail lines are short and fit 280px, so height is deterministic
+        // without waiting a frame for layout.
+        int lines = Math.Max(1, text.Split('\n').Length);
+        float height = 16 + lines * 20 + 8;
+        _tooltipPanel.CustomMinimumSize = new Vector2(280, height);
+        _tooltipPanel.Size = new Vector2(280, height);
+        _tooltipPanel.Visible = true;
+        _tooltipPanel.MoveToFront();
+        var cellGlobal = cell.GetGlobalRect();
+        var rootGlobal = GetGlobalRect();
+        var cellPos = cellGlobal.Position - rootGlobal.Position;
+        float x = cellPos.X + cellGlobal.Size.X + 8;
+        if (x + 280 > 1180) x = cellPos.X - 280 - 8;
+        if (x < 0) x = 0;
+        float y = cellPos.Y;
+        if (y + height > 660) y = 660 - height;
+        if (y < 0) y = 0;
+        _tooltipPanel.Position = new Vector2(x, y);
+    }
+
+    private void HideTooltip()
+    {
+        if (_tooltipPanel != null) _tooltipPanel.Visible = false;
+    }
+
+    private void RebuildAll()
+    {
+        BuildTabs();
+        BuildGrid();
+    }
+
+    private void BuildTabs()
+    {
+        if (!IsInsideTree() || _tabButtons == null || _detailBox == null) return;
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
-        _ownedButtons.Clear();
-        _equippedButtons.Clear();
-        _lastSelectedDetail = DefaultTooltip;
-        var ownedBox = GetNode<VBoxContainer>("OwnedScroll/OwnedListBox");
-        var detail = GetNode<VBoxContainer>("DetailBox");
-        var statsBox = GetNode<VBoxContainer>("RightBox/StatsBox");
-        ClearBox(ownedBox); ClearBox(detail); ClearBox(statsBox);
-        SetTooltip(DefaultTooltip);
-
-        // Left: all owned equipment (bag + equipped on any hero), fixed 240x48 each.
-        void AddOwnedButton(string text, string detail, System.Action onDoubleClick)
-        {
-            var btn = new Button { Text = text, CustomMinimumSize = new Vector2(240, 48) };
-            UiTheme.StyleButton(btn);
-            btn.CustomMinimumSize = new Vector2(240, 48);
-            btn.MouseEntered += () => SetTooltip(detail);
-            btn.MouseExited += () => SetTooltip(_lastSelectedDetail);
-            btn.GuiInput += (InputEvent e) =>
-            {
-                if (e is InputEventMouseButton mb && mb.Pressed)
-                {
-                    if (mb.DoubleClick) onDoubleClick();
-                    else
-                    {
-                        _lastSelectedDetail = detail;
-                        foreach (var b in _ownedButtons) b.Modulate = Colors.White;
-                        btn.Modulate = UiTheme.Gold;
-                        SetTooltip(detail);
-                    }
-                }
-            };
-            _ownedButtons.Add(btn);
-            ownedBox.AddChild(btn);
-        }
-        for (int i = 0; i < gm.Save.BagEquipment.Count; i++)
-        {
-            var item = gm.Save.BagEquipment[i];
-            var slotDef = ProgressionService.Slots.Find(s => s.Id == item.SlotId);
-            var bagIndex = i;
-            AddOwnedButton($"{slotDef?.Name ?? item.SlotId} · Lv{item.Level} — Trong túi",
-                EquipmentService.DetailText(item.SlotId, item.Level, item.RefineIndex, "Trạng thái: Trong túi"),
-                () =>
-                {
-                    // Phase 2.6: bag items can be equipped to ANY hero, owned or locked.
-                    if (EquipmentService.EquipFromBag(gm.Save, _selectedHeroId, bagIndex))
-                    { gm.SaveGame(); CallDeferred("BuildAll"); }
-                });
-        }
+        ClearBox(_tabButtons);
+        ClearBox(_detailBox);
+        // Vertical tab buttons (Godot 4.7 TabContainer only supports Top/Bottom,
+        // so vertical tabs are a button column — same look and behavior).
         foreach (var hero in HeroDatabase.Heroes)
         {
-            foreach (var slot in ProgressionService.Slots)
-            {
-                var eq = gm.Save.HeroEquipment[hero.Id][slot.Id];
-                if (eq.IsEmpty) continue;
-                var heroId = hero.Id; var slotId = slot.Id;
-                AddOwnedButton($"{slot.Name} · Lv{eq.Level} — {hero.Name}",
-                    EquipmentService.DetailText(slotId, eq.Level, eq.RefineIndex, $"Đang mang: {hero.Name}"),
-                    () =>
-                    {
-                        if (EquipmentService.Unequip(gm.Save, heroId, slotId)) { gm.SaveGame(); CallDeferred("BuildAll"); }
-                    });
-            }
+            bool owned = gm.Save.OwnedHeroIds.Contains(hero.Id);
+            var btn = new Button { Text = owned ? hero.Name : $"{hero.Name} (Khóa)", CustomMinimumSize = new Vector2(160, 56) };
+            UiTheme.StyleButton(btn, hero.Id == _selectedHeroId);
+            btn.CustomMinimumSize = new Vector2(160, 56);
+            var id = hero.Id;
+            btn.Pressed += () => { _selectedHeroId = id; gm.SelectedHeroId = id; CallDeferred("RebuildAll"); };
+            _tabButtons.AddChild(btn);
         }
-        if (_ownedButtons.Count == 0) ownedBox.AddChild(MakeLabel("Chưa sở hữu trang bị nào.", 14, 240));
-
-        // Center: selected hero detail, fixed sizes.
+        // Detail of the selected tab hero.
         var heroDef = HeroDatabase.Get(_selectedHeroId);
         var p = gm.Save.Heroes[_selectedHeroId];
         var eff = ProgressionService.GetEffectiveHero(gm.Save, _selectedHeroId);
         bool selectedOwned = gm.Save.OwnedHeroIds.Contains(_selectedHeroId);
-        // Hero selector: 2 rows x 3 buttons — 6 full names cannot fit one
-        // 500px row at a readable font size (Gia Cát Lượng alone needs 104px).
-        var heroListAll = HeroDatabase.Heroes;
-        for (int rowIdx = 0; rowIdx < 2; rowIdx++)
-        {
-            var selectorBox = new HBoxContainer();
-            detail.AddChild(selectorBox);
-            for (int colIdx = 0; colIdx < 3; colIdx++)
-            {
-                var hero = heroListAll[rowIdx * 3 + colIdx];
-                var btn = new Button { Text = hero.Name, CustomMinimumSize = new Vector2(160, 48) };
-                UiTheme.StyleButton(btn, hero.Id == _selectedHeroId);
-                btn.CustomMinimumSize = new Vector2(160, 48);
-                var id = hero.Id;
-                btn.Pressed += () => { _selectedHeroId = id; gm.SelectedHeroId = id; CallDeferred("BuildAll"); };
-                selectorBox.AddChild(btn);
-            }
-        }
-        detail.AddChild(MakeLabel($"{heroDef.Name} — Cấp {p.Level} — Loại: {HeroDatabase.RoleName(heroDef.Role)}", 20));
-        var portrait = new ColorRect { Color = new Color(0.20f, 0.35f, 0.60f), CustomMinimumSize = new Vector2(480, 110) };
-        detail.AddChild(portrait);
-        detail.AddChild(MakeLabel($"Chân dung: {heroDef.Name} (placeholder, chưa có sprite final)", 13, 480));
+        var page = _detailBox;
+        page.AddChild(MakeLabel($"{heroDef.Name} — Cấp {p.Level} — Loại: {HeroDatabase.RoleName(heroDef.Role)}", 20));
+        page.AddChild(new ColorRect { Color = new Color(0.20f, 0.35f, 0.60f), CustomMinimumSize = new Vector2(540, 140) });
+        page.AddChild(MakeLabel($"Chân dung: {heroDef.Name} (placeholder, chưa có sprite final)", 13));
+        page.AddChild(MakeLabel(selectedOwned
+            ? $"EXP: {p.Exp}/{ProgressionService.ExpToNext(p.Level)} — Sao: {p.Stars}/5 — Mảnh: {gm.Save.Shards[_selectedHeroId]}"
+            : $"CHƯA SỞ HỮU (cần 10 mảnh để mở khóa, hiện có {gm.Save.Shards[_selectedHeroId]} mảnh)"));
+        var expBar = new ProgressBar { MinValue = 0, MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level), Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp, CustomMinimumSize = new Vector2(540, 20) };
+        page.AddChild(expBar);
+        int power = eff.Hp + eff.Atk * 5;
+        page.AddChild(MakeLabel($"Chỉ số hiệu lực — Lực chiến ~{power}: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}"));
+        page.AddChild(MakeLabel($"Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}"));
+        // 4 equipped icon slots (equipped items live ONLY here, never in the grid).
         var equippedBox = new HBoxContainer();
-        detail.AddChild(equippedBox);
+        page.AddChild(equippedBox);
+        var equippedButtons = new List<Button>();
         foreach (var slot in ProgressionService.Slots)
         {
             var eq = gm.Save.HeroEquipment[_selectedHeroId][slot.Id];
-            var slotBtn = new Button
-            {
-                Text = eq.IsEmpty ? $"{slot.Name}\n(Trống)" : $"{slot.Name}\nĐang mang",
-                Disabled = !selectedOwned,
-                CustomMinimumSize = new Vector2(115, 56),
-            };
-            UiTheme.StyleButton(slotBtn, slot.Id == _selectedSlot);
-            slotBtn.CustomMinimumSize = new Vector2(115, 56);
-            var slotId = slot.Id;
+            var slotBtn = MakeIconButton(eq.IsEmpty ? EmptyColor : SlotColors[slot.Id], !eq.IsEmpty);
+            var heroId = _selectedHeroId; var slotId = slot.Id;
             string slotDetail = eq.IsEmpty ? "Ô trống — chưa mang trang bị."
                 : EquipmentService.DetailText(slotId, eq.Level, eq.RefineIndex, $"Đang mang: {heroDef.Name}");
-            slotBtn.MouseEntered += () => SetTooltip(slotDetail);
-            slotBtn.MouseExited += () => SetTooltip(_lastSelectedDetail);
+            slotBtn.MouseEntered += () => ShowTooltip(slotBtn, slotDetail);
+            slotBtn.MouseExited += HideTooltip;
             slotBtn.GuiInput += (InputEvent e) =>
             {
                 if (e is InputEventMouseButton mb && mb.Pressed)
                 {
                     if (mb.DoubleClick)
                     {
-                        if (selectedOwned && EquipmentService.Unequip(gm.Save, _selectedHeroId, slotId)) { gm.SaveGame(); CallDeferred("BuildAll"); }
+                        if (EquipmentService.Unequip(gm.Save, heroId, slotId)) { gm.SaveGame(); CallDeferred("RebuildAll"); }
                     }
                     else
                     {
-                        _selectedSlot = slotId;
-                        _lastSelectedDetail = slotDetail;
-                        foreach (var b in _equippedButtons) b.Modulate = Colors.White;
+                        foreach (var b in equippedButtons) b.Modulate = Colors.White;
                         slotBtn.Modulate = UiTheme.Gold;
-                        SetTooltip(slotDetail);
                     }
                 }
             };
-            _equippedButtons.Add(slotBtn);
+            equippedButtons.Add(slotBtn);
             equippedBox.AddChild(slotBtn);
         }
-        var unequipAll = new Button { Text = "Tháo tất cả trang bị", Disabled = !selectedOwned, CustomMinimumSize = new Vector2(480, 56) };
+        var unequipAll = new Button { Text = "Tháo tất cả trang bị", CustomMinimumSize = new Vector2(540, 56) };
         UiTheme.StyleButton(unequipAll);
-        unequipAll.CustomMinimumSize = new Vector2(480, 56);
-        unequipAll.Pressed += () => { if (EquipmentService.UnequipAll(gm.Save, _selectedHeroId) >= 0) { gm.SaveGame(); CallDeferred("BuildAll"); } };
-        detail.AddChild(unequipAll);
-        detail.AddChild(MakeLabel($"EXP: {p.Exp}/{ProgressionService.ExpToNext(p.Level)} — Sao: {p.Stars}/5 — Mảnh: {gm.Save.Shards[_selectedHeroId]}" + (selectedOwned ? "" : " — CHƯA SỞ HỮU (cần 10 mảnh để mở khóa)"), 15, 480));
-        var expBar = new ProgressBar { MinValue = 0, MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level), Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp, CustomMinimumSize = new Vector2(480, 20) };
-        detail.AddChild(expBar);
-        detail.AddChild(MakeLabel($"Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}", 15, 480));
+        unequipAll.CustomMinimumSize = new Vector2(540, 56);
+        var unequipHero = _selectedHeroId;
+        unequipAll.Pressed += () => { if (EquipmentService.UnequipAll(gm.Save, unequipHero) >= 0) { gm.SaveGame(); CallDeferred("RebuildAll"); } };
+        page.AddChild(unequipAll);
         if (selectedOwned)
         {
             var id = _selectedHeroId;
-            var openBtn = new Button { Text = "Mở trang bị & cường hóa cho tướng này", CustomMinimumSize = new Vector2(480, 56) };
+            var openBtn = new Button { Text = "Mở trang bị & cường hóa cho tướng này", CustomMinimumSize = new Vector2(540, 56) };
             UiTheme.StyleButton(openBtn, true);
-            openBtn.CustomMinimumSize = new Vector2(480, 56);
+            openBtn.CustomMinimumSize = new Vector2(540, 56);
             openBtn.Pressed += () =>
             {
                 gm.SelectedHeroId = id;
@@ -232,13 +234,57 @@ public partial class HeroListScene : Control
                 if (hub != null && hub.IsPopupOpen) hub.OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HubScene.HeroPopupSize);
                 else GetTree().ChangeSceneToFile("res://features/hero/scenes/HeroScreen.tscn");
             };
-            detail.AddChild(openBtn);
+            page.AddChild(openBtn);
         }
+        HideTooltip();
+    }
 
-        // Right: hero stats + hint (tooltip panel itself is static in the .tscn).
-        int power = eff.Hp + eff.Atk * 5;
-        statsBox.AddChild(MakeLabel($"Chỉ số hiệu lực — Lực chiến ~{power}", 17, 320));
-        statsBox.AddChild(MakeLabel($"HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}\nTướng Tinh: {gm.Save.StarNodesUnlocked}/12 ô", 15, 320));
-        statsBox.AddChild(MakeLabel("Trái: trang bị sở hữu (mang được cho mọi tướng). Click đúp món trong túi để mang cho tướng đang chọn, click đúp món đang mang để tháo. Hover để xem chi tiết.", 13, 320));
+    private void BuildGrid()
+    {
+        if (!IsInsideTree() || _grid == null) return;
+        var gm = GetNode<GameManager>("/root/GameManager");
+        ProgressionService.EnsureDefaults(gm.Save);
+        ClearBox(_grid);
+        if (_gridTitle != null) _gridTitle.Text = $"TRANG BỊ TRONG TÚI ({gm.Save.BagEquipment.Count})";
+        // 4 columns x 7 rows = 28 cells; beyond 28 items, rows grow (scroll).
+        int totalCells = Math.Max(28, ((gm.Save.BagEquipment.Count + 3) / 4) * 4);
+        var gridButtons = new List<Button>();
+        for (int i = 0; i < totalCells; i++)
+        {
+            if (i < gm.Save.BagEquipment.Count)
+            {
+                var item = gm.Save.BagEquipment[i];
+                var btn = MakeIconButton(SlotColors[item.SlotId], true);
+                var bagIndex = i;
+                string detail = EquipmentService.DetailText(item.SlotId, item.Level, item.RefineIndex, "Trạng thái: Trong túi");
+                btn.MouseEntered += () => ShowTooltip(btn, detail);
+                btn.MouseExited += HideTooltip;
+                btn.GuiInput += (InputEvent e) =>
+                {
+                    if (e is InputEventMouseButton mb && mb.Pressed)
+                    {
+                        if (mb.DoubleClick)
+                        {
+                            // Equip to the hero of the current tab — any hero, including locked.
+                            if (EquipmentService.EquipFromBag(gm.Save, CurrentHeroId(), bagIndex)) { gm.SaveGame(); CallDeferred("RebuildAll"); }
+                        }
+                        else
+                        {
+                            foreach (var b in gridButtons) b.Modulate = Colors.White;
+                            btn.Modulate = UiTheme.Gold;
+                        }
+                    }
+                };
+                gridButtons.Add(btn);
+                _grid.AddChild(btn);
+            }
+            else
+            {
+                var empty = MakeIconButton(EmptyColor, false);
+                empty.Disabled = true;
+                _grid.AddChild(empty);
+            }
+        }
+        HideTooltip();
     }
 }

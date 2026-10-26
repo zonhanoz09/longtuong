@@ -15,6 +15,20 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.7 — đã làm (tướng tab dọc + lưới trang bị 4×7 icon-only)
+
+- Danh sách tướng: tab dọc bên trái, mỗi tab 1 tướng (tiêu đề có "(Khóa)"
+  cho tướng chưa sở hữu); bấm tab đổi chi tiết tướng ở giữa. Lưu ý: Godot
+  4.7 TabContainer chỉ có tab Trên/Dưới nên tab dọc làm bằng cột nút tab.
+- Lưới trang bị bên phải: 4 cột, ô vuông 64×64 chỉ hiện icon (ô màu theo
+  loại, chưa có sprite), không tên/cấp/chỉ số; chỉ chứa món trong túi, món
+  đang mang không có trong lưới mà chỉ ở 4 ô đang mang của tướng. Túi quá 28
+  món thì lưới cuộn thêm hàng (đã test 30 món → 32 ô, cuộn được).
+- Hover ô (lưới hoặc đang mang) hiện tooltip nổi ngay kế bên ô (ưu tiên
+  phải, hết chỗ lật trái, kẹp trong popup); click đơn chỉ chọn, click đúp
+  tháo/mang, mang được cho mọi tướng kể cả tướng khóa.
+- Test: `tests/TestPhase27.tscn` (11 check).
+
 ## Phase 2.6 — đã làm (trang bị: danh sách sở hữu bên trái, hover hiện chỉ số, layout fix cứng)
 
 - Màn Danh sách tướng: trái là danh sách trang bị user sở hữu (túi + đang

@@ -274,12 +274,16 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
-### Phase 2.7 — PLAN: Danh sách tướng tab dọc + lưới trang bị 4×7 icon-only (CHƯA LÀM)
+### Phase 2.7 — Danh sách tướng tab dọc + lưới trang bị 4×7 icon-only (ĐÃ HOÀN THÀNH)
 
-> Huynh chốt 2026-10-26 (tối): UI 2.6 sai — làm lại theo plan này, CHƯA code.
+> Huynh chốt 2026-10-26 (tối): UI 2.6 sai — làm lại theo plan này.
 > Khôi phục kiểu tab mỗi tướng một tab của 2.4, nhưng tab xếp DỌC bên trái
 > (2.4 tab nằm ngang trên đầu); lưới trang bị thành ô vuông nhỏ 4×7, chỉ hiện
 > icon; trang bị đang mang không có trong lưới; hover hiện tooltip kế bên ô.
+> Sửa khi làm: Godot 4.7 TabContainer CHỈ hỗ trợ tab Trên/Dưới
+> (POSITION_MAX = 2, đặt Left bị engine từ chối) nên tab dọc làm bằng cột nút
+> tab + panel chi tiết chung — giữ nguyên hình thức và hành vi đã chốt.
+> Túi quá 28 món: Huynh chốt lưới CUỘN thêm hàng (không giới hạn túi).
 
 #### Bố cục (popup giữ 1180×660, tất cả fix cứng, không đổi kích thước Hub)
 - Tiêu đề trên cùng (20,10–600,40), vùng chính y 60–640 (cao 580).

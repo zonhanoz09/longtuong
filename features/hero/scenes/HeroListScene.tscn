@@ -17,46 +17,52 @@ offset_left = 20.0
 offset_top = 10.0
 offset_right = 600.0
 offset_bottom = 40.0
-text = "TUONG & TRANG BI — Trai: trang bi so huu | Giua: tuong | Phai: chi so + chi tiet"
+text = "DANH SACH TUONG — Tab doc | Luoi trang bi 4x7 (chi icon)"
 
-[node name="OwnedScroll" type="ScrollContainer" parent="."]
+[node name="TabButtons" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 60.0
-offset_right = 280.0
-offset_bottom = 600.0
-
-[node name="OwnedListBox" type="VBoxContainer" parent="OwnedScroll"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 240.0
-offset_bottom = 0.0
+offset_right = 180.0
+offset_bottom = 640.0
 
 [node name="DetailBox" type="VBoxContainer" parent="."]
 clip_contents = true
 layout_mode = 0
-offset_left = 300.0
+offset_left = 200.0
 offset_top = 60.0
-offset_right = 800.0
+offset_right = 760.0
 offset_bottom = 640.0
 
-[node name="RightBox" type="VBoxContainer" parent="."]
+[node name="GridPanel" type="VBoxContainer" parent="."]
 clip_contents = true
 layout_mode = 0
-offset_left = 820.0
+offset_left = 780.0
 offset_top = 60.0
 offset_right = 1160.0
 offset_bottom = 640.0
 
-[node name="StatsBox" type="VBoxContainer" parent="RightBox"]
+[node name="GridTitleLabel" type="Label" parent="GridPanel"]
 layout_mode = 0
+text = "TRANG BI TRONG TUI"
 
-[node name="TooltipPanel" type="PanelContainer" parent="RightBox"]
+[node name="GridScroll" type="ScrollContainer" parent="GridPanel"]
+custom_minimum_size = Vector2(380, 548)
 layout_mode = 0
-custom_minimum_size = Vector2(320, 200)
+horizontal_scroll_mode = 3
 
-[node name="TooltipLabel" type="Label" parent="RightBox/TooltipPanel"]
+[node name="EquipmentGrid" type="GridContainer" parent="GridPanel/GridScroll"]
+layout_mode = 0
+columns = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="TooltipPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
+custom_minimum_size = Vector2(280, 160)
+
+[node name="TooltipLabel" type="Label" parent="TooltipPanel"]
 layout_mode = 0
 autowrap_mode = 3
-text = "Hover vao trang bi de xem chi tiet."
+text = "Tooltip"

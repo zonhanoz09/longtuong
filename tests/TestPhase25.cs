@@ -103,25 +103,28 @@ public partial class TestPhase25 : Node
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "hero list popup opens");
         if (heroList == null) { hub.QueueFree(); return; }
-        var ownedBox = heroList.GetNodeOrNull<VBoxContainer>("OwnedScroll/OwnedListBox");
-        var detail = heroList.GetNodeOrNull<VBoxContainer>("DetailBox");
-        var right = heroList.GetNodeOrNull<VBoxContainer>("RightBox");
-        Check(ownedBox != null && detail != null && right != null, "hero list has owned/ detail/ right columns");
-        var ownedButtons = ownedBox?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
-        var rows = detail?.GetChildren().OfType<HBoxContainer>().ToList() ?? new System.Collections.Generic.List<HBoxContainer>();
-        var equipped = rows.Count >= 3 ? rows[2].GetChildren().OfType<Button>().ToList() : new System.Collections.Generic.List<Button>();
-        Check(ownedButtons.Count == 4, "hero list left owned list has 4 seeded items");
-        Check(equipped.Count == 4, "hero detail has 4 equipped slot controls");
-        if (ownedButtons.Count == 0 || equipped.Count == 0) { hub.ClosePopup(); hub.QueueFree(); return; }
+        var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
+        var gridButtons = grid.GetChildren().OfType<Button>().ToList();
+        Check(gridButtons.Count == 28 && gridButtons.Count(b => b.Disabled == false) == 4, "grid has 28 cells, 4 filled from seed");
+        if (gridButtons.Count == 0) { hub.ClosePopup(); hub.QueueFree(); return; }
         int bagBefore = gm.Save.BagEquipment.Count;
-        // Single click on an owned item must NOT equip.
-        ownedButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(false));
-        Check(gm.Save.BagEquipment.Count == bagBefore, "single click on owned item does not equip");
-        // Double-click a bag item equips it to the selected hero.
-        ownedButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
-        Check(gm.Save.BagEquipment.Count == bagBefore - 1, "double-click owned bag item equips it");
-        // Double-click the equipped slot unequips it back to bag.
-        equipped[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
+        // Single click on a grid item must NOT equip.
+        gridButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(false));
+        Check(gm.Save.BagEquipment.Count == bagBefore, "single click on grid item does not equip");
+        // Double-click a grid item equips it to the current tab hero.
+        gridButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
+        Check(gm.Save.BagEquipment.Count == bagBefore - 1, "double-click grid item equips it");
+        // Reopen: the equipped item must NOT be in the grid anymore.
+        hub.ClosePopup();
+        hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
+        var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
+        var grid2 = heroList2.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
+        Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == bagBefore - 1, "equipped item is no longer in the grid");
+        var page2 = heroList2.GetNode<VBoxContainer>("DetailBox");
+        var equipped2 = page2.GetChildren().OfType<HBoxContainer>().First().GetChildren().OfType<Button>().ToList();
+        Check(equipped2.Count == 4, "hero tab page has 4 equipped slots after reopen");
+        // Double-click the equipped slot unequips it back to the grid.
+        equipped2[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
         Check(gm.Save.BagEquipment.Count == bagBefore, "double-click equipped slot unequips it back to bag");
         hub.ClosePopup();
         hub.QueueFree();

@@ -38,25 +38,23 @@ public partial class TestPhase24 : Node
             hub.ClosePopup();
         }
 
-        // Hero list (Phase 2.6): no tabs, 3 fixed columns: owned equipment left,
-        // hero detail center (with hero selector), stats + tooltip right.
+        // Hero list (Phase 2.7): vertical tabs + 4-column equipment grid.
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
-        Check(heroList != null && heroList.GetNodeOrNull<TabContainer>("HeroTabs") == null, "hero list no longer uses tabs");
-        var ownedScroll = heroList?.GetNodeOrNull<ScrollContainer>("OwnedScroll");
-        var ownedBox = heroList?.GetNodeOrNull<VBoxContainer>("OwnedScroll/OwnedListBox");
-        var detail = heroList?.GetNodeOrNull<VBoxContainer>("DetailBox");
-        var right = heroList?.GetNodeOrNull<VBoxContainer>("RightBox");
-        var tooltip = heroList?.GetNodeOrNull<Label>("RightBox/TooltipPanel/TooltipLabel");
-        Check(ownedScroll != null && ownedBox != null && detail != null && right != null && tooltip != null, "hero list has owned list (scroll) + detail + right stats/tooltip columns");
-        if (detail != null)
-        {
-            var rows = detail.GetChildren().OfType<HBoxContainer>().ToList();
-            Check(rows.Count >= 3 && rows[0].GetChildren().OfType<Button>().Count() + rows[1].GetChildren().OfType<Button>().Count() == HeroDatabase.Heroes.Count, "hero detail has selector rows with one button per hero");
-            Check(rows.Count >= 3 && rows[2].GetChildren().OfType<Button>().Count() == 4, "hero detail has 4 equipped slot controls");
-            var labels = string.Join("\n", detail.GetChildren().OfType<Label>().Select(l => l.Text));
-            Check(labels.Contains("Tuyệt kỹ"), "hero detail shows skills");
-        }
+        var tabButtons = heroList?.GetNodeOrNull<VBoxContainer>("TabButtons");
+        var tabBtns = tabButtons?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
+        // TabButtons is a VBoxContainer, so its buttons stack vertically by construction.
+        Check(tabButtons != null && tabBtns.Count == HeroDatabase.Heroes.Count, "hero tabs are a vertical button column, one per hero");
+        var grid = heroList?.GetNodeOrNull<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
+        Check(grid != null && grid.Columns == 4, "equipment grid has 4 columns");
+        Check(grid != null && grid.GetChildCount() == 28, "equipment grid has 28 cells (4x7) when bag is empty");
+        if (grid != null)
+            Check(grid.GetChildren().OfType<Button>().All(b => b.Text == ""), "grid cells are icon-only (no text)");
+        var page = heroList?.GetNodeOrNull<VBoxContainer>("DetailBox");
+        var equippedBox = page?.GetChildren().OfType<HBoxContainer>().FirstOrDefault();
+        Check(equippedBox != null && equippedBox.GetChildren().OfType<Button>().Count() == 4, "hero tab page has 4 equipped icon slots");
+        if (equippedBox != null)
+            Check(equippedBox.GetChildren().OfType<Button>().All(b => b.Text == ""), "equipped slots are icon-only (no text)");
         hub.ClosePopup();
         hub.QueueFree();
         GD.Print(_failures == 0 ? "TEST PHASE2.4: ALL PASS" : $"TEST PHASE2.4: {_failures} FAILURES");
