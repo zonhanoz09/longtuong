@@ -87,3 +87,13 @@ text = "Chieu mo..."
 [connection signal="pressed" from="StarUpButton" to="." method="OnStarUpPressed"]
 [connection signal="pressed" from="UnlockStarButton" to="." method="OnUnlockStarPressed"]
 [connection signal="pressed" from="RecruitButton" to="." method="OnRecruitPressed"]
+
+[node name="UnequipAllButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 680.0
+offset_top = 540.0
+offset_right = 880.0
+offset_bottom = 580.0
+text = "Thao tat ca"
+
+[connection signal="pressed" from="UnequipAllButton" to="." method="OnUnequipAllPressed"]

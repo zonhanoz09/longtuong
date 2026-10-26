@@ -38,23 +38,22 @@ public partial class TestPhase24 : Node
             hub.ClosePopup();
         }
 
-        // Hero list: one tab per hero, each tab has detail + carried equipment.
+        // Hero list (Phase 2.5): 3 columns, no tabs anymore.
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
-        var tabs = heroList?.GetNodeOrNull<TabContainer>("HeroTabs");
-        Check(tabs != null, "hero list has HeroTabs TabContainer");
-        if (tabs != null)
+        Check(heroList != null && heroList.GetNodeOrNull<TabContainer>("HeroTabs") == null, "hero list no longer uses tabs");
+        var left = heroList?.GetNodeOrNull<VBoxContainer>("HeroListBox");
+        var detail = heroList?.GetNodeOrNull<VBoxContainer>("DetailBox");
+        var right = heroList?.GetNodeOrNull<VBoxContainer>("RightBox");
+        Check(left != null && detail != null && right != null, "hero list has left list + center detail + right columns");
+        if (left != null)
+            Check(left.GetChildren().OfType<Button>().Count() == HeroDatabase.Heroes.Count, "hero list left column has one button per hero");
+        if (detail != null)
         {
-            Check(tabs.GetTabCount() == HeroDatabase.Heroes.Count, $"hero tabs count = {HeroDatabase.Heroes.Count}");
-            for (int i = 0; i < HeroDatabase.Heroes.Count; i++)
-                Check(tabs.GetTabTitle(i).Contains(HeroDatabase.Heroes[i].Name), $"tab {i} is {HeroDatabase.Heroes[i].Name}");
-            var firstPage = tabs.GetChild(0) as VBoxContainer;
-            var allText = firstPage == null ? "" : string.Join("\n", firstPage.GetChildren().OfType<Label>().Select(l => l.Text));
-            Check(allText.Contains("Trang bị mang theo"), "hero tab shows carried equipment header");
-            foreach (var slot in ProgressionService.Slots)
-                Check(allText.Contains(slot.Name), $"hero tab shows equipment slot: {slot.Name}");
-            Check(allText.Contains("Chỉ số hiệu lực"), "hero tab shows effective stats");
-            Check(allText.Contains("Tuyệt kỹ"), "hero tab shows skills");
+            var equippedBox = detail.GetChildren().OfType<HBoxContainer>().FirstOrDefault();
+            Check(equippedBox != null && equippedBox.GetChildren().OfType<Button>().Count() == 4, "hero detail has 4 equipped slot controls");
+            var labels = string.Join("\n", detail.GetChildren().OfType<Label>().Select(l => l.Text));
+            Check(labels.Contains("Tuyệt kỹ"), "hero detail shows skills");
         }
         hub.ClosePopup();
         hub.QueueFree();

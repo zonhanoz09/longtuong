@@ -12,7 +12,7 @@ namespace LongTuong;
 public partial class HubScene : Control
 {
     // Popup content sizes (width x height), one per widget.
-    public static readonly Vector2 HeroListPopupSize = new(1100, 620);
+    public static readonly Vector2 HeroListPopupSize = new(1180, 660);
     public static readonly Vector2 BagPopupSize = new(1020, 640);
     public static readonly Vector2 HeroPopupSize = new(1140, 680);
     public static readonly Vector2 FormationPopupSize = new(900, 540);

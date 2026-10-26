@@ -15,6 +15,19 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.5 — đã làm (tướng kiểu ảnh mẫu + click đúp tháo/mang trang bị)
+
+- Danh sách tướng làm lại 3 cột kiểu ảnh mẫu (thay tab 2.4): trái danh sách
+  tướng, giữa chi tiết (chân dung placeholder + 4 ô đang mang + Tháo tất cả
+  + EXP + kỹ năng), phải chỉ số chi tiết + lưới túi trang bị. Popup 1180×660.
+- Tướng mặc định không có trang bị: ô Rỗng không cộng chỉ số; tướng mới có
+  4 ô Rỗng + túi 4 món cơ bản để test. Save cũ giữ nguyên món đang mang.
+- Click đúp món đang mang → tháo về túi; click đúp món trong túi → mang
+  cho tướng đang chọn (ô đã có món thì hoán đổi, không mất món); click đơn
+  chỉ chọn, không tháo/mang. Màn Trang bị thêm nút Tháo từng món + Tháo tất cả.
+- Test: `tests/TestPhase25.tscn` (ô Rỗng, tháo/mang/hoán đổi, seed, save cũ,
+  click đúp/click đơn trong popup thật).
+
 ## Phase 2.4 — đã làm (bỏ nút Quay lại + tướng dạng tab)
 
 - Bỏ nút Quay lại Hub ở tất cả widget, chỉ đóng bằng nút X của popup;

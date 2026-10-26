@@ -15,5 +15,13 @@ public class SaveData
     public List<string> OwnedHeroIds { get; set; } = new();
     public Dictionary<string, int> Shards { get; set; } = new();
     public Dictionary<string, Dictionary<string, EquipmentState>> HeroEquipment { get; set; } = new();
+    public List<BagEquipmentItem> BagEquipment { get; set; } = new();
     public int StarNodesUnlocked { get; set; } = 0;
+}
+
+public class BagEquipmentItem
+{
+    public string SlotId { get; set; } = "";
+    public int Level { get; set; } = 0;
+    public int RefineIndex { get; set; } = 0;
 }

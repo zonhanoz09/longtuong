@@ -29,6 +29,11 @@ public static class SeedService
         var starter = StarterHeroId(username);
         save.OwnedHeroIds = new List<string> { starter };
         save.TeamIds = new List<string> { starter };
+        // Phase 2.5: starter starts with NO equipped items; the bag holds 4
+        // basic items (one per slot) so equip -> unequip -> re-equip can be tested.
+        save.BagEquipment = ProgressionService.Slots
+            .Select(s => new BagEquipmentItem { SlotId = s.Id, Level = 0, RefineIndex = 0 })
+            .ToList();
         save.Gold = SeededGold;
         save.Gems = SeededGems;
         return save;

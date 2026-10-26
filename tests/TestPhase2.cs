@@ -80,14 +80,22 @@ public partial class TestPhase2 : Node
     private void CheckEquipment()
     {
         var s = Fresh();
+        // Phase 2.5: fresh heroes start with empty slots, so equip a bag item first.
+        s.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
+        Check(EquipmentService.EquipFromBag(s, "quan_vu", 0) && !s.HeroEquipment["quan_vu"]["weapon"].IsEmpty, "equip bag weapon into empty slot");
         int goldBefore = s.Gold;
         Check(ProgressionService.EnhanceCost(0) == 100, "enhance cost level 0 = 100");
         Check(ProgressionService.TryEnhance(s, "quan_vu", "weapon") && s.HeroEquipment["quan_vu"]["weapon"].Level == 1 && s.Gold == goldBefore - 100, "enhance weapon 0->1 costs 100");
         s.HeroEquipment["quan_vu"]["weapon"].Level = 10;
         Check(!ProgressionService.TryEnhance(s, "quan_vu", "weapon"), "enhance fails at max 10");
         var s2 = Fresh(); s2.Gold = 50;
+        Check(!ProgressionService.TryEnhance(s2, "quan_vu", "weapon") && s2.Gold == 50, "enhance fails on empty slot, no deduction");
+        s2.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
+        EquipmentService.EquipFromBag(s2, "quan_vu", 0);
         Check(!ProgressionService.TryEnhance(s2, "quan_vu", "weapon") && s2.Gold == 50, "enhance fails with insufficient gold, no deduction");
         var s3 = Fresh();
+        s3.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
+        EquipmentService.EquipFromBag(s3, "quan_vu", 0);
         Check(ProgressionService.TryRefine(s3, "quan_vu", "weapon") && s3.HeroEquipment["quan_vu"]["weapon"].RefineIndex == 1, "refine cycles 0->1 and costs 100");
         for (int i = 0; i < 4; i++) ProgressionService.TryRefine(s3, "quan_vu", "weapon");
         Check(s3.HeroEquipment["quan_vu"]["weapon"].RefineIndex == 0, "refine cycles back to 0 after 5");
@@ -141,7 +149,7 @@ public partial class TestPhase2 : Node
         {
             var s = Fresh();
             s.Heroes["lu_bo"].Level = 12; s.Heroes["lu_bo"].Stars = 4; s.Shards["lu_bo"] = 33;
-            s.HeroEquipment["lu_bo"]["weapon"].Level = 5; s.HeroEquipment["lu_bo"]["weapon"].RefineIndex = 2;
+            s.HeroEquipment["lu_bo"]["weapon"].IsEmpty = false; s.HeroEquipment["lu_bo"]["weapon"].Level = 5; s.HeroEquipment["lu_bo"]["weapon"].RefineIndex = 2;
             s.StarNodesUnlocked = 3; s.Gems = 77;
             SaveManager.Save(path, s);
             var loaded = SaveManager.Load(path);

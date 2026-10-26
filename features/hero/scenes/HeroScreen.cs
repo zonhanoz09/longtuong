@@ -11,7 +11,7 @@ public partial class HeroScreen : Control
     private Label? _detailLabel;
     private Label? _starLabel;
     private Label? _recruitLabel;
-    private readonly Dictionary<string, (Label Label, Button Enhance, Button Refine)> _equipRows = new();
+    private readonly Dictionary<string, (Label Label, Button Enhance, Button Refine, Button Unequip)> _equipRows = new();
 
     public override void _Ready()
     {
@@ -23,6 +23,7 @@ public partial class HeroScreen : Control
         UiTheme.StyleButton(GetNode<Button>("StarUpButton"), true);
         UiTheme.StyleButton(GetNode<Button>("UnlockStarButton"));
         UiTheme.StyleButton(GetNode<Button>("RecruitButton"));
+        UiTheme.StyleButton(GetNode<Button>("UnequipAllButton"));
         if (!gm.Save.OwnedHeroIds.Contains(_selected) && gm.Save.OwnedHeroIds.Count > 0) _selected = gm.Save.OwnedHeroIds[0];
         ProgressionService.EnsureDefaults(gm.Save);
         _detailLabel = GetNode<Label>("DetailLabel");
@@ -63,9 +64,18 @@ public partial class HeroScreen : Control
             var label = new Label { CustomMinimumSize = new Vector2(520, 0) };
             var enh = new Button { Text = "Cường hóa" };
             var refBtn = new Button { Text = "Tẩy luyện" };
+            var uneq = new Button { Text = "Tháo" };
             UiTheme.StyleButton(enh);
             UiTheme.StyleButton(refBtn);
+            UiTheme.StyleButton(uneq);
             var slotId = slot.Id;
+            uneq.Pressed += () =>
+            {
+                var gm = GetNode<GameManager>("/root/GameManager");
+                if (EquipmentService.Unequip(gm.Save, _selected, slotId)) { _status = $"Đã tháo {slot.Name} về túi!"; gm.SaveGame(); }
+                else _status = "Ô này đang trống, không có gì để tháo!";
+                Refresh();
+            };
             enh.Pressed += () =>
             {
                 var gm = GetNode<GameManager>("/root/GameManager");
@@ -83,8 +93,9 @@ public partial class HeroScreen : Control
             row.AddChild(label);
             row.AddChild(enh);
             row.AddChild(refBtn);
+            row.AddChild(uneq);
             box.AddChild(row);
-            _equipRows[slot.Id] = (label, enh, refBtn);
+            _equipRows[slot.Id] = (label, enh, refBtn, uneq);
         }
     }
 
@@ -105,9 +116,18 @@ public partial class HeroScreen : Control
         foreach (var slot in ProgressionService.Slots)
         {
             var eq = save.HeroEquipment[_selected][slot.Id];
-            var (label, enh, _) = _equipRows[slot.Id];
-            label.Text = $"{slot.Name}: Cường hóa {eq.Level}/10 (tốn {ProgressionService.EnhanceCost(eq.Level)} Vàng) — Tẩy luyện: {ProgressionService.RefineNames[eq.RefineIndex]} (tốn 100 Vàng)";
-            enh.Disabled = eq.Level >= ProgressionService.MaxEnhanceLevel;
+            var (label, enh, refBtn, uneq) = _equipRows[slot.Id];
+            if (eq.IsEmpty)
+            {
+                label.Text = $"{slot.Name}: (Trống — chưa mang trang bị)";
+            }
+            else
+            {
+                label.Text = $"{slot.Name}: Cường hóa {eq.Level}/10 (tốn {ProgressionService.EnhanceCost(eq.Level)} Vàng) — Tẩy luyện: {ProgressionService.RefineNames[eq.RefineIndex]} (tốn 100 Vàng)";
+            }
+            enh.Disabled = eq.IsEmpty || eq.Level >= ProgressionService.MaxEnhanceLevel;
+            refBtn.Disabled = eq.IsEmpty;
+            uneq.Disabled = eq.IsEmpty;
         }
         if (_starLabel != null)
         {
@@ -147,4 +167,12 @@ public partial class HeroScreen : Control
         Refresh();
     }
 
+    private void OnUnequipAllPressed()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        int count = EquipmentService.UnequipAll(gm.Save, _selected);
+        _status = count > 0 ? $"Đã tháo tất cả {count} món về túi!" : "Không có món nào đang mang!";
+        gm.SaveGame();
+        Refresh();
+    }
 }

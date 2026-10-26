@@ -257,10 +257,9 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   mờ) và layout đã thu chiều rộng cho vừa khung, có cắt tràn (clip) trong khung.
 
 
-> Cập nhật 2026-10-26: **Phase 2.5 — PLAN (CHƯA LÀM, chờ Huynh chốt)** — Giao diện
-> Danh sách tướng theo ảnh mẫu (danh sách trái + chi tiết giữa + trang bị phải),
-> tướng mặc định không có trang bị, tháo/mang trang bị qua lại giữa tướng và túi.
-> Xem §6.5 dưới đây. Code game hiện tại CHƯA đổi theo plan này.
+> Cập nhật 2026-10-26: **Phase 2.5 — ĐÃ HOÀN THÀNH** — Giao diện Danh sách
+> tướng theo ảnh mẫu (danh sách trái + chi tiết giữa + trang bị phải), tướng
+> mặc định không có trang bị, tháo/mang bằng click đúp. Xem §6.5 dưới đây.
 
 ### Phase 2.4 — Bỏ nút Quay lại + Danh sách tướng dạng tab
 
@@ -275,7 +274,7 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
-### Phase 2.5 — PLAN: Giao diện tướng kiểu ảnh mẫu + tháo/mang trang bị (CHƯA LÀM)
+### Phase 2.5 — Giao diện tướng kiểu ảnh mẫu + tháo/mang trang bị (ĐÃ HOÀN THÀNH)
 
 **Nguồn tham khảo:** ảnh giao diện Võ tướng game gốc mà Huynh gửi (chỉ lấy
 bố cục và luồng, KHÔNG copy art, text, số liệu của game gốc — toàn bộ nhãn,
@@ -291,7 +290,7 @@ trong widget.
 **2.5.1. Bố cục mới cho widget Danh sách tướng (thay layout tab của 2.4)**
 - Layout tab ở 2.4 bị thay bằng layout 3 cột theo ảnh, vì ảnh dùng danh sách
   + chi tiết chứ không dùng tab. Popup Danh sách tướng tăng từ 1100×620 lên
-  **1180×680** (bằng popup Vào ải/Trang bị) để đủ 3 cột.
+  **1180×660** (rộng bằng popup Vào ải nhưng thấp hơn 20px để kích thước popup mỗi widget vẫn khác nhau) để đủ 3 cột.
 - Cột trái (~160px): danh sách 6 tướng dạng nút dọc, tướng đang chọn tô sáng,
   tướng chưa sở hữu xám + ghi "(Khóa)". Dưới danh sách ghi số tướng sở hữu
   (vd 1/6). Bấm tên tướng đổi chi tiết ở giữa, không chuyển màn hình.

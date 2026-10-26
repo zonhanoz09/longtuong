@@ -15,6 +15,9 @@ public class EquipmentState
 {
     public int Level { get; set; } = 0;
     public int RefineIndex { get; set; } = 0;
+    // Phase 2.5: true = slot is empty (no item equipped). Defaults to false so
+    // old saves (no such field in JSON) keep their equipment equipped.
+    public bool IsEmpty { get; set; } = false;
 }
 
 public class EquipmentSlotDef
@@ -76,6 +79,7 @@ public static class ProgressionService
         save.HeroEquipment ??= new Dictionary<string, Dictionary<string, EquipmentState>>();
         save.StageStars ??= new Dictionary<string, int>();
         save.OwnedHeroIds ??= new List<string>();
+        save.BagEquipment ??= new List<BagEquipmentItem>();
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
         if (save.OwnedHeroIds.Count == 0)
             save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();
@@ -86,12 +90,12 @@ public static class ProgressionService
             if (!save.HeroEquipment.ContainsKey(hero.Id))
             {
                 var dict = new Dictionary<string, EquipmentState>();
-                foreach (var slot in Slots) dict[slot.Id] = new EquipmentState();
+                foreach (var slot in Slots) dict[slot.Id] = new EquipmentState { IsEmpty = true };
                 save.HeroEquipment[hero.Id] = dict;
             }
             else foreach (var slot in Slots)
                 if (!save.HeroEquipment[hero.Id].ContainsKey(slot.Id))
-                    save.HeroEquipment[hero.Id][slot.Id] = new EquipmentState();
+                    save.HeroEquipment[hero.Id][slot.Id] = new EquipmentState { IsEmpty = true };
         }
     }
 
@@ -135,7 +139,7 @@ public static class ProgressionService
         EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
         int cost = EnhanceCost(eq.Level);
-        if (eq.Level >= MaxEnhanceLevel || save.Gold < cost) return false;
+        if (eq.IsEmpty || eq.Level >= MaxEnhanceLevel || save.Gold < cost) return false;
         save.Gold -= cost;
         eq.Level++;
         return true;
@@ -145,7 +149,7 @@ public static class ProgressionService
     {
         EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
-        if (save.Gold < RefineCostGold) return false;
+        if (eq.IsEmpty || save.Gold < RefineCostGold) return false;
         save.Gold -= RefineCostGold;
         eq.RefineIndex = (eq.RefineIndex + 1) % RefineNames.Length;
         return true;
@@ -204,6 +208,7 @@ public static class ProgressionService
         foreach (var slot in Slots)
         {
             var eq = save.HeroEquipment[heroId][slot.Id];
+            if (eq.IsEmpty) continue;
             def.Atk += slot.BaseAtk + slot.AtkPerLevel * eq.Level;
             def.Hp += slot.BaseHp + slot.HpPerLevel * eq.Level;
             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;

@@ -17,11 +17,25 @@ offset_left = 20.0
 offset_top = 10.0
 offset_right = 600.0
 offset_bottom = 40.0
-text = "DANH SACH TUONG — Moi tab la 1 tuong"
+text = "DANH SACH TUONG — Trai: danh sach | Giua: chi tiet | Phai: chi so + tui"
 
-[node name="HeroTabs" type="TabContainer" parent="."]
+[node name="HeroListBox" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 60.0
-offset_right = 1080.0
-offset_bottom = 600.0
+offset_right = 180.0
+offset_bottom = 640.0
+
+[node name="DetailBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 60.0
+offset_right = 700.0
+offset_bottom = 640.0
+
+[node name="RightBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 720.0
+offset_top = 60.0
+offset_right = 1160.0
+offset_bottom = 640.0

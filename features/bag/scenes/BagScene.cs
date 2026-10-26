@@ -26,6 +26,13 @@ public partial class BagScene : Control
             var eq = gm.Save.HeroEquipment[hero.Id];
             Add($"{hero.Name}: " + string.Join(", ", ProgressionService.Slots.Select(s => $"{s.Name} {eq[s.Id].Level}/10")));
         }
+        Add("— Trang bị trong túi (mang trong màn Danh sách tướng bằng click đúp) —");
+        if (gm.Save.BagEquipment.Count == 0) Add("Túi trang bị trống.");
+        foreach (var item in gm.Save.BagEquipment)
+        {
+            var slotDef = ProgressionService.Slots.Find(s => s.Id == item.SlotId);
+            Add($"{slotDef?.Name ?? item.SlotId}: Cấp {item.Level}/10 — {ProgressionService.RefineNames[item.RefineIndex]}");
+        }
         Add("— Sao ải —");
         foreach (var stage in HeroDatabase.Stages)
         {
