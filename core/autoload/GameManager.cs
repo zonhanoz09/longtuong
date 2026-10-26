@@ -47,7 +47,19 @@ public partial class GameManager : Node
     {
         Save = SaveManager.Load(SavePath);
         ProgressionService.EnsureDefaults(Save);
-        if (Save.TeamIds != null && Save.TeamIds.Count == 3) SelectedTeamIds = new List<string>(Save.TeamIds);
+        if (Save.TeamIds != null && Save.TeamIds.Count >= 1 && Save.TeamIds.Count <= 3)
+            SelectedTeamIds = Save.TeamIds.Where(id => Save.OwnedHeroIds.Contains(id)).ToList();
+        if (SelectedTeamIds.Count == 0 && Save.OwnedHeroIds.Count > 0)
+            SelectedTeamIds = new List<string> { Save.OwnedHeroIds[0] };
+    }
+
+    public void CreateSeededSave(string username)
+    {
+        CurrentUsername = username;
+        Save = SeedService.CreateSeededSave(username);
+        SelectedTeamIds = new List<string>(Save.TeamIds);
+        SelectedHeroId = Save.TeamIds[0];
+        SaveGame();
     }
 
     public void RecordWin()
@@ -84,6 +96,7 @@ public partial class GameManager : Node
             ProgressionService.AddExp(Save, heroId, 40 + CurrentStageId * 10);
             ProgressionService.AddShards(Save, heroId, 2);
         }
+        ProgressionService.CheckUnlocks(Save);
         SaveGame();
     }
 }

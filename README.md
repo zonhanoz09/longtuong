@@ -15,6 +15,21 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.2 — đã làm (UI/UX + Hub thẻ + seed data)
+
+- Hệ thống UI chung (`core/ui/UiTheme.cs`): nền tối, điểm nhấn Vàng đồng, tiêu đề
+  28px, nút tối thiểu 56px, mọi màn hình có header + thanh Vàng/KNB góc phải +
+  nút về Hub; nút khóa xám kèm lý do.
+- Hub redesign: thẻ widget 2 cột (tên + mô tả + trạng thái), header hiện tài khoản,
+  tướng đại diện, số tướng sở hữu, thắng/ải.
+- Seed tài khoản mới: tướng khởi đầu xác định từ tên đăng nhập
+  (`(tổng mã ký tự + 31*độ dài) % 6`), Vàng 100.000 + KNB 10.000 để test, chỉ sở
+  hữu 1 tướng khởi đầu; tài khoản cũ giữ nguyên 6 tướng.
+- Mở khóa tướng: đủ 10 mảnh thì tự mở khóa (trừ 10 mảnh), qua chiêu mộ hoặc
+  thưởng trận. Đội hình/chọn ải từ 2.2 cho phép 1–3 tướng để tài khoản 1 tướng
+  vào ải được ngay.
+- Test: `tests/TestPhase22.tscn`.
+
 ## Phase 2.1 — đã làm (login/register -> hub -> widget)
 
 - Màn hình chính giờ là Đăng nhập/Đăng ký (`features/auth/`): tài khoản lưu local,

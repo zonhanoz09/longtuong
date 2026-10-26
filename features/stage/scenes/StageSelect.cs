@@ -13,8 +13,15 @@ public partial class StageSelect : Control
 
     public override void _Ready()
     {
+        UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
-        _selected.AddRange(gm.SelectedTeamIds);
+        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+        UiTheme.AddCurrencyBar(this, gm);
+        UiTheme.StyleButton(GetNode<Button>("StartButton"), true);
+        UiTheme.StyleButton(GetNode<Button>("BackButton"));
+        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
+        _selected.AddRange(gm.SelectedTeamIds.Where(id => gm.Save.OwnedHeroIds.Contains(id)));
+        if (_selected.Count == 0 && gm.Save.OwnedHeroIds.Count > 0) _selected.Add(gm.Save.OwnedHeroIds[0]);
         _selectedStage = System.Math.Min(gm.CurrentStageId, 10);
         _infoLabel = GetNode<Label>("InfoLabel");
         BuildHeroButtons();
@@ -27,12 +34,15 @@ public partial class StageSelect : Control
         var box = GetNode<VBoxContainer>("HeroBox");
         foreach (var hero in HeroDatabase.Heroes)
         {
+            bool owned = GetNode<GameManager>("/root/GameManager").Save.OwnedHeroIds.Contains(hero.Id);
             var btn = new Button
             {
-                Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — HP {hero.Hp} / ATK {hero.Atk} / Tốc {hero.Speed} — {hero.UltName}",
+                Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — HP {hero.Hp} / ATK {hero.Atk} / Tốc {hero.Speed} — {hero.UltName}{(owned ? "" : " (KHÓA — cần 10 mảnh)")}",
                 ToggleMode = true,
                 ButtonPressed = _selected.Contains(hero.Id),
+                Disabled = !owned,
             };
+            UiTheme.StyleButton(btn);
             var id = hero.Id;
             btn.Pressed += () =>
             {
@@ -78,6 +88,7 @@ public partial class StageSelect : Control
     private void RefreshInfo(string? note = null)
     {
         var names = _selected.Select(id => HeroDatabase.Get(id).Name).ToList();
+        // Title/label info is updated below; team size is 1-3 since Phase 2.2.
         var stage = HeroDatabase.GetStage(_selectedStage);
         if (_infoLabel != null)
             _infoLabel.Text = $"Đội ({_selected.Count}/3): {string.Join(", ", names)} | Ải {_selectedStage}: {stage.Name}{(note != null ? $" | {note}" : "")}";
@@ -85,7 +96,7 @@ public partial class StageSelect : Control
 
     private void OnStartPressed()
     {
-        if (_selected.Count != 3) { RefreshInfo("Phải chọn đúng 3 tướng!"); return; }
+        if (_selected.Count < 1 || _selected.Count > 3) { RefreshInfo("Chọn từ 1 đến 3 tướng!"); return; }
         var gm = GetNode<GameManager>("/root/GameManager");
         int seed = (int)(System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 1000000) + _selectedStage * 7919;
         gm.StartBattle(_selectedStage, new List<string>(_selected), seed);

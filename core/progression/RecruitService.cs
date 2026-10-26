@@ -34,6 +34,7 @@ public static class RecruitService
         save.Gold -= ProgressionService.RecruitCostGold;
         heroId = DrawHero(rng);
         ProgressionService.AddShards(save, heroId, ProgressionService.RecruitShards);
+        ProgressionService.CheckUnlocks(save);
         return true;
     }
 

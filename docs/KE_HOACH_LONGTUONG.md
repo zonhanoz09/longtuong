@@ -18,6 +18,9 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Cập nhật 2026-10-26: **Phase 2.1 đã hoàn thành** — đăng nhập/đăng ký local
 > (hash mật khẩu) -> Hub 7 widget (tướng sở hữu, túi đồ, trang bị, bày trận,
 > vào ải, cường hóa, chiêu mộ), save tách theo tài khoản local.
+> Cập nhật 2026-10-26: **Phase 2.2 — ĐÃ HOÀN THÀNH** — UI/UX thống nhất cho
+> toàn bộ widget + Hub dạng thẻ, và seed data tài khoản mới: 1 tướng khởi đầu
+> suy ra từ tên đăng nhập + rất nhiều Vàng để test chức năng (xem §6.2 dưới đây).
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
@@ -189,6 +192,48 @@ endpoint xem dữ liệu phải bắt auth.
   công khai tỉ lệ ngay trong UI quay.
 - **Tiêu chí qua:** leo lại ải cũ thấy mạnh lên rõ rệt; không có đường build nào
   "vô dụng hoàn toàn" hay "một mình cân hết".
+
+
+### Phase 2.2 — UI/UX toàn bộ widget + Hub + seed data khởi đầu
+
+**Vấn đề trước 2.2:** mỗi màn hình tự vẽ kiểu riêng (nút đủ cỡ, không có header
+chung, không thấy Vàng/KNB khi đang ở màn con, Hub là danh sách nút dài), và tài
+khoản mới có sẵn cả 6 tướng + 1.000 Vàng nên không test được vòng lặp
+khởi đầu → chiêu mộ → mở khóa tướng.
+
+**2.2.1. Hệ thống UI/UX chung (`core/ui/UiTheme.cs`)**
+- Khung 1280×720, nền tối, chữ sáng, điểm nhấn Vàng đồng (Tam Quốc) + Đỏ cho địch.
+- Quy tắc mọi màn hình: header (tiêu đề + thanh tiền tệ Vàng/KNB ở góc phải),
+  nội dung chính, nút Quay lại Hub ở cuối. Nút chính cao tối thiểu 56px, nút bị
+  khóa hiển thị xám + lý do (chưa mở ải, chưa sở hữu tướng, chưa đủ tiền).
+- Không dùng sprite final ở phase này: tướng vẫn là khối màu + tên, nhưng có
+  nhãn cấp/sao/HP/ATK thống nhất, để Phase art sau chỉ thay khối màu bằng sprite.
+
+**2.2.2. Hub redesign (màn hình trung tâm)**
+- Header: tên tài khoản + tướng đại diện (tướng khởi đầu) + Vàng/KNB + thắng/ải.
+- 7 widget thành thẻ 2 cột (mỗi thẻ: tên + mô tả 1 dòng + trạng thái, ví dụ
+  "Túi đồ — 12.340 Vàng, 3 tướng sở hữu"), cộng thẻ Đăng xuất. Bấm thẻ → đúng màn.
+- Hub là điểm quay về duy nhất: mọi màn con đều có nút về Hub (trừ trận → về chọn ải).
+
+**2.2.3. Seed data tài khoản mới (chỉ áp cho đăng ký mới từ 2.2)**
+- Tướng khởi đầu suy ra **xác định** từ tên đăng nhập: `index = (tổng mã ký tự
+  của tên + 31 × độ dài tên) % 6` theo thứ tự 6 tướng trong data. Cùng tên luôn
+  ra cùng tướng, tên khác có thể trùng tướng (chỉ có 6 tướng).
+- Tài khoản mới: Vàng **100.000**, Kim Nguyên Bảo **10.000**, chỉ sở hữu 1 tướng
+  khởi đầu đó, đội hình ban đầu = [tướng khởi đầu]. Số Vàng/KNB này là **seed
+  test, không phải cân bằng kinh tế thật** — Phase 5 mới cân bằng lại.
+- Tài khoản cũ (đã có save trước 2.2): giữ nguyên sở hữu cả 6 tướng, không bị
+  thu hồi, không nhận seed 100.000 (tránh lạm phát save cũ).
+- Mở khóa tướng: tướng chưa sở hữu hiển thị khóa; khi đủ **10 mảnh** tướng đó
+  (chiêu mộ hoặc thưởng trận) sẽ tự mở khóa và trừ 10 mảnh. Đội hình và chọn ải
+  từ 2.2 cho phép **1–3 tướng** (trước đây bắt đúng 3) để tài khoản 1 tướng vẫn
+  vào ải được ngay, rồi chiêu mộ mở thêm tướng.
+
+**2.2.4. Tiêu chí qua**
+- Đăng ký tên mới → Hub hiện đúng tướng khởi đầu theo công thức + 100.000 Vàng.
+- Mọi màn hình đều có header + thanh tiền tệ + nút về Hub, nút khóa có lý do.
+- Tài khoản 1 tướng vào ải được, chiêu mộ đủ 10 mảnh thì mở khóa tướng mới.
+- Test headless Phase 2.2 pass, các test cũ vẫn pass.
 
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).

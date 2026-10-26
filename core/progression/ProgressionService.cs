@@ -75,6 +75,10 @@ public static class ProgressionService
         save.Shards ??= new Dictionary<string, int>();
         save.HeroEquipment ??= new Dictionary<string, Dictionary<string, EquipmentState>>();
         save.StageStars ??= new Dictionary<string, int>();
+        save.OwnedHeroIds ??= new List<string>();
+        // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
+        if (save.OwnedHeroIds.Count == 0)
+            save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();
         foreach (var hero in HeroDatabase.Heroes)
         {
             if (!save.Heroes.ContainsKey(hero.Id)) save.Heroes[hero.Id] = new HeroProgress();
@@ -148,6 +152,23 @@ public static class ProgressionService
     }
 
     public static int StarChartPoints(SaveData save) => save.StageStars.Values.Sum();
+
+    // Unlock any locked hero that reached 10 shards (costs 10 shards). Returns newly unlocked ids.
+    public static List<string> CheckUnlocks(SaveData save)
+    {
+        EnsureDefaults(save);
+        var unlocked = new List<string>();
+        foreach (var hero in HeroDatabase.Heroes)
+        {
+            if (!save.OwnedHeroIds.Contains(hero.Id) && save.Shards[hero.Id] >= SeedService.UnlockShards)
+            {
+                save.Shards[hero.Id] -= SeedService.UnlockShards;
+                save.OwnedHeroIds.Add(hero.Id);
+                unlocked.Add(hero.Id);
+            }
+        }
+        return unlocked;
+    }
     public static bool TryUnlockStarNode(SaveData save)
     {
         if (save.StarNodesUnlocked >= StarChartNodes) return false;

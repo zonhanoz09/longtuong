@@ -15,8 +15,17 @@ public partial class HeroScreen : Control
 
     public override void _Ready()
     {
+        UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
         if (!string.IsNullOrEmpty(gm.SelectedHeroId)) _selected = gm.SelectedHeroId;
+        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+        UiTheme.AddCurrencyBar(this, gm);
+        UiTheme.StyleButton(GetNode<Button>("StarUpButton"), true);
+        UiTheme.StyleButton(GetNode<Button>("UnlockStarButton"));
+        UiTheme.StyleButton(GetNode<Button>("RecruitButton"));
+        UiTheme.StyleButton(GetNode<Button>("BackButton"));
+        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
+        if (!gm.Save.OwnedHeroIds.Contains(_selected) && gm.Save.OwnedHeroIds.Count > 0) _selected = gm.Save.OwnedHeroIds[0];
         ProgressionService.EnsureDefaults(gm.Save);
         _detailLabel = GetNode<Label>("DetailLabel");
         _starLabel = GetNode<Label>("StarLabel");
@@ -31,7 +40,10 @@ public partial class HeroScreen : Control
         var box = GetNode<VBoxContainer>("HeroBox");
         foreach (var hero in HeroDatabase.Heroes)
         {
-            var btn = new Button { Text = hero.Name, ToggleMode = true, ButtonPressed = hero.Id == _selected };
+            var gm2 = GetNode<GameManager>("/root/GameManager");
+            bool owned = gm2.Save.OwnedHeroIds.Contains(hero.Id);
+            var btn = new Button { Text = owned ? hero.Name : $"{hero.Name} (KHÓA)", ToggleMode = true, ButtonPressed = hero.Id == _selected, Disabled = !owned };
+            UiTheme.StyleButton(btn);
             var id = hero.Id;
             btn.Pressed += () =>
             {
@@ -53,6 +65,8 @@ public partial class HeroScreen : Control
             var label = new Label { CustomMinimumSize = new Vector2(520, 0) };
             var enh = new Button { Text = "Cường hóa" };
             var refBtn = new Button { Text = "Tẩy luyện" };
+            UiTheme.StyleButton(enh);
+            UiTheme.StyleButton(refBtn);
             var slotId = slot.Id;
             enh.Pressed += () =>
             {

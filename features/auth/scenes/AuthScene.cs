@@ -9,7 +9,12 @@ public partial class AuthScene : Control
 
     public override void _Ready()
     {
+        UiTheme.ApplyBackground(this);
+        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+        UiTheme.StyleButton(GetNode<Button>("LoginButton"), true);
+        UiTheme.StyleButton(GetNode<Button>("RegisterButton"));
         _statusLabel = GetNode<Label>("StatusLabel");
+        UiTheme.StyleBody(_statusLabel, 15);
         GetNode<LineEdit>("PasswordEdit").Secret = true;
     }
 
@@ -23,6 +28,12 @@ public partial class AuthScene : Control
         GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
     }
 
+    private void GoHubSeeded(GameManager gm)
+    {
+        gm.CreateSeededSave(Username);
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    }
+
     private void OnLoginPressed()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
@@ -33,7 +44,7 @@ public partial class AuthScene : Control
     private void OnRegisterPressed()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
-        if (LocalAuth.Register(gm.AccountsPath, Username, Password, out var error)) GoHub(gm);
+        if (LocalAuth.Register(gm.AccountsPath, Username, Password, out var error)) GoHubSeeded(gm);
         else if (_statusLabel != null) _statusLabel.Text = "Đăng ký thất bại: " + error;
     }
 }

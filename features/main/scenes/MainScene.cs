@@ -9,6 +9,13 @@ public partial class MainScene : Control
 
     public override void _Ready()
     {
+        UiTheme.ApplyBackground(this);
+        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+        foreach (var n in new[] { "BattleButton", "SaveButton", "LoadButton", "HeroButton", "HubButton" })
+        {
+            var b = GetNodeOrNull<Button>(n);
+            if (b != null) UiTheme.StyleButton(b);
+        }
         _statusLabel = GetNode<Label>("StatusLabel");
         RefreshStatus();
     }

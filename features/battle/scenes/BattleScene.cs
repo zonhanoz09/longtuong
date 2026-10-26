@@ -19,7 +19,14 @@ public partial class BattleScene : Control
 
     public override void _Ready()
     {
+        UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
+        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+        UiTheme.StyleButton(GetNode<Button>("NormalButton"));
+        UiTheme.StyleButton(GetNode<Button>("UltButton"), true);
+        UiTheme.StyleButton(GetNode<Button>("AutoButton"));
+        UiTheme.StyleButton(GetNode<Button>("BackButton"));
+        GetNode<Button>("BackButton").Text = "← Quay lại chọn ải";
         var stage = HeroDatabase.GetStage(gm.CurrentStageId);
         var effectiveTeam = gm.SelectedTeamIds.Select(id => ProgressionService.GetEffectiveHero(gm.Save, id)).ToList();
         _engine = new BattleEngine(effectiveTeam, stage, gm.CurrentSeed);

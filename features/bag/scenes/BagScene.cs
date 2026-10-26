@@ -8,10 +8,15 @@ public partial class BagScene : Control
 {
     public override void _Ready()
     {
+        UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
+        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+        UiTheme.AddCurrencyBar(this, gm);
+        UiTheme.StyleButton(GetNode<Button>("BackButton"));
+        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         var box = GetNode<VBoxContainer>("ItemBox");
-        void Add(string text) => box.AddChild(new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        void Add(string text) { var l = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart }; UiTheme.StyleBody(l, 15); box.AddChild(l); }
         Add($"Vàng: {gm.Save.Gold} | Kim Nguyên Bảo: {gm.Save.Gems} | Trận thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage}");
         Add($"Tướng Tinh: {gm.Save.StarNodesUnlocked}/12 ô | Tổng sao ải: {ProgressionService.StarChartPoints(gm.Save)}");
         Add("— Mảnh tướng —");
