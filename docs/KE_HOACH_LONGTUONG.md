@@ -305,8 +305,8 @@ trong widget.
   (map với 技能/觉醒技能/天赋 của ảnh).
 - Cột phải (~440px): trên cùng là chỉ số chi tiết của tướng đang chọn;
   dưới là lưới **"Trang bị có thể dùng"** (map với 能使用的装备): các món trong
-  túi, mỗi ô ghi tên ô + cấp cường hóa + dòng tẩy luyện, bấm vào là mang cho
-  tướng đang chọn. Nút 解雇 (sa thải) và 回收 (thu hồi) trong ảnh và nút
+  túi, mỗi ô ghi tên ô + cấp cường hóa + dòng tẩy luyện, **click đúp vào
+  là mang cho tướng đang chọn** (theo luật click đúp ở §2.5.2). Nút 解雇 (sa thải) và 回收 (thu hồi) trong ảnh và nút
   一键互换 (đổi nhanh) ở cuối danh sách trái KHÔNG làm trong 2.5 (xem §2.5.5).
 - Chỉ số hiển thị: chỉ hiện chỉ số engine mình thật sự có (HP/ATK/DEF/Tốc/
   Bạo/Né + Lực chiến ước tính), KHÔNG bịa thêm 11 chỉ số như ảnh gốc
@@ -326,6 +326,20 @@ trong widget.
   thao tác này). Cường hóa/tẩy luyện giữ nguyên phí cũ, nhưng chỉ làm được
   khi ô đang có món — ô Rỗng thì nút cường hóa/tẩy luyện bị khóa + báo
   "Chưa mang trang bị".
+- **Tương tác chốt: click đúp (double-click).** Click đúp vào món đang mang
+  (ô quanh chân dung ở cột giữa) → tháo món đó về túi. Click đúp vào món
+  trong lưới túi (cột phải) → mang món đó cho tướng đang chọn (ô đã có món
+  thì hoán đổi như trên). Click đơn chỉ chọn/tô sáng món và hiện chi tiết,
+  KHÔNG tháo cũng KHÔNG mang — để tránh bấm nhầm 1 lần đã đổi đồ.
+  Nút "Tháo tất cả" vẫn là nút bấm đơn như thường (không phải món đồ nên
+  không áp luật click đúp); trong màn Trang bị, nút Tháo từng dòng vẫn giữ
+  làm phương án dự phòng cho người không dùng chuột.
+- Lưu ý kỹ thuật khi làm: đừng gắn tháo/mang vào `Button.Pressed` của ô đồ,
+  vì Pressed nổ theo từng lần click (click đúp sẽ thành 2 lần bấm đơn).
+  Ô đồ phải là control bắt `GuiInput` và chỉ hành động khi
+  `InputEventMouseButton.DoubleClick == true`; click đơn chỉ đổi trạng thái
+  chọn. Test phải mô phỏng đúng sự kiện click đúp này, không gọi thẳng
+  hàm service rồi kết luận UI đã đúng.
 - Tướng không trang bị vẫn vào ải/bày trận được bình thường (chỉ yếu hơn),
   không chặn luồng chơi. Chỉ tướng đã sở hữu mới được tháo/mang; tướng khóa
   chỉ xem chi tiết, các nút trang bị bị khóa.
@@ -365,6 +379,10 @@ trong widget.
   0 món đang mang + đúng 4 món trong túi; save cũ vẫn giữ nguyên món đang mang.
 - Mở popup Danh sách tướng: có đủ 3 cột (danh sách trái, chi tiết giữa,
   lưới túi phải), không còn TabContainer của 2.4, không có nút Quay lại.
+- Tương tác click đúp: mô phỏng sự kiện click đúp lên món đang mang → tháo
+  về túi; click đúp lên món trong túi → mang cho tướng (hoán đổi nếu ô đã
+  có món); click đơn lên cùng các ô đó → không đổi trạng thái mang/tháo,
+  chỉ đổi ô đang chọn.
 
 **2.5.5. Ngoài phạm vi 2.5 (làm sau, không lén đưa vào)**
 - Sa thải tướng (解雇), thu hồi (回收), đổi nhanh 1 chạm (一键互换): ảnh hưởng
