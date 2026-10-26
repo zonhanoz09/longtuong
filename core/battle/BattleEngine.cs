@@ -26,11 +26,14 @@ public class BattleEngine
     public bool PlayerWon => EnemyFighters.All(f => !f.Alive) && PlayerFighters.Any(f => f.Alive);
 
     public BattleEngine(List<string> playerIds, StageDef stage, int seed)
+        : this(playerIds.Select(id => HeroDatabase.Get(id)).ToList(), stage, seed) { }
+
+    public BattleEngine(List<HeroDef> playerDefs, StageDef stage, int seed)
     {
         Stage = stage;
         Seed = seed;
         _rng = new Random(seed);
-        foreach (var id in playerIds) PlayerFighters.Add(new Fighter(HeroDatabase.Get(id), true));
+        foreach (var def in playerDefs) PlayerFighters.Add(new Fighter(def, true));
         foreach (var id in stage.EnemyIds) EnemyFighters.Add(new Fighter(HeroDatabase.Get(id).WithScale(stage.Scale), false));
         RebuildOrder();
     }

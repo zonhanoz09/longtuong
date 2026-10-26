@@ -20,6 +20,11 @@ public partial class MainScene : Control
             _statusLabel.Text = $"longtuong Phase 0 — v{GameManager.Version} | Vang: {gm.Save.Gold} | Thang: {gm.Save.Wins}";
     }
 
+    private void OnHeroPressed()
+    {
+        GetTree().ChangeSceneToFile("res://features/hero/scenes/HeroScreen.tscn");
+    }
+
     private void OnStagePressed()
     {
         GetTree().ChangeSceneToFile("res://features/stage/scenes/StageSelect.tscn");

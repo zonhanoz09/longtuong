@@ -1,0 +1,98 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/hero/scenes/HeroScreen.cs" id="1_hero"]
+
+[node name="HeroScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hero")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 600.0
+offset_bottom = 40.0
+text = "TUONG & TRANG BI — Cap / Sao / Cuong hoa / Tay luyen / Tuong Tinh / Chieu mo"
+
+[node name="HeroBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 50.0
+offset_right = 400.0
+offset_bottom = 300.0
+
+[node name="DetailLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 420.0
+offset_top = 50.0
+offset_right = 1260.0
+offset_bottom = 300.0
+autowrap_mode = 3
+text = "Dang tai..."
+
+[node name="EquipBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 320.0
+offset_right = 1260.0
+offset_bottom = 480.0
+
+[node name="StarLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 490.0
+offset_right = 1260.0
+offset_bottom = 530.0
+autowrap_mode = 3
+text = "Tuong Tinh..."
+
+[node name="StarUpButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 540.0
+offset_right = 220.0
+offset_bottom = 580.0
+text = "Tang sao"
+
+[node name="UnlockStarButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 540.0
+offset_right = 440.0
+offset_bottom = 580.0
+text = "Mo o Tuong Tinh"
+
+[node name="RecruitButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 460.0
+offset_top = 540.0
+offset_right = 660.0
+offset_bottom = 580.0
+text = "Chieu mo (100 Vang)"
+
+[node name="RecruitLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 590.0
+offset_right = 1260.0
+offset_bottom = 620.0
+autowrap_mode = 3
+text = "Chieu mo..."
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 630.0
+offset_right = 220.0
+offset_bottom = 670.0
+text = "Quay lai"
+
+[connection signal="pressed" from="StarUpButton" to="." method="OnStarUpPressed"]
+[connection signal="pressed" from="UnlockStarButton" to="." method="OnUnlockStarPressed"]
+[connection signal="pressed" from="RecruitButton" to="." method="OnRecruitPressed"]
+[connection signal="pressed" from="BackButton" to="." method="OnBackPressed"]

@@ -27,6 +27,7 @@ public partial class GameManager : Node
     public void LoadGame()
     {
         Save = SaveManager.Load(SavePath);
+        ProgressionService.EnsureDefaults(Save);
         if (Save.TeamIds != null && Save.TeamIds.Count == 3) SelectedTeamIds = new List<string>(Save.TeamIds);
     }
 
@@ -52,11 +53,18 @@ public partial class GameManager : Node
         LastBattleStars = stars;
         LastBattleReward = rewardGold;
         if (!won) return;
+        bool firstClear = CurrentStageId > Save.LastStage;
         Save.Wins++;
-        if (CurrentStageId > Save.LastStage) Save.LastStage = CurrentStageId;
+        if (firstClear) Save.LastStage = CurrentStageId;
         var key = CurrentStageId.ToString();
         if (!Save.StageStars.TryGetValue(key, out var old) || stars > old) Save.StageStars[key] = stars;
         Save.Gold += rewardGold;
+        Save.Gems += 5 + (firstClear ? 20 : 0);
+        foreach (var heroId in SelectedTeamIds)
+        {
+            ProgressionService.AddExp(Save, heroId, 40 + CurrentStageId * 10);
+            ProgressionService.AddShards(Save, heroId, 2);
+        }
         SaveGame();
     }
 }

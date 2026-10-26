@@ -40,3 +40,4 @@ jobs:
         run: |
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase0.tscn
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase1.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase2.tscn

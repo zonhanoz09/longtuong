@@ -21,7 +21,8 @@ public partial class BattleScene : Control
     {
         var gm = GetNode<GameManager>("/root/GameManager");
         var stage = HeroDatabase.GetStage(gm.CurrentStageId);
-        _engine = new BattleEngine(new List<string>(gm.SelectedTeamIds), stage, gm.CurrentSeed);
+        var effectiveTeam = gm.SelectedTeamIds.Select(id => ProgressionService.GetEffectiveHero(gm.Save, id)).ToList();
+        _engine = new BattleEngine(effectiveTeam, stage, gm.CurrentSeed);
         _turnLabel = GetNode<Label>("TurnLabel");
         _logLabel = GetNode<Label>("LogLabel");
         _resultLabel = GetNode<Label>("ResultLabel");

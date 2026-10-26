@@ -15,6 +15,19 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2 — đã làm (nuôi tướng & trang bị)
+
+- Cấp/EXP: lên cấp cần 100 + 50*(cấp-1) EXP, tối đa cấp 60; tăng sao bằng mảnh
+  (tốn 10*sao hiện tại, tối đa 5 sao); chỉ số = gốc * (1+0.04*(cấp-1)) * (1+0.25*(sao-1)).
+- Trang bị 4 món (vũ khí/giáp/mũ/giày) + cường hóa tối đa 10 (tốn 100*(cấp+1) Vàng)
+  + tẩy luyện 1 dòng (5 dòng luân phiên, tốn 100 Vàng).
+- Tướng Tinh: 12 ô, mở khi tổng sao ải >= (ô+1)*2, mỗi ô +3% HP/ATK toàn đội.
+- Chiêu mộ: 100 Vàng = 5 mảnh 1 tướng, tỉ lệ công khai (Quan Vũ/Trương Phi/Triệu Vân
+  20%, Điêu Thuyền/Gia Cát Lượng 15%, Lữ Bố 10%).
+- Thắng trận: mỗi tướng trong đội +EXP (40+10*ải), +2 mảnh, +5 Kim Nguyên Bảo
+  (+20 nếu phá ải lần đầu); trận dùng tướng hiệu lực (đã tính cấp/sao/trang bị/Tướng Tinh).
+- Test: `tests/TestPhase2.tscn`.
+
 ## Phase 1 — đã làm (vertical slice)
 
 - 6 tướng (`core/data/HeroDatabase.cs`): Quan Vũ, Trương Phi, Triệu Vân,
