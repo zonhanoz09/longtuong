@@ -15,6 +15,16 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.12 — đã làm (pilot scene-first: Danh sách tướng lên Godot scene)
+
+- Khung tĩnh của màn Danh sách tướng (label chi tiết, chân dung, thanh
+  EXP, hàng ô đang mang, nút tháo tất cả) giờ nằm trong
+  `HeroListScene.tscn`, chỉnh trực tiếp trên editor; code chỉ đổ dữ liệu.
+- 2 scene mẫu mới: `HeroTabButton.tscn` (160×56) và `EquipmentCell.tscn`
+  (64×64, dùng chung cho lưới túi + ô đang mang). Hành vi cũ giữ nguyên
+  (click đúp tháo/mang, tooltip, cuộn lưới) — test 2.4–2.7, 2.11 vẫn xanh.
+- Test: `tests/TestPhase212.tscn` (10 check).
+
 ## Phase 2.11 — đã làm (tướng mặc định luôn là tướng đã sở hữu)
 
 - Sửa lỗi: sau khi đăng nhập, tướng mặc định từng kẹt ở "quan_vu" (tướng

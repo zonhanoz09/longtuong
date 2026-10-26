@@ -34,6 +34,63 @@ offset_top = 60.0
 offset_right = 760.0
 offset_bottom = 640.0
 
+[node name="DetailNameLabel" type="Label" parent="DetailBox"]
+layout_mode = 0
+size_flags_horizontal = 1
+custom_minimum_size = Vector2(540, 0)
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="DetailPortrait" type="ColorRect" parent="DetailBox"]
+layout_mode = 0
+custom_minimum_size = Vector2(540, 140)
+color = Color(0.2, 0.35, 0.6, 1)
+
+[node name="DetailPortraitLabel" type="Label" parent="DetailBox"]
+layout_mode = 0
+size_flags_horizontal = 1
+custom_minimum_size = Vector2(540, 0)
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="DetailExpLabel" type="Label" parent="DetailBox"]
+layout_mode = 0
+size_flags_horizontal = 1
+custom_minimum_size = Vector2(540, 0)
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="DetailExpBar" type="ProgressBar" parent="DetailBox"]
+layout_mode = 0
+custom_minimum_size = Vector2(540, 20)
+
+[node name="DetailStatsLabel" type="Label" parent="DetailBox"]
+layout_mode = 0
+size_flags_horizontal = 1
+custom_minimum_size = Vector2(540, 0)
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="DetailSkillsLabel" type="Label" parent="DetailBox"]
+layout_mode = 0
+size_flags_horizontal = 1
+custom_minimum_size = Vector2(540, 0)
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="EquippedBox" type="HBoxContainer" parent="DetailBox"]
+layout_mode = 0
+
+[node name="UnequipAllButton" type="Button" parent="DetailBox"]
+layout_mode = 0
+custom_minimum_size = Vector2(540, 56)
+text = "Tháo tất cả trang bị"
+
 [node name="GridPanel" type="VBoxContainer" parent="."]
 clip_contents = true
 layout_mode = 0

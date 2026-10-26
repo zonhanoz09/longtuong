@@ -274,6 +274,33 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.12 — Pilot scene-first: màn Danh sách tướng lên Godot scene (ĐÃ HOÀN THÀNH)
+
+- Vấn đề: Huynh thấy UI đang dev trên code C# và muốn chỉnh trên engine.
+  Kiểm chứng thật: Auth/Hub/Chiêu mộ đã hoàn toàn nằm trong scene; phần còn
+  lại trong code chủ yếu là danh sách lặp theo dữ liệu (không vẽ tĩnh được).
+  Pilot này chuyển màn Danh sách tướng sang kiểu scene-first đúng nghĩa:
+- Khung tĩnh giờ nằm trong `features/hero/scenes/HeroListScene.tscn`:
+  `DetailNameLabel`, `DetailPortrait` (ColorRect 540×140),
+  `DetailPortraitLabel`, `DetailExpLabel`, `DetailExpBar`,
+  `DetailStatsLabel`, `DetailSkillsLabel`, `EquippedBox`,
+  `UnequipAllButton` — code chỉ set Text/giá trị, không tạo node, không
+  `ClearBox(DetailBox)` mỗi lần rebuild nữa; font size/màu label cũng nằm
+  trong scene (theme override), chỉnh được ngay trong editor.
+- Phần lặp theo dữ liệu thành 2 scene mẫu riêng, code chỉ instantiate +
+  điền dữ liệu: `HeroTabButton.tscn` (160×56, 1 nút cho mỗi tướng) và
+  `EquipmentCell.tscn` (64×64, dùng chung cho ô lưới túi và ô đang mang).
+  Màu icon theo loại ô + tooltip + click đơn chọn / click đúp tháo-mang
+  giữ nguyên trong code vì chúng phụ thuộc dữ liệu.
+- Nút "Tháo tất cả" giờ là node tĩnh trong scene, nối Pressed một lần ở
+  `_Ready` (dùng tướng của tab hiện tại lúc bấm, tương đương hành vi cũ).
+- Chưa làm trong pilot (để đợt chuyển hết): theme chung thành file
+  `.tres` (hiện `UiTheme.cs` vẫn giữ màu/style nút) và các màn còn lại.
+- Test: `tests/TestPhase212.tscn` (10 check: 2 template load được, khung
+  detail nằm trong scene, tên tướng hiện đúng, tab 160×56, ô 64×64,
+  click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
+  2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
+
 ### Phase 2.11 — Luật: tướng mặc định luôn là tướng đã sở hữu (ĐÃ HOÀN THÀNH)
 
 - Lỗi đã sửa: `GameManager.LoadGame` trước đây không đụng tới

@@ -5,7 +5,14 @@ using System.Collections.Generic;
 namespace LongTuong;
 
 /// <summary>
-/// Phase 2.7 hero/equipment screen (popup 1180x660, all sizes fixed):
+/// Phase 2.7 hero/equipment screen (popup 1180x660, all sizes fixed), with a
+/// Phase 2.12 scene-first pilot: the static layout now lives in
+/// HeroListScene.tscn (detail labels, portrait placeholder, EXP bar,
+/// equipped-slot row, unequip-all button) and the code only fills in data.
+/// What stays in code is genuinely data-driven: one tab button per hero
+/// (from the HeroTabButton.tscn template) and one grid/equipped cell per
+/// item (from the EquipmentCell.tscn template) — their count depends on the
+/// save, so they cannot be static scene nodes.
 /// - Vertical tabs: one tab button per hero stacked in a left column (the
 ///   2.4 tab-per-hero pattern, but tabs stacked vertically on the left
 ///   instead of horizontally on top). Godot 4.7 TabContainer only supports
@@ -15,7 +22,7 @@ namespace LongTuong;
 ///   square icon-only cells; rows grow past 7 inside a ScrollContainer when
 ///   the bag holds more than 28 items (Phase 2.7 approved option).
 /// - The grid holds ONLY bag items. Items equipped on a hero are NOT in the
-///   grid — they only appear on that hero's 4 equipped icon slots.
+///   grid — they only appear on that hero's 6 equipped icon slots.
 /// - Cells show ONLY an icon (a slot-type color square until real sprites
 ///   exist): no name, no level, no stats, no text at all. Hovering a cell or
 ///   an equipped slot shows a floating tooltip BESIDE it (right side first,
@@ -38,12 +45,22 @@ public partial class HeroListScene : Control
     private static readonly Color EmptyColor = new(0.12f, 0.12f, 0.16f);
 
     private VBoxContainer? _tabButtons;
-    private VBoxContainer? _detailBox;
-    private string _selectedHeroId = "";
     private GridContainer? _grid;
     private Label? _gridTitle;
     private PanelContainer? _tooltipPanel;
     private Label? _tooltipLabel;
+    // Detail area: static scene nodes (HeroListScene.tscn), code only sets text/values.
+    private Label? _nameLabel;
+    private Label? _portraitLabel;
+    private Label? _expLabel;
+    private ProgressBar? _expBar;
+    private Label? _statsLabel;
+    private Label? _skillsLabel;
+    private HBoxContainer? _equippedBox;
+    private Button? _unequipAllButton;
+    private PackedScene? _tabButtonTemplate;
+    private PackedScene? _cellTemplate;
+    private string _selectedHeroId = "";
 
     public override void _Ready()
     {
@@ -53,7 +70,6 @@ public partial class HeroListScene : Control
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         _tabButtons = GetNode<VBoxContainer>("TabButtons");
-        _detailBox = GetNode<VBoxContainer>("DetailBox");
         _grid = GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         _gridTitle = GetNode<Label>("GridPanel/GridTitleLabel");
         UiTheme.StyleBody(_gridTitle, 17);
@@ -70,6 +86,21 @@ public partial class HeroListScene : Control
             BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2,
             CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
         });
+        _nameLabel = GetNode<Label>("DetailBox/DetailNameLabel");
+        _portraitLabel = GetNode<Label>("DetailBox/DetailPortraitLabel");
+        _expLabel = GetNode<Label>("DetailBox/DetailExpLabel");
+        _expBar = GetNode<ProgressBar>("DetailBox/DetailExpBar");
+        _statsLabel = GetNode<Label>("DetailBox/DetailStatsLabel");
+        _skillsLabel = GetNode<Label>("DetailBox/DetailSkillsLabel");
+        _equippedBox = GetNode<HBoxContainer>("DetailBox/EquippedBox");
+        _unequipAllButton = GetNode<Button>("DetailBox/UnequipAllButton");
+        UiTheme.StyleButton(_unequipAllButton);
+        _unequipAllButton.Pressed += () =>
+        {
+            if (EquipmentService.UnequipAll(gm.Save, CurrentHeroId()) >= 0) { gm.SaveGame(); CallDeferred("RebuildAll"); }
+        };
+        _tabButtonTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroTabButton.tscn");
+        _cellTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/EquipmentCell.tscn");
         _selectedHeroId = gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId) ? gm.SelectedHeroId
             : gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : HeroDatabase.Heroes[0].Id;
         BuildTabs();
@@ -87,18 +118,17 @@ public partial class HeroListScene : Control
         }
     }
 
-    // 2.6 layout lesson: autowrap labels inside a VBoxContainer need Fill +
-    // the column width, otherwise they collapse to width 1 with huge height.
-    private Label MakeLabel(string text, int size = 15, float width = 540)
+    private Button InstantiateTabButton()
     {
-        var l = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = Control.SizeFlags.Fill, CustomMinimumSize = new Vector2(width, 0) };
-        UiTheme.StyleBody(l, size);
-        return l;
+        if (_tabButtonTemplate != null) return _tabButtonTemplate.Instantiate<Button>();
+        return new Button { CustomMinimumSize = new Vector2(160, 56) };
     }
 
     private Button MakeIconButton(Color bg, bool filled)
     {
-        var btn = new Button { Text = "", CustomMinimumSize = new Vector2(64, 64) };
+        Button btn;
+        if (_cellTemplate != null) btn = _cellTemplate.Instantiate<Button>();
+        else btn = new Button { Text = "", CustomMinimumSize = new Vector2(64, 64) };
         var normal = new StyleBoxFlat
         {
             BgColor = bg, BorderColor = filled ? UiTheme.Gold : UiTheme.Muted,
@@ -152,43 +182,42 @@ public partial class HeroListScene : Control
 
     private void BuildTabs()
     {
-        if (!IsInsideTree() || _tabButtons == null || _detailBox == null) return;
+        if (!IsInsideTree() || _tabButtons == null || _nameLabel == null || _portraitLabel == null
+            || _expLabel == null || _expBar == null || _statsLabel == null || _skillsLabel == null
+            || _equippedBox == null) return;
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
         ClearBox(_tabButtons);
-        ClearBox(_detailBox);
         // Vertical tab buttons (Godot 4.7 TabContainer only supports Top/Bottom,
         // so vertical tabs are a button column — same look and behavior).
         foreach (var hero in HeroDatabase.Heroes)
         {
             bool owned = gm.Save.OwnedHeroIds.Contains(hero.Id);
-            var btn = new Button { Text = owned ? hero.Name : $"{hero.Name} (Khóa)", CustomMinimumSize = new Vector2(160, 56) };
+            var btn = InstantiateTabButton();
+            btn.Text = owned ? hero.Name : $"{hero.Name} (Khóa)";
             UiTheme.StyleButton(btn, hero.Id == _selectedHeroId);
-            btn.CustomMinimumSize = new Vector2(160, 56);
             var id = hero.Id;
             btn.Pressed += () => { _selectedHeroId = id; if (gm.Save.OwnedHeroIds.Contains(id)) gm.SelectedHeroId = id; CallDeferred("RebuildAll"); };
             _tabButtons.AddChild(btn);
         }
-        // Detail of the selected tab hero.
+        // Detail of the selected tab hero: fill the static scene nodes.
         var heroDef = HeroDatabase.Get(_selectedHeroId);
         var p = gm.Save.Heroes[_selectedHeroId];
         var eff = ProgressionService.GetEffectiveHero(gm.Save, _selectedHeroId);
         bool selectedOwned = gm.Save.OwnedHeroIds.Contains(_selectedHeroId);
-        var page = _detailBox;
-        page.AddChild(MakeLabel($"{heroDef.Name} — Cấp {p.Level} — Loại: {HeroDatabase.RoleName(heroDef.Role)}", 20));
-        page.AddChild(new ColorRect { Color = new Color(0.20f, 0.35f, 0.60f), CustomMinimumSize = new Vector2(540, 140) });
-        page.AddChild(MakeLabel($"Chân dung: {heroDef.Name} (placeholder, chưa có sprite final)", 13));
-        page.AddChild(MakeLabel(selectedOwned
+        _nameLabel.Text = $"{heroDef.Name} — Cấp {p.Level} — Loại: {HeroDatabase.RoleName(heroDef.Role)}";
+        _portraitLabel.Text = $"Chân dung: {heroDef.Name} (placeholder, chưa có sprite final)";
+        _expLabel.Text = selectedOwned
             ? $"EXP: {p.Exp}/{ProgressionService.ExpToNext(p.Level)} — Sao: {p.Stars}/5 — Mảnh: {gm.Save.Shards[_selectedHeroId]}"
-            : $"CHƯA SỞ HỮU (cần 10 mảnh để mở khóa, hiện có {gm.Save.Shards[_selectedHeroId]} mảnh)"));
-        var expBar = new ProgressBar { MinValue = 0, MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level), Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp, CustomMinimumSize = new Vector2(540, 20) };
-        page.AddChild(expBar);
+            : $"CHƯA SỞ HỮU (cần 10 mảnh để mở khóa, hiện có {gm.Save.Shards[_selectedHeroId]} mảnh)";
+        _expBar.MinValue = 0;
+        _expBar.MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level);
+        _expBar.Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp;
         int power = eff.Hp + eff.Atk * 5;
-        page.AddChild(MakeLabel($"Chỉ số hiệu lực — Lực chiến ~{power}: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}"));
-        page.AddChild(MakeLabel($"Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}"));
-        // 4 equipped icon slots (equipped items live ONLY here, never in the grid).
-        var equippedBox = new HBoxContainer();
-        page.AddChild(equippedBox);
+        _statsLabel.Text = $"Chỉ số hiệu lực — Lực chiến ~{power}: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}";
+        _skillsLabel.Text = $"Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}";
+        // 6 equipped icon slots (equipped items live ONLY here, never in the grid).
+        ClearBox(_equippedBox);
         var equippedButtons = new List<Button>();
         foreach (var slot in ProgressionService.Slots)
         {
@@ -215,14 +244,8 @@ public partial class HeroListScene : Control
                 }
             };
             equippedButtons.Add(slotBtn);
-            equippedBox.AddChild(slotBtn);
+            _equippedBox.AddChild(slotBtn);
         }
-        var unequipAll = new Button { Text = "Tháo tất cả trang bị", CustomMinimumSize = new Vector2(540, 56) };
-        UiTheme.StyleButton(unequipAll);
-        unequipAll.CustomMinimumSize = new Vector2(540, 56);
-        var unequipHero = _selectedHeroId;
-        unequipAll.Pressed += () => { if (EquipmentService.UnequipAll(gm.Save, unequipHero) >= 0) { gm.SaveGame(); CallDeferred("RebuildAll"); } };
-        page.AddChild(unequipAll);
         HideTooltip();
     }
 
