@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-dotnet:
+    name: Build (dotnet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build game (C#)
+        run: dotnet build longtuong.csproj --nologo -c Release
+
+  godot-headless-tests:
+    name: Godot headless test scenes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Download Godot 4.7.1 .NET
+        run: |
+          curl -sSL -o /tmp/godot.zip https://github.com/godotengine/godot/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip
+          mkdir -p /tmp/godot-bin && unzip -q -o /tmp/godot.zip -d /tmp/godot-bin
+          echo "GODOT=/tmp/godot-bin/Godot_v4.7.1-stable_mono_linux_x86_64/Godot_v4.7.1-stable_mono_linux.x86_64" >> "$GITHUB_ENV"
+      - name: Import project
+        run: '"$GODOT" --headless --path . --import --quit'
+      - name: Build C# assemblies for Godot
+        run: dotnet build longtuong.csproj --nologo
+      - name: Run test scenes
+        run: |
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase0.tscn
