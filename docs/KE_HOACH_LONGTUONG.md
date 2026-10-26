@@ -274,6 +274,32 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.6 — Trang bị: trái là danh sách sở hữu, hover mới hiện chỉ số, layout fix cứng (ĐÃ HOÀN THÀNH)
+
+- Màn Danh sách tướng làm lại: trái (260×540, cuộn được) là DANH SÁCH TRANG BỊ
+  USER ĐANG SỞ HỮU — gồm cả món trong túi lẫn món đang mang trên mọi tướng
+  (ghi rõ "Trong túi" hay "Đang mang: <tên tướng>"); giữa (500×580) là chi tiết
+  tướng đang chọn (chọn tướng bằng 2 hàng nút × 3, chân dung, 4 ô đang mang,
+  Tháo tất cả, EXP, kỹ năng); phải (340×580) là chỉ số tướng + khung tooltip
+  cố định 320×200. Popup vẫn 1180×660.
+- KHÔNG hiển thị chỉ số trên trang bị: nút món đồ chỉ ghi tên ô + cấp (VD
+  "Vũ khí · Lv3 — Trong túi"), nút ô đang mang chỉ ghi tên ô + "Đang mang" /
+  "(Trống)". Hover (MouseEntered) vào bất kỳ món đồ nào mới hiện chi tiết đầy
+  đủ trong khung tooltip: chỉ số cộng theo cấp, dòng tẩy luyện, trạng thái.
+  Click đơn chỉ chọn/tô sáng, không tháo/mang.
+- Mang được cho TẤT CẢ các tướng: click đúp món trong túi → mang cho tướng
+  đang chọn (kể cả tướng chưa sở hữu), click đúp món đang mang (ở danh sách
+  trái hoặc ở ô giữa) → tháo về túi; hoán đổi khi ô đã có món, không mất món.
+- Sửa gốc layout vỡ: label có autowrap trong VBoxContainer từng bị tính chiều
+  cao theo chiều rộng 1px khiến cột phình tới ~5157px — nay mọi label đều ép
+  Fill + chiều rộng đúng cột (480/320/240), cột nào cũng clip_contents, và
+  nút chọn tướng dùng 2 hàng × 3 vì 6 tên đầy đủ không vừa 1 hàng 500px.
+- Màn Trang bị: dòng trang bị chỉ còn tên ô + cấp + tiền cường hóa (bỏ dòng
+  tẩy luyện), hover vào hàng mới hiện chi tiết; Túi đồ chỉ ghi tên ô + cấp.
+- Test: `tests/TestPhase26.tscn` (18 check: tooltip hover, không chỉ số trên
+  nút, kích thước fix cứng, mang cho tướng khóa, danh sách sở hữu vẫn đủ món
+  sau khi mang).
+
 ### Phase 2.5 — Giao diện tướng kiểu ảnh mẫu + tháo/mang trang bị (ĐÃ HOÀN THÀNH)
 
 **Nguồn tham khảo:** ảnh giao diện Võ tướng game gốc mà Huynh gửi (chỉ lấy

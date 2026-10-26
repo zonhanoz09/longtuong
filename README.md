@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.6 — đã làm (trang bị: danh sách sở hữu bên trái, hover hiện chỉ số, layout fix cứng)
+
+- Màn Danh sách tướng: trái là danh sách trang bị user sở hữu (túi + đang
+  mang trên mọi tướng, cuộn được, 260×540), giữa là tướng đang chọn
+  (500×580), phải là chỉ số tướng + khung tooltip cố định 320×200.
+- Món đồ không hiện chỉ số — chỉ tên ô + cấp; hover mới hiện chi tiết đầy
+  đủ (chỉ số theo cấp, tẩy luyện, trạng thái) trong khung tooltip. Click đơn
+  chỉ chọn, click đúp tháo/mang; mang được cho tất cả các tướng, kể cả tướng
+  chưa sở hữu. Đã sửa gốc layout vỡ do label autowrap trong VBoxContainer.
+- Test: `tests/TestPhase26.tscn` (18 check).
+
 ## Phase 2.5 — đã làm (tướng kiểu ảnh mẫu + click đúp tháo/mang trang bị)
 
 - Danh sách tướng làm lại 3 cột kiểu ảnh mẫu (thay tab 2.4): trái danh sách

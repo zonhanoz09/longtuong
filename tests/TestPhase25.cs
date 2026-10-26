@@ -103,28 +103,26 @@ public partial class TestPhase25 : Node
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "hero list popup opens");
         if (heroList == null) { hub.QueueFree(); return; }
-        var left = heroList.GetNodeOrNull<VBoxContainer>("HeroListBox");
+        var ownedBox = heroList.GetNodeOrNull<VBoxContainer>("OwnedScroll/OwnedListBox");
         var detail = heroList.GetNodeOrNull<VBoxContainer>("DetailBox");
         var right = heroList.GetNodeOrNull<VBoxContainer>("RightBox");
-        Check(left != null && detail != null && right != null, "hero list has 3 columns (left/detail/right)");
-        var bagButtons = right?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
-        // Right column buttons are only bag buttons (no other buttons there).
-        Check(bagButtons.Count == 4, "hero list bag grid has 4 seeded items");
-        var equippedBox = detail?.GetChildren().OfType<HBoxContainer>().FirstOrDefault();
-        var equipped = equippedBox?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
+        Check(ownedBox != null && detail != null && right != null, "hero list has owned/ detail/ right columns");
+        var ownedButtons = ownedBox?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
+        var rows = detail?.GetChildren().OfType<HBoxContainer>().ToList() ?? new System.Collections.Generic.List<HBoxContainer>();
+        var equipped = rows.Count >= 3 ? rows[2].GetChildren().OfType<Button>().ToList() : new System.Collections.Generic.List<Button>();
+        Check(ownedButtons.Count == 4, "hero list left owned list has 4 seeded items");
         Check(equipped.Count == 4, "hero detail has 4 equipped slot controls");
-        if (bagButtons.Count == 0 || equipped.Count == 0) { hub.ClosePopup(); hub.QueueFree(); return; }
+        if (ownedButtons.Count == 0 || equipped.Count == 0) { hub.ClosePopup(); hub.QueueFree(); return; }
         int bagBefore = gm.Save.BagEquipment.Count;
-        // Single click on a bag item must NOT equip.
-        bagButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(false));
-        Check(gm.Save.BagEquipment.Count == bagBefore, "single click on bag item does not equip");
-        // Double-click a bag item equips it.
-        bagButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
-        Check(gm.Save.BagEquipment.Count == bagBefore - 1, "double-click bag item equips it");
-        // Double-click the (old) equipped control for that slot unequips it.
-        // Find equipped button for the same slot: bag item 0 was weapon (seed order = Slots order).
+        // Single click on an owned item must NOT equip.
+        ownedButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(false));
+        Check(gm.Save.BagEquipment.Count == bagBefore, "single click on owned item does not equip");
+        // Double-click a bag item equips it to the selected hero.
+        ownedButtons[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
+        Check(gm.Save.BagEquipment.Count == bagBefore - 1, "double-click owned bag item equips it");
+        // Double-click the equipped slot unequips it back to bag.
         equipped[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
-        Check(gm.Save.BagEquipment.Count == bagBefore, "double-click equipped item unequips it back to bag");
+        Check(gm.Save.BagEquipment.Count == bagBefore, "double-click equipped slot unequips it back to bag");
         hub.ClosePopup();
         hub.QueueFree();
     }

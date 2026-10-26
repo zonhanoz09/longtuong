@@ -97,3 +97,12 @@ offset_bottom = 580.0
 text = "Thao tat ca"
 
 [connection signal="pressed" from="UnequipAllButton" to="." method="OnUnequipAllPressed"]
+
+[node name="EquipDetailLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 630.0
+offset_right = 1120.0
+offset_bottom = 670.0
+autowrap_mode = 3
+text = "Hover vao trang bi de xem chi tiet."

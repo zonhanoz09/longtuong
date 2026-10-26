@@ -38,20 +38,22 @@ public partial class TestPhase24 : Node
             hub.ClosePopup();
         }
 
-        // Hero list (Phase 2.5): 3 columns, no tabs anymore.
+        // Hero list (Phase 2.6): no tabs, 3 fixed columns: owned equipment left,
+        // hero detail center (with hero selector), stats + tooltip right.
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null && heroList.GetNodeOrNull<TabContainer>("HeroTabs") == null, "hero list no longer uses tabs");
-        var left = heroList?.GetNodeOrNull<VBoxContainer>("HeroListBox");
+        var ownedScroll = heroList?.GetNodeOrNull<ScrollContainer>("OwnedScroll");
+        var ownedBox = heroList?.GetNodeOrNull<VBoxContainer>("OwnedScroll/OwnedListBox");
         var detail = heroList?.GetNodeOrNull<VBoxContainer>("DetailBox");
         var right = heroList?.GetNodeOrNull<VBoxContainer>("RightBox");
-        Check(left != null && detail != null && right != null, "hero list has left list + center detail + right columns");
-        if (left != null)
-            Check(left.GetChildren().OfType<Button>().Count() == HeroDatabase.Heroes.Count, "hero list left column has one button per hero");
+        var tooltip = heroList?.GetNodeOrNull<Label>("RightBox/TooltipPanel/TooltipLabel");
+        Check(ownedScroll != null && ownedBox != null && detail != null && right != null && tooltip != null, "hero list has owned list (scroll) + detail + right stats/tooltip columns");
         if (detail != null)
         {
-            var equippedBox = detail.GetChildren().OfType<HBoxContainer>().FirstOrDefault();
-            Check(equippedBox != null && equippedBox.GetChildren().OfType<Button>().Count() == 4, "hero detail has 4 equipped slot controls");
+            var rows = detail.GetChildren().OfType<HBoxContainer>().ToList();
+            Check(rows.Count >= 3 && rows[0].GetChildren().OfType<Button>().Count() + rows[1].GetChildren().OfType<Button>().Count() == HeroDatabase.Heroes.Count, "hero detail has selector rows with one button per hero");
+            Check(rows.Count >= 3 && rows[2].GetChildren().OfType<Button>().Count() == 4, "hero detail has 4 equipped slot controls");
             var labels = string.Join("\n", detail.GetChildren().OfType<Label>().Select(l => l.Text));
             Check(labels.Contains("Tuyệt kỹ"), "hero detail shows skills");
         }

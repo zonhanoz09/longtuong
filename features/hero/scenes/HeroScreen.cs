@@ -11,6 +11,7 @@ public partial class HeroScreen : Control
     private Label? _detailLabel;
     private Label? _starLabel;
     private Label? _recruitLabel;
+    private Label? _equipDetailLabel;
     private readonly Dictionary<string, (Label Label, Button Enhance, Button Refine, Button Unequip)> _equipRows = new();
 
     public override void _Ready()
@@ -29,6 +30,8 @@ public partial class HeroScreen : Control
         _detailLabel = GetNode<Label>("DetailLabel");
         _starLabel = GetNode<Label>("StarLabel");
         _recruitLabel = GetNode<Label>("RecruitLabel");
+        _equipDetailLabel = GetNode<Label>("EquipDetailLabel");
+        if (_equipDetailLabel != null) UiTheme.StyleBody(_equipDetailLabel, 14);
         BuildHeroButtons();
         BuildEquipRows();
         Refresh();
@@ -61,6 +64,16 @@ public partial class HeroScreen : Control
         foreach (var slot in ProgressionService.Slots)
         {
             var row = new HBoxContainer();
+            var rowSlotId = slot.Id;
+            row.MouseEntered += () =>
+            {
+                var gm = GetNode<GameManager>("/root/GameManager");
+                var eq = gm.Save.HeroEquipment[_selected][rowSlotId];
+                if (_equipDetailLabel != null)
+                    _equipDetailLabel.Text = eq.IsEmpty ? "Ô trống — chưa mang trang bị."
+                        : EquipmentService.DetailText(rowSlotId, eq.Level, eq.RefineIndex, $"Đang mang: {HeroDatabase.Get(_selected).Name}");
+            };
+            row.MouseExited += () => { if (_equipDetailLabel != null) _equipDetailLabel.Text = "Hover vào trang bị để xem chi tiết."; };
             var label = new Label { CustomMinimumSize = new Vector2(520, 0) };
             var enh = new Button { Text = "Cường hóa" };
             var refBtn = new Button { Text = "Tẩy luyện" };
@@ -123,7 +136,7 @@ public partial class HeroScreen : Control
             }
             else
             {
-                label.Text = $"{slot.Name}: Cường hóa {eq.Level}/10 (tốn {ProgressionService.EnhanceCost(eq.Level)} Vàng) — Tẩy luyện: {ProgressionService.RefineNames[eq.RefineIndex]} (tốn 100 Vàng)";
+                label.Text = $"{slot.Name}: Cấp {eq.Level}/10 (cường hóa tốn {ProgressionService.EnhanceCost(eq.Level)} Vàng)";
             }
             enh.Disabled = eq.IsEmpty || eq.Level >= ProgressionService.MaxEnhanceLevel;
             refBtn.Disabled = eq.IsEmpty;

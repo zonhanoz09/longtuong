@@ -17,25 +17,46 @@ offset_left = 20.0
 offset_top = 10.0
 offset_right = 600.0
 offset_bottom = 40.0
-text = "DANH SACH TUONG — Trai: danh sach | Giua: chi tiet | Phai: chi so + tui"
+text = "TUONG & TRANG BI — Trai: trang bi so huu | Giua: tuong | Phai: chi so + chi tiet"
 
-[node name="HeroListBox" type="VBoxContainer" parent="."]
+[node name="OwnedScroll" type="ScrollContainer" parent="."]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 60.0
-offset_right = 180.0
-offset_bottom = 640.0
+offset_right = 280.0
+offset_bottom = 600.0
+
+[node name="OwnedListBox" type="VBoxContainer" parent="OwnedScroll"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 240.0
+offset_bottom = 0.0
 
 [node name="DetailBox" type="VBoxContainer" parent="."]
+clip_contents = true
 layout_mode = 0
-offset_left = 200.0
+offset_left = 300.0
 offset_top = 60.0
-offset_right = 700.0
+offset_right = 800.0
 offset_bottom = 640.0
 
 [node name="RightBox" type="VBoxContainer" parent="."]
+clip_contents = true
 layout_mode = 0
-offset_left = 720.0
+offset_left = 820.0
 offset_top = 60.0
 offset_right = 1160.0
 offset_bottom = 640.0
+
+[node name="StatsBox" type="VBoxContainer" parent="RightBox"]
+layout_mode = 0
+
+[node name="TooltipPanel" type="PanelContainer" parent="RightBox"]
+layout_mode = 0
+custom_minimum_size = Vector2(320, 200)
+
+[node name="TooltipLabel" type="Label" parent="RightBox/TooltipPanel"]
+layout_mode = 0
+autowrap_mode = 3
+text = "Hover vao trang bi de xem chi tiet."
