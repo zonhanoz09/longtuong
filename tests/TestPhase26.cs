@@ -52,7 +52,7 @@ public partial class TestPhase26 : Node
         gridButtons[0].EmitSignal(Control.SignalName.MouseExited);
         Check(tooltipPanel.Visible == false, "mouse exit hides tooltip");
         // Hover on an empty cell shows no tooltip (empty cells have no handlers).
-        gridButtons[4].EmitSignal(Control.SignalName.MouseEntered);
+        gridButtons[6].EmitSignal(Control.SignalName.MouseEntered);
         Check(tooltipPanel.Visible == false, "hover on empty cell shows no tooltip");
         hub.ClosePopup();
         hub.QueueFree();

@@ -65,8 +65,8 @@ public partial class TestPhase25 : Node
         s.BagEquipment.Clear();
         foreach (var slot in ProgressionService.Slots)
             s.BagEquipment.Add(new BagEquipmentItem { SlotId = slot.Id, Level = 0, RefineIndex = 0 });
-        for (int i = 0; i < 4; i++) EquipmentService.EquipFromBag(s, "quan_vu", 0);
-        Check(EquipmentService.UnequipAll(s, "quan_vu") == 4 && s.HeroEquipment["quan_vu"].Values.All(eq => eq.IsEmpty) && s.BagEquipment.Count == 4, "unequip all empties 4 slots and returns 4 items");
+        for (int i = 0; i < ProgressionService.Slots.Count; i++) EquipmentService.EquipFromBag(s, "quan_vu", 0);
+        Check(EquipmentService.UnequipAll(s, "quan_vu") == ProgressionService.Slots.Count && s.HeroEquipment["quan_vu"].Values.All(eq => eq.IsEmpty) && s.BagEquipment.Count == ProgressionService.Slots.Count, "unequip all empties all slots and returns all items");
     }
 
     private void CheckSeedAndLegacy()
@@ -74,7 +74,7 @@ public partial class TestPhase25 : Node
         var seeded = SeedService.CreateSeededSave("testhero");
         var starter = seeded.OwnedHeroIds[0];
         Check(seeded.HeroEquipment[starter].Values.All(eq => eq.IsEmpty), "seeded starter has no equipped items");
-        Check(seeded.BagEquipment.Count == 4 && seeded.BagEquipment.Select(b => b.SlotId).Distinct().Count() == 4, "seeded bag has 4 basic items, one per slot");
+        Check(seeded.BagEquipment.Count == 6 && seeded.BagEquipment.Select(b => b.SlotId).Distinct().Count() == 6, "seeded bag has 6 basic items, one per slot");
         // Legacy save: equipment without IsEmpty field deserializes to false (equipped).
         var legacy = Fresh();
         legacy.HeroEquipment["quan_vu"]["weapon"].IsEmpty = false;
@@ -105,7 +105,7 @@ public partial class TestPhase25 : Node
         if (heroList == null) { hub.QueueFree(); return; }
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
-        Check(gridButtons.Count == 28 && gridButtons.Count(b => b.Disabled == false) == 4, "grid has 28 cells, 4 filled from seed");
+        Check(gridButtons.Count == 28 && gridButtons.Count(b => b.Disabled == false) == 6, "grid has 28 cells, 6 filled from seed");
         if (gridButtons.Count == 0) { hub.ClosePopup(); hub.QueueFree(); return; }
         int bagBefore = gm.Save.BagEquipment.Count;
         // Single click on a grid item must NOT equip.
@@ -122,7 +122,7 @@ public partial class TestPhase25 : Node
         Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == bagBefore - 1, "equipped item is no longer in the grid");
         var page2 = heroList2.GetNode<VBoxContainer>("DetailBox");
         var equipped2 = page2.GetChildren().OfType<HBoxContainer>().First().GetChildren().OfType<Button>().ToList();
-        Check(equipped2.Count == 4, "hero tab page has 4 equipped slots after reopen");
+        Check(equipped2.Count == 6, "hero tab page has 6 equipped slots after reopen");
         // Double-click the equipped slot unequips it back to the grid.
         equipped2[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
         Check(gm.Save.BagEquipment.Count == bagBefore, "double-click equipped slot unequips it back to bag");

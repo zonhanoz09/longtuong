@@ -52,7 +52,7 @@ public partial class TestPhase24 : Node
             Check(grid.GetChildren().OfType<Button>().All(b => b.Text == ""), "grid cells are icon-only (no text)");
         var page = heroList?.GetNodeOrNull<VBoxContainer>("DetailBox");
         var equippedBox = page?.GetChildren().OfType<HBoxContainer>().FirstOrDefault();
-        Check(equippedBox != null && equippedBox.GetChildren().OfType<Button>().Count() == 4, "hero tab page has 4 equipped icon slots");
+        Check(equippedBox != null && equippedBox.GetChildren().OfType<Button>().Count() == 6, "hero tab page has 6 equipped icon slots");
         if (equippedBox != null)
             Check(equippedBox.GetChildren().OfType<Button>().All(b => b.Text == ""), "equipped slots are icon-only (no text)");
         hub.ClosePopup();

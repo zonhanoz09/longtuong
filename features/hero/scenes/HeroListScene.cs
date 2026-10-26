@@ -32,6 +32,8 @@ public partial class HeroListScene : Control
         ["armor"] = new Color(0.20f, 0.35f, 0.60f),
         ["helmet"] = new Color(0.25f, 0.55f, 0.30f),
         ["boots"] = new Color(0.65f, 0.55f, 0.20f),
+        ["cloak"] = new Color(0.50f, 0.30f, 0.75f),
+        ["bracer"] = new Color(0.20f, 0.60f, 0.60f),
     };
     private static readonly Color EmptyColor = new(0.12f, 0.12f, 0.16f);
 

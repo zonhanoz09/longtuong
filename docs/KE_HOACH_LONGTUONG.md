@@ -274,6 +274,21 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.8 — Thêm 2 loại trang bị: Choàng + Uyển (6 ô) (ĐÃ HOÀN THÀNH)
+
+- Slots tăng từ 4 lên 6: Vũ khí, Giáp, Mũ, Giày + Choàng (HP 120+25/cấp,
+  DEF 6+1/cấp) + Uyển (ATK 12+3/cấp, Tốc 4+1/cấp). Mọi hệ thống chạy theo
+  danh sách Slots nên tự nhận 2 ô mới: trận (chỉ số hiệu lực), cường hóa,
+  tẩy luyện, tháo/mang/hoán đổi, lưới túi, ô đang mang.
+- Tướng cũ/save cũ: `EnsureDefaults` tự thêm 2 ô mới dạng Rỗng (không mất
+  đồ cũ); tài khoản mới: tướng 6 ô Rỗng + túi 6 món cơ bản (mỗi loại 1).
+- UI: tab tướng giờ có 6 ô đang mang (icon tím cho Choàng, xanh ngọc cho
+  Uyển); màn Trang bị/Cường hóa có 6 hàng — hàng trang bị được bọc trong
+  ScrollContainer (6 hàng × 56px = 356px vượt vùng 160px cũ) nên không tràn
+  sang nút phía dưới.
+- Test: `tests/TestPhase28.tscn` (12 check: đủ 6 ô, chỉ số Choàng/Uyển,
+  seed 6 món, save cũ nhận thêm 2 ô Rỗng, HeroScreen đủ 6 hàng).
+
 ### Phase 2.7 — Danh sách tướng tab dọc + lưới trang bị 4×7 icon-only (ĐÃ HOÀN THÀNH)
 
 > Huynh chốt 2026-10-26 (tối): UI 2.6 sai — làm lại theo plan này.

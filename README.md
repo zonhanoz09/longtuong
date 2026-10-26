@@ -15,6 +15,14 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.8 — đã làm (thêm Choàng + Uyển, thành 6 ô trang bị)
+
+- Thêm Choàng (HP + DEF) và Uyển (ATK + Tốc); mọi hệ thống (trận, cường
+  hóa, tẩy luyện, tháo/mang, lưới túi) chạy theo danh sách Slots nên tự
+  nhận 2 ô mới. Save cũ tự thêm 2 ô Rỗng, tài khoản mới có túi 6 món.
+- Màn Trang bị có 6 hàng trong khung cuộn (không tràn layout).
+- Test: `tests/TestPhase28.tscn` (12 check).
+
 ## Phase 2.7 — đã làm (tướng tab dọc + lưới trang bị 4×7 icon-only)
 
 - Danh sách tướng: tab dọc bên trái, mỗi tab 1 tướng (tiêu đề có "(Khóa)"

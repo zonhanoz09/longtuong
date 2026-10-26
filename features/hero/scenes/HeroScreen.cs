@@ -60,7 +60,7 @@ public partial class HeroScreen : Control
 
     private void BuildEquipRows()
     {
-        var box = GetNode<VBoxContainer>("EquipBox");
+        var box = GetNode<VBoxContainer>("EquipScroll/EquipBox");
         foreach (var slot in ProgressionService.Slots)
         {
             var row = new HBoxContainer();

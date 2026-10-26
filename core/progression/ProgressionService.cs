@@ -62,6 +62,8 @@ public static class ProgressionService
         new EquipmentSlotDef { Id = "armor", Name = "Giáp", BaseHp = 150, HpPerLevel = 30, BaseDef = 10, DefPerLevel = 2 },
         new EquipmentSlotDef { Id = "helmet", Name = "Mũ", BaseHp = 80, HpPerLevel = 15, BaseDef = 8, DefPerLevel = 1 },
         new EquipmentSlotDef { Id = "boots", Name = "Giày", BaseSpeed = 8, SpeedPerLevel = 1, BaseDef = 5, DefPerLevel = 1 },
+        new EquipmentSlotDef { Id = "cloak", Name = "Choàng", BaseHp = 120, HpPerLevel = 25, BaseDef = 6, DefPerLevel = 1 },
+        new EquipmentSlotDef { Id = "bracer", Name = "Uyển", BaseAtk = 12, AtkPerLevel = 3, BaseSpeed = 4, SpeedPerLevel = 1 },
     };
 
     // Refine bonus lines (1 per item, cycled): Crit, Dodge, Speed, ATK%, HP%.

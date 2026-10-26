@@ -35,12 +35,20 @@ offset_bottom = 300.0
 autowrap_mode = 3
 text = "Dang tai..."
 
-[node name="EquipBox" type="VBoxContainer" parent="."]
+[node name="EquipScroll" type="ScrollContainer" parent="."]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 320.0
 offset_right = 1120.0
 offset_bottom = 480.0
+horizontal_scroll_mode = 3
+
+[node name="EquipBox" type="VBoxContainer" parent="EquipScroll"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1100.0
+offset_bottom = 0.0
 
 [node name="StarLabel" type="Label" parent="."]
 layout_mode = 0

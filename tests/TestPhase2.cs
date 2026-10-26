@@ -159,7 +159,7 @@ public partial class TestPhase2 : Node
             Check(loaded.HeroEquipment["lu_bo"]["weapon"].Level == 5 && loaded.HeroEquipment["lu_bo"]["weapon"].RefineIndex == 2, "save/load preserves equipment");
             var empty = new SaveData();
             ProgressionService.EnsureDefaults(empty);
-            Check(empty.Heroes.Count == 6 && empty.HeroEquipment["quan_vu"].Count == 4, "EnsureDefaults fills 6 heroes x 4 equipment for old saves");
+            Check(empty.Heroes.Count == 6 && empty.HeroEquipment["quan_vu"].Count == ProgressionService.Slots.Count, "EnsureDefaults fills 6 heroes x all equipment slots for old saves");
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
