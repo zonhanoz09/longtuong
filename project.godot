@@ -4,7 +4,7 @@ config_version=5
 [application]
 config/name="longtuong"
 config/description="Tam Quoc side-view RPG - Phase 0 scaffold"
-run/main_scene="res://features/main/scenes/MainScene.tscn"
+run/main_scene="res://features/auth/scenes/AuthScene.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 
 [autoload]

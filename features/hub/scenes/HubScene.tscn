@@ -1,0 +1,77 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/hub/scenes/HubScene.cs" id="1_hub"]
+
+[node name="HubScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hub")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 600.0
+offset_bottom = 40.0
+text = "HUB — DAI BAN DOANH"
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 50.0
+offset_right = 1260.0
+offset_bottom = 90.0
+autowrap_mode = 3
+text = "Dang tai..."
+
+[node name="WidgetBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 110.0
+offset_right = 620.0
+offset_bottom = 620.0
+
+[node name="HeroListButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Danh sach tuong so huu"
+
+[node name="BagButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Tui do"
+
+[node name="EquipmentButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Trang bi"
+
+[node name="FormationButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Bay tran"
+
+[node name="StageButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Vao ai"
+
+[node name="EnhanceButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Cuong hoa"
+
+[node name="RecruitButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Chieu mo"
+
+[node name="LogoutButton" type="Button" parent="WidgetBox"]
+custom_minimum_size = Vector2(0, 56)
+text = "Dang xuat"
+
+[connection signal="pressed" from="WidgetBox/HeroListButton" to="." method="OnHeroListPressed"]
+[connection signal="pressed" from="WidgetBox/BagButton" to="." method="OnBagPressed"]
+[connection signal="pressed" from="WidgetBox/EquipmentButton" to="." method="OnEquipmentPressed"]
+[connection signal="pressed" from="WidgetBox/FormationButton" to="." method="OnFormationPressed"]
+[connection signal="pressed" from="WidgetBox/StageButton" to="." method="OnStagePressed"]
+[connection signal="pressed" from="WidgetBox/EnhanceButton" to="." method="OnEnhancePressed"]
+[connection signal="pressed" from="WidgetBox/RecruitButton" to="." method="OnRecruitPressed"]
+[connection signal="pressed" from="WidgetBox/LogoutButton" to="." method="OnLogoutPressed"]

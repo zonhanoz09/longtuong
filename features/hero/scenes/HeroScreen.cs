@@ -16,6 +16,7 @@ public partial class HeroScreen : Control
     public override void _Ready()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
+        if (!string.IsNullOrEmpty(gm.SelectedHeroId)) _selected = gm.SelectedHeroId;
         ProgressionService.EnsureDefaults(gm.Save);
         _detailLabel = GetNode<Label>("DetailLabel");
         _starLabel = GetNode<Label>("StarLabel");
@@ -136,6 +137,6 @@ public partial class HeroScreen : Control
 
     private void OnBackPressed()
     {
-        GetTree().ChangeSceneToFile("res://features/main/scenes/MainScene.tscn");
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
     }
 }

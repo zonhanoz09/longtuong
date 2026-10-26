@@ -95,6 +95,6 @@ public partial class StageSelect : Control
 
     private void OnBackPressed()
     {
-        GetTree().ChangeSceneToFile("res://features/main/scenes/MainScene.tscn");
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
     }
 }

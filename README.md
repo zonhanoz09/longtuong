@@ -15,6 +15,19 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.1 — đã làm (login/register -> hub -> widget)
+
+- Màn hình chính giờ là Đăng nhập/Đăng ký (`features/auth/`): tài khoản lưu local,
+  mật khẩu chỉ lưu dạng hash SHA-256 + salt riêng từng tài khoản, không lưu plaintext.
+- Hub (`features/hub/`): sau khi đăng nhập, 7 widget + đăng xuất:
+  Danh sách tướng sở hữu, Túi đồ, Trang bị, Bày trận, Vào ải, Cường hóa, Chiêu mộ.
+- Save tách theo tài khoản (file `save_<tên>.json` local); chưa đăng nhập vẫn dùng
+  `save.json` cũ. Server thật phase sau mới tách tài khoản thật.
+- Màn hình mới: Danh sách tướng (bấm xem chi tiết), Túi đồ (vàng, KNB, mảnh,
+  trang bị, sao ải), Bày trận (chọn đúng 3, lưu, xem lực chiến), Chiêu mộ riêng
+  (tỉ lệ công khai). Trang bị/Cường hóa dùng chung màn hình Tướng.
+- Test: `tests/TestPhase21.tscn`.
+
 ## Phase 2 — đã làm (nuôi tướng & trang bị)
 
 - Cấp/EXP: lên cấp cần 100 + 50*(cấp-1) EXP, tối đa cấp 60; tăng sao bằng mảnh

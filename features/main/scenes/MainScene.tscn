@@ -106,3 +106,20 @@ grow_vertical = 2
 text = "Tuong & Trang bi"
 
 [connection signal="pressed" from="HeroButton" to="." method="OnHeroPressed"]
+
+[node name="HubButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = 170.0
+offset_right = 120.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Vao Hub"
+
+[connection signal="pressed" from="HubButton" to="." method="OnHubPressed"]

@@ -10,13 +10,32 @@ public partial class GameManager : Node
     public const string Version = "0.1.0-phase1";
     public SaveData Save { get; private set; } = new();
     public List<string> SelectedTeamIds { get; set; } = new() { "quan_vu", "truong_phi", "gia_cat_luong" };
+    public string CurrentUsername { get; set; } = "";
+    public string SelectedHeroId { get; set; } = "quan_vu";
+    public string AccountsPath => OS.GetUserDataDir() + "/accounts.json";
     public int CurrentStageId { get; set; } = 1;
     public int CurrentSeed { get; set; }
     public bool LastBattleWon { get; private set; }
     public int LastBattleStars { get; private set; }
     public int LastBattleReward { get; private set; }
 
-    public string SavePath => OS.GetUserDataDir() + "/save.json";
+    // Save tách theo tài khoản (Phase 2.1, vẫn local; server phase sau mới tách thật).
+    // Chưa đăng nhập thì dùng save.json cũ để không mất tiến trình Phase 0-2.
+    public string SavePath => string.IsNullOrEmpty(CurrentUsername)
+        ? OS.GetUserDataDir() + "/save.json"
+        : OS.GetUserDataDir() + "/save_" + SanitizeUsername(CurrentUsername) + ".json";
+
+    public static string SanitizeUsername(string username) =>
+        new string(username.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' ? c : '_').ToArray());
+
+    public void Logout()
+    {
+        CurrentUsername = "";
+        SelectedHeroId = "quan_vu";
+        Save = new SaveData();
+        SelectedTeamIds = new List<string> { "quan_vu", "truong_phi", "gia_cat_luong" };
+        LastBattleWon = false; LastBattleStars = 0; LastBattleReward = 0;
+    }
 
     public void SaveGame()
     {

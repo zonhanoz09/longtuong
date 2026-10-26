@@ -14,6 +14,10 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Cập nhật 2026-10-26: **Phase 2 đã hoàn thành** — cấp/EXP/sao, trang bị
 > cường hóa/tẩy luyện, Tướng Tinh 12 ô, chiêu mộ công khai tỉ lệ, thưởng trận
 > có EXP/mảnh/Kim Nguyên Bảo, test Phase 2 headless pass (xem README).
+>
+> Cập nhật 2026-10-26: **Phase 2.1 đã hoàn thành** — đăng nhập/đăng ký local
+> (hash mật khẩu) -> Hub 7 widget (tướng sở hữu, túi đồ, trang bị, bày trận,
+> vào ải, cường hóa, chiêu mộ), save tách theo tài khoản local.
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
