@@ -20,9 +20,9 @@ public partial class MainScene : Control
             _statusLabel.Text = $"longtuong Phase 0 — v{GameManager.Version} | Vang: {gm.Save.Gold} | Thang: {gm.Save.Wins}";
     }
 
-    private void OnBattlePressed()
+    private void OnStagePressed()
     {
-        GetTree().ChangeSceneToFile("res://features/battle/scenes/BattlePlaceholder.tscn");
+        GetTree().ChangeSceneToFile("res://features/stage/scenes/StageSelect.tscn");
     }
 
     private void OnSavePressed()

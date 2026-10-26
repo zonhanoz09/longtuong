@@ -15,6 +15,18 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 1 — đã làm (vertical slice)
+
+- 6 tướng (`core/data/HeroDatabase.cs`): Quan Vũ, Trương Phi, Triệu Vân,
+  Gia Cát Lượng, Điêu Thuyền, Lữ Bố — mỗi tướng 1 đánh thường + 1 tuyệt kỹ + 1 bị động.
+- Combat 3v3 (`core/battle/BattleEngine.cs`): đánh theo tốc độ, nộ đầy 100 thì
+  bấm tuyệt kỹ (hoặc auto), bạo kích, né, khắc hệ Võ > Mưu > Phụ > Võ, RNG có seed
+  (cùng seed cho cùng kết quả), sao 1–3 theo HP còn lại/số lượt.
+- Chương 1: 10 ải, độ khó tăng theo hệ số 0.85 → 1.66, thưởng 150 → 600 Vàng.
+- Luồng: Màn hình chính → Chọn đội (đúng 3/6 tướng) & ải (mở theo ải đã qua)
+  → Trận → kết quả + sao + thưởng lưu local.
+- Test: `tests/TestPhase0.tscn` + `tests/TestPhase1.tscn`.
+
 ## Phase 0 — đã làm
 
 - Màn hình chính (`features/main/scenes/MainScene.tscn`): vào trận placeholder,

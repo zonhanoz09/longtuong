@@ -53,6 +53,10 @@ public partial class TestPhase0 : Node
         var mainInst = main?.Instantiate<Control>();
         Check(mainInst != null && mainInst.GetNodeOrNull<Label>("StatusLabel") != null, "main scene instantiates with StatusLabel");
         mainInst?.QueueFree();
+        var stage = ResourceLoader.Load<PackedScene>("res://features/stage/scenes/StageSelect.tscn");
+        Check(stage != null, "stage select scene loads");
+        var battleScene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn");
+        Check(battleScene != null, "battle scene loads");
         var battle = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattlePlaceholder.tscn");
         Check(battle != null, "battle scene loads");
         var battleInst = battle?.Instantiate<Control>();

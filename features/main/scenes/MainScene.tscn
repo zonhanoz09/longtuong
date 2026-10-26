@@ -54,7 +54,7 @@ offset_right = 120.0
 offset_bottom = 60.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Vao tran placeholder"
+text = "Chon doi & ai"
 
 [node name="SaveButton" type="Button" parent="."]
 layout_mode = 1
@@ -86,6 +86,6 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Tai game"
 
-[connection signal="pressed" from="BattleButton" to="." method="OnBattlePressed"]
+[connection signal="pressed" from="BattleButton" to="." method="OnStagePressed"]
 [connection signal="pressed" from="SaveButton" to="." method="OnSavePressed"]
 [connection signal="pressed" from="LoadButton" to="." method="OnLoadPressed"]

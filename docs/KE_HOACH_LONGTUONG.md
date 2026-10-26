@@ -7,6 +7,9 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Cập nhật 2026-10-26 (theo chốt của Huynh): stack đổi từ GDScript sang
 > **Godot 4.7+ .NET (C#)**. Các mục §5, §6 dưới đây đã sửa theo chốt này;
 > bản đầu dùng GDScript chỉ vì skill `godot-master` trong repo viết cho GDScript.
+>
+> Cập nhật 2026-10-26: **Phase 1 đã hoàn thành** — 6 tướng, engine 3v3 có seed,
+> chọn đội/ải, sao + thưởng, test Phase 0 + Phase 1 headless pass (xem README).
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
