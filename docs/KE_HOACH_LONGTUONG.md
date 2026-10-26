@@ -274,6 +274,83 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.7 — PLAN: Danh sách tướng tab dọc + lưới trang bị 4×7 icon-only (CHƯA LÀM)
+
+> Huynh chốt 2026-10-26 (tối): UI 2.6 sai — làm lại theo plan này, CHƯA code.
+> Khôi phục kiểu tab mỗi tướng một tab của 2.4, nhưng tab xếp DỌC bên trái
+> (2.4 tab nằm ngang trên đầu); lưới trang bị thành ô vuông nhỏ 4×7, chỉ hiện
+> icon; trang bị đang mang không có trong lưới; hover hiện tooltip kế bên ô.
+
+#### Bố cục (popup giữ 1180×660, tất cả fix cứng, không đổi kích thước Hub)
+- Tiêu đề trên cùng (20,10–600,40), vùng chính y 60–640 (cao 580).
+- Trái + giữa: `TabContainer` với `TabPosition = Left` (tab dọc bên trái):
+  mỗi tab là 1 tướng, tiêu đề tab = tên tướng (+ " (Khóa)" nếu chưa sở hữu),
+  rộng vùng tab ~160px (theo tên dài nhất "Gia Cát Lượng (Khóa)").
+  Tab đang chọn = tướng `gm.SelectedHeroId` (mặc định tướng đầu sở hữu).
+- Nội dung mỗi tab (trang chi tiết tướng đó, rộng ~580px): header Cấp — Loại,
+  chân dung placeholder, chỉ số hiệu lực, EXP + thanh EXP, kỹ năng, 4 ô ĐANG
+  MANG (ô vuông icon, xem dưới), nút "Mở trang bị & cường hóa" (chỉ tướng đã
+  sở hữu, mở popup HeroScreen như cũ).
+- Phải: panel lưới trang bị (x 780–1160, rộng 380): tiêu đề "Trang bị trong
+  túi" + lưới 4 cột × 7 hàng, ô vuông 64×64, cách nhau 8px (lưới 4×64+3×8 =
+  280 rộng, 7×64+6×8 = 496 cao, vừa vùng 580).
+
+#### Lưới trang bị 4×7 — quy tắc mới (đảo ngược 2.6 ở 2 điểm)
+- Lưới CHỈ chứa trang bị trong túi (BagEquipment). Trang bị đang mang trên
+  tướng KHÔNG có trong lưới — nó chỉ hiện ở 4 ô đang mang của tướng đó.
+  (2.6 gộp cả túi + đang mang vào danh sách trái; bản này bỏ gộp.)
+- Ô lưới CHỈ hiện icon, không hiện gì khác: không tên, không cấp, không chỉ
+  số, không dòng tẩy luyện, không chữ "Trong túi". Ô trống = ô vuông tối viền
+  mỏng, không bấm được, không tooltip.
+- Icon placeholder (chưa có sprite final): ô màu theo loại trang bị — Vũ khí /
+  Giáp / Mũ / Giày mỗi loại một màu riêng, để phân biệt bằng mắt. Khi có
+  sprite thật thì chỉ thay texture của icon, không đổi layout hay kích thước.
+- 4 ô đang mang trên tướng cũng là ô vuông icon-only như ô lưới (ô trống =
+  ô vuông tối). Hover ô đang mang cũng hiện tooltip kế bên như ô lưới.
+
+#### Tooltip kế bên (thay khung tooltip cố định bên phải của 2.6)
+- Một TooltipPanel duy nhất là con trực tiếp của root HeroList (không nằm
+  trong cột nào), mặc định ẩn, `MouseFilter = Ignore` (không chặn hover ô
+  bên dưới), luôn đưa lên trên cùng khi hiện.
+- Hover (MouseEntered) vào ô lưới hoặc ô đang mang → tooltip hiện NGAY KẾ BÊN
+  ô đó: ưu tiên bên phải ô (x = mép phải ô + 8); nếu không đủ chỗ trong popup
+  thì lật sang bên trái ô; Y kẹp trong popup (không tràn lên trên/dưới).
+  Nội dung tooltip tái dùng `EquipmentService.DetailText`: tên ô, cấp, chỉ số
+  cộng theo cấp, dòng tẩy luyện, trạng thái ("Trong túi" hoặc "Đang mang:
+  <tên tướng>"). MouseExited → ẩn tooltip.
+- Click đơn vào ô chỉ chọn/tô sáng (viền vàng), không tháo/mang — giữ luật cũ.
+
+#### Tương tác (giữ nguyên từ 2.5/2.6, chỉ đổi vị trí bấm)
+- Click đúp ô lưới (món trong túi) → mang cho tướng của tab đang chọn (mang
+  được cho mọi tướng, kể cả tướng khóa — giữ luật 2.6); ô đã có món thì món cũ
+  tự về túi (hoán đổi, không mất món).
+- Click đúp ô đang mang → tháo về lưới (vào túi).
+- Sau mỗi lần tháo/mang: SaveGame + rebuild lại tab + lưới (qua CallDeferred,
+  giữ guard IsInsideTree như 2.5 để không lỗi khi popup đã đóng).
+- HeroScreen và Túi đồ KHÔNG đổi trong phase này (đã bỏ chỉ số khỏi dòng món
+  ở 2.6); chỉ màn Danh sách tướng làm lại theo plan này.
+
+#### Câu hỏi cần Huynh chốt trước khi làm (lưới 4×7 = 28 ô)
+- Túi vượt 28 món thì sao? (a) Giới hạn túi đúng 28 món: chiêu mộ/thưởng trận
+  không nhận thêm khi đầy, báo "Túi đầy" — đúng 4×7 cứng, không cuộn.
+  (b) Lưới cuộn thêm hàng: vẫn 4 cột, hàng tăng vượt 7 trong ScrollContainer
+  — không chặn gameplay, nhưng lưới không còn đúng 4×7 khi đầy.
+  Đề xuất mặc định: (b) cuộn, vì hiện tại túi không có giới hạn và tướng mới
+  đã có sẵn 4 món + chiêu mộ/thưởng liên tục thêm món.
+
+#### File đổi + test
+- Viết lại `features/hero/scenes/HeroListScene.cs` + `.tscn` (TabContainer
+  Left, panel lưới 4×7, TooltipPanel nổi); `HubScene.HeroListPopupSize` giữ
+  1180×660 (không đổi, để kích thước popup mỗi widget vẫn khác nhau).
+- Cập nhật test cũ theo layout mới: TestPhase24 (kiểm tra tab dọc thay vì
+  "không còn tab"), TestPhase25/26 (bỏ kiểm tra 3 cột 2.6, chuyển sang tab +
+  lưới); viết `tests/TestPhase27.tscn`: TabPosition Left + đủ 6 tab (tiêu đề
+  có "(Khóa)" cho tướng khóa); lưới đúng 4 cột × 7 hàng = 28 ô, ô 64×64, ô
+  có món Text rỗng (chỉ icon); mang 1 món → lưới giảm 1 ô có món và món đó
+  không còn trong lưới; hover ô → tooltip hiện, nằm kế bên ô, trong popup,
+  chứa tên + chỉ số + tẩy luyện; hover ô trống → không tooltip; click đúp
+  lưới ↔ ô đang mang vẫn tháo/mang được; popup vẫn 1180×660.
+
 ### Phase 2.6 — Trang bị: trái là danh sách sở hữu, hover mới hiện chỉ số, layout fix cứng (ĐÃ HOÀN THÀNH)
 
 - Màn Danh sách tướng làm lại: trái (260×540, cuộn được) là DANH SÁCH TRANG BỊ
