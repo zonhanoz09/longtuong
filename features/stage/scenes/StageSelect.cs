@@ -18,8 +18,6 @@ public partial class StageSelect : Control
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("StartButton"), true);
-        UiTheme.StyleButton(GetNode<Button>("BackButton"));
-        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         _selected.AddRange(gm.SelectedTeamIds.Where(id => gm.Save.OwnedHeroIds.Contains(id)));
         if (_selected.Count == 0 && gm.Save.OwnedHeroIds.Count > 0) _selected.Add(gm.Save.OwnedHeroIds[0]);
         _selectedStage = System.Math.Min(gm.CurrentStageId, 10);
@@ -104,9 +102,4 @@ public partial class StageSelect : Control
         GetTree().ChangeSceneToFile("res://features/battle/scenes/BattleScene.tscn");
     }
 
-    private void OnBackPressed()
-    {
-        if (UiTheme.TryCloseHubPopup(this)) return;
-        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
-    }
 }

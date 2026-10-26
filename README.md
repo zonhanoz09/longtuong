@@ -15,6 +15,15 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.4 — đã làm (bỏ nút Quay lại + tướng dạng tab)
+
+- Bỏ nút Quay lại Hub ở tất cả widget, chỉ đóng bằng nút X của popup;
+  nút thoát trận nay về thẳng Hub.
+- Danh sách tướng dạng tab: 1 tab = 1 tướng, mỗi tab có chi tiết đầy đủ
+  (cấp/sao/mảnh, chỉ số hiệu lực, kỹ năng) + 4 trang bị mang theo;
+  tab tướng chưa sở hữu ghi Khóa + số mảnh.
+- Test: `tests/TestPhase24.tscn` (không còn BackButton, đủ 6 tab, tab có trang bị).
+
 ## Phase 2.3 — đã làm (widget thành popup, kích thước riêng)
 
 - Hub ở lại phía sau; 6 widget mở thành popup trên nền mờ, khung viền Vàng,

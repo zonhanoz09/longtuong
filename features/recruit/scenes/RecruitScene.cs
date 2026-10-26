@@ -15,8 +15,6 @@ public partial class RecruitScene : Control
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm0);
         UiTheme.StyleButton(GetNode<Button>("DrawButton"), true);
-        UiTheme.StyleButton(GetNode<Button>("BackButton"));
-        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         _statusLabel = GetNode<Label>("StatusLabel");
         _goldLabel = GetNode<Label>("GoldLabel");
         GetNode<Label>("RatesLabel").Text = $"Tỉ lệ công khai (1 lượt = 5 mảnh 1 tướng): {RecruitService.RatesText()}.";
@@ -43,9 +41,4 @@ public partial class RecruitScene : Control
         Refresh();
     }
 
-    private void OnBackPressed()
-    {
-        if (UiTheme.TryCloseHubPopup(this)) return;
-        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
-    }
 }

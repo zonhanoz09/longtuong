@@ -26,7 +26,7 @@ public partial class BattleScene : Control
         UiTheme.StyleButton(GetNode<Button>("UltButton"), true);
         UiTheme.StyleButton(GetNode<Button>("AutoButton"));
         UiTheme.StyleButton(GetNode<Button>("BackButton"));
-        GetNode<Button>("BackButton").Text = "← Quay lại chọn ải";
+        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         var stage = HeroDatabase.GetStage(gm.CurrentStageId);
         var effectiveTeam = gm.SelectedTeamIds.Select(id => ProgressionService.GetEffectiveHero(gm.Save, id)).ToList();
         _engine = new BattleEngine(effectiveTeam, stage, gm.CurrentSeed);
@@ -124,6 +124,6 @@ public partial class BattleScene : Control
 
     private void OnBackPressed()
     {
-        GetTree().ChangeSceneToFile("res://features/stage/scenes/StageSelect.tscn");
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
     }
 }

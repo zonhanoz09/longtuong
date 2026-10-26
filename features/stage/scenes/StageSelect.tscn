@@ -50,13 +50,4 @@ offset_right = 220.0
 offset_bottom = 670.0
 text = "VAO TRAN"
 
-[node name="BackButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 240.0
-offset_top = 630.0
-offset_right = 440.0
-offset_bottom = 670.0
-text = "QUAY LAI"
-
 [connection signal="pressed" from="StartButton" to="." method="OnStartPressed"]
-[connection signal="pressed" from="BackButton" to="." method="OnBackPressed"]

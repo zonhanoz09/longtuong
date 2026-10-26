@@ -98,4 +98,3 @@ layout_mode = 0
 layout_mode = 0
 text = "X"
 
-[connection signal="pressed" from="PopupFrame/CloseButton" to="." method="OnClosePopupPressed"]

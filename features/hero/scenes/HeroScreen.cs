@@ -23,8 +23,6 @@ public partial class HeroScreen : Control
         UiTheme.StyleButton(GetNode<Button>("StarUpButton"), true);
         UiTheme.StyleButton(GetNode<Button>("UnlockStarButton"));
         UiTheme.StyleButton(GetNode<Button>("RecruitButton"));
-        UiTheme.StyleButton(GetNode<Button>("BackButton"));
-        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         if (!gm.Save.OwnedHeroIds.Contains(_selected) && gm.Save.OwnedHeroIds.Count > 0) _selected = gm.Save.OwnedHeroIds[0];
         ProgressionService.EnsureDefaults(gm.Save);
         _detailLabel = GetNode<Label>("DetailLabel");
@@ -149,9 +147,4 @@ public partial class HeroScreen : Control
         Refresh();
     }
 
-    private void OnBackPressed()
-    {
-        if (UiTheme.TryCloseHubPopup(this)) return;
-        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
-    }
 }

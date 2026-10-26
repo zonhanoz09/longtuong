@@ -13,8 +13,6 @@ public partial class BagScene : Control
         ProgressionService.EnsureDefaults(gm.Save);
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
-        UiTheme.StyleButton(GetNode<Button>("BackButton"));
-        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         var box = GetNode<VBoxContainer>("ItemBox");
         void Add(string text) { var l = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart }; UiTheme.StyleBody(l, 15); box.AddChild(l); }
         Add($"Vàng: {gm.Save.Gold} | Kim Nguyên Bảo: {gm.Save.Gems} | Trận thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage}");
@@ -36,9 +34,4 @@ public partial class BagScene : Control
         }
     }
 
-    private void OnBackPressed()
-    {
-        if (UiTheme.TryCloseHubPopup(this)) return;
-        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
-    }
 }

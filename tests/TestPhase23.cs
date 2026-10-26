@@ -45,13 +45,11 @@ public partial class TestPhase23 : Node
             Check(hub.ClosePopup(), $"ClosePopup reports closed: {path}");
             Check(!hub.IsPopupOpen && !hub.GetNode<ColorRect>("Dim").Visible, $"popup closed and dim hidden: {path}");
         }
-        // Back button inside a popup closes it (does not reload Hub).
+        // Popup X button closes it (widgets no longer have a Back button since 2.4).
         hub.OpenPopup("res://features/recruit/scenes/RecruitScene.tscn", HubScene.RecruitPopupSize);
-        var recruit = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
-        var back = recruit?.GetNodeOrNull<Button>("BackButton");
-        Check(back != null, "recruit popup has BackButton");
-        back?.EmitSignal(Button.SignalName.Pressed);
-        Check(!hub.IsPopupOpen, "BackButton inside popup closes popup instead of scene change");
+        var close = hub.GetNode<Button>("PopupFrame/CloseButton");
+        close.EmitSignal(Button.SignalName.Pressed);
+        Check(!hub.IsPopupOpen, "X button closes popup");
         // Sizes really differ per widget.
         var distinct = cases.Select(c => c.Size).Distinct().Count();
         Check(distinct == cases.Length, "every widget popup size is different");

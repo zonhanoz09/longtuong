@@ -18,8 +18,6 @@ public partial class FormationScene : Control
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("SaveButton"), true);
-        UiTheme.StyleButton(GetNode<Button>("BackButton"));
-        GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         _selected.AddRange(gm.SelectedTeamIds.Where(id => gm.Save.OwnedHeroIds.Contains(id)));
         if (_selected.Count == 0 && gm.Save.OwnedHeroIds.Count > 0) _selected.Add(gm.Save.OwnedHeroIds[0]);
         _infoLabel = GetNode<Label>("InfoLabel");
@@ -65,9 +63,4 @@ public partial class FormationScene : Control
         Refresh("Đã lưu đội hình!");
     }
 
-    private void OnBackPressed()
-    {
-        if (UiTheme.TryCloseHubPopup(this)) return;
-        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
-    }
 }

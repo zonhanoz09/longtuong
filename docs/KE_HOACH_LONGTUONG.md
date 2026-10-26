@@ -256,6 +256,19 @@ khởi đầu → chiêu mộ → mở khóa tướng.
 - Trong popup, widget không vẽ thêm thanh tiền tệ riêng (Hub đã hiện sau lớp
   mờ) và layout đã thu chiều rộng cho vừa khung, có cắt tràn (clip) trong khung.
 
+
+### Phase 2.4 — Bỏ nút Quay lại + Danh sách tướng dạng tab
+
+- Bỏ nút Quay lại Hub ở tất cả widget (Danh sách tướng, Túi đồ, Trang bị,
+  Cường hóa, Bày trận, Vào ải, Chiêu mộ) vì popup đã có nút X để đóng.
+  Trận đấu không phải widget nên giữ nút thoát, nhưng nay về thẳng Hub
+  (trước đây về màn chọn ải — màn đó giờ chỉ là popup, không có nút quay lại).
+- Widget Danh sách tướng làm lại dạng tab: 1 tab = 1 tướng (6 tab), mỗi tab
+  hiện chi tiết đầy đủ: cấp/EXP, sao, mảnh, chỉ số hiệu lực, đánh thường/
+  tuyệt kỹ/bị động, và 4 trang bị mang theo (tên món + cấp cường hóa +
+  dòng tẩy luyện). Tướng chưa sở hữu có tab riêng ghi "Khóa" + số mảnh hiện có.
+  Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
+
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).
 - Quái Công Thành (boss theo giờ, đánh chung lấy mốc thưởng — phase này làm boss
