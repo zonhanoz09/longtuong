@@ -30,6 +30,7 @@ public partial class GameManager : Node
 
     public void Logout()
     {
+        HeroDatabase.SetCustomHeroName("");
         CurrentUsername = "";
         SelectedHeroId = "quan_vu";
         Save = new SaveData();
@@ -47,6 +48,7 @@ public partial class GameManager : Node
     {
         Save = SaveManager.Load(SavePath);
         ProgressionService.EnsureDefaults(Save);
+        if (!string.IsNullOrEmpty(CurrentUsername)) HeroDatabase.SetCustomHeroName(CurrentUsername);
         if (Save.TeamIds != null && Save.TeamIds.Count >= 1 && Save.TeamIds.Count <= 3)
             SelectedTeamIds = Save.TeamIds.Where(id => Save.OwnedHeroIds.Contains(id)).ToList();
         if (SelectedTeamIds.Count == 0 && Save.OwnedHeroIds.Count > 0)

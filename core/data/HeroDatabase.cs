@@ -54,7 +54,12 @@ public static class HeroDatabase
 {
     public static readonly List<HeroDef> Heroes = new()
     {
-        // Phase 2.9: default starter for new accounts (balanced Vanguard leader).
+        // Phase 2.10: custom hero for new accounts. Its Name is NOT fixed here:
+        // it is set to the account username on seed/login via SetCustomHeroName.
+        // Basic stats, no real skills yet (placeholder ult = plain 1.0x hit).
+        // It is intentionally NOT in the recruit pool (see RecruitService.Rates).
+        new HeroDef { Id = "custom_hero", Name = "Tướng Tự Tạo", Role = HeroRole.Vanguard, Hp = 500, Atk = 60, Def = 30, Speed = 60, Crit = 0.10, Dodge = 0.05, NormalName = "Đánh thường", UltName = "Chưa có tuyệt kỹ", UltPower = 1.0, UltKind = UltKind.SingleDamage, PassiveName = "Chưa có bị động", PassiveDesc = "Tướng tự tạo theo tên đăng nhập — kỹ năng sẽ được cập nhật sau." },
+        // Phase 2.9: former default starter, still a normal recruitable hero.
         new HeroDef { Id = "luu_bi", Name = "Lưu Bị", Role = HeroRole.Vanguard, Hp = 620, Atk = 72, Def = 42, Speed = 68, Crit = 0.12, Dodge = 0.08, NormalName = "Song Kiếm", UltName = "Song Cổ Kiếm", UltPower = 1.8, UltKind = UltKind.SingleDamage, PassiveName = "Nhân Nghĩa", PassiveDesc = "Được lòng người: tướng cân bằng, không bị khắc hệ (Tiên phong)." },
         new HeroDef { Id = "quan_vu", Name = "Quan Vũ", Role = HeroRole.Warrior, Hp = 520, Atk = 85, Def = 35, Speed = 70, Crit = 0.25, Dodge = 0.05, NormalName = "Thanh Long Trảm", UltName = "Thanh Long Yển Nguyệt", UltPower = 2.0, UltKind = UltKind.SingleDamage, PassiveName = "Võ Thánh", PassiveDesc = "Tỉ lệ bạo kích +15% so với tướng thường." },
         new HeroDef { Id = "truong_phi", Name = "Trương Phi", Role = HeroRole.Vanguard, Hp = 750, Atk = 60, Def = 55, Speed = 55, Crit = 0.10, Dodge = 0.05, DamageReduction = 0.15, NormalName = "Mâu Đâm", UltName = "Tiếng Thét Trường Bản", UltPower = 1.6, UltKind = UltKind.SingleDamage, PassiveName = "Thiết Bích", PassiveDesc = "Giảm 15% sát thương nhận vào." },
@@ -79,6 +84,13 @@ public static class HeroDatabase
     };
 
     public static HeroDef Get(string id) => Heroes.First(h => h.Id == id);
+
+    /// <summary>Phase 2.10: the custom hero's display name is the username.</summary>
+    public static void SetCustomHeroName(string username)
+    {
+        var custom = Heroes.FirstOrDefault(h => h.Id == "custom_hero");
+        if (custom != null) custom.Name = string.IsNullOrEmpty(username) ? "Tướng Tự Tạo" : username;
+    }
     public static StageDef GetStage(int id) => Stages.First(s => s.Id == id);
     public static string RoleName(HeroRole role) => role switch
     {

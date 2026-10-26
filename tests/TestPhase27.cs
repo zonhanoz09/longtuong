@@ -26,9 +26,9 @@ public partial class TestPhase27 : Node
         Check(HubScene.HeroListPopupSize == new Vector2(1180, 660), "hero list popup is 1180x660");
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-        Check(tabBtns.Count == 7, "7 hero tabs in a vertical button column");
+        Check(tabBtns.Count == 8, "8 hero tabs in a vertical button column");
         var starter = gm.Save.OwnedHeroIds[0];
-        Check(tabBtns.Count(b => b.Text.Contains("(Khóa)")) == 6, "locked heroes show (Khóa) in tab titles");
+        Check(tabBtns.Count(b => b.Text.Contains("(Khóa)")) == 7, "locked heroes show (Khóa) in tab titles");
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid.Columns == 4 && grid.GetChildCount() == 28, "grid is 4 columns x 7 rows = 28 cells");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();

@@ -15,6 +15,14 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.10 — đã làm (tướng tự tạo làm default tài khoản mới)
+
+- Thêm tướng tự tạo (tên = tên đăng nhập, Tiên phong, chỉ số cơ bản, chưa
+  có skill — tuyệt kỹ placeholder ×1.0, sẽ cập nhật sau). Tài khoản mới
+  luôn chỉ sở hữu tướng này; nó KHÔNG có trong chiêu mộ. Tài khoản cũ
+  không tự nhận thêm. Lưu Bị vẫn là tướng thường, quay được bằng chiêu mộ.
+- Test: `tests/TestPhase210.tscn` (15 check).
+
 ## Phase 2.9 — đã làm (thêm Lưu Bị, tướng default tài khoản mới)
 
 - Đội hình 6 → 7 tướng: Lưu Bị (Tiên phong cân bằng, Song Cổ Kiếm ×1.8).

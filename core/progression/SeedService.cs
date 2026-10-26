@@ -6,8 +6,8 @@ namespace LongTuong;
 
 /// <summary>
 /// Seed data for NEW accounts (Phase 2.2, test seed — not final economy balance).
-/// Phase 2.9: every new account starts with the same default hero, Lưu Bị.
-/// The old username-hash starter selection was removed.
+/// Phase 2.10: every new account starts with the custom hero, named after the
+/// username (basic stats, no skills yet, not in the recruit pool).
 /// </summary>
 public static class SeedService
 {
@@ -15,7 +15,7 @@ public static class SeedService
     public const int SeededGems = 10000;
     public const int UnlockShards = 10;
 
-    public const string DefaultStarterHeroId = "luu_bi";
+    public const string DefaultStarterHeroId = "custom_hero";
 
     public static string StarterHeroId(string username) => DefaultStarterHeroId;
 
@@ -23,6 +23,7 @@ public static class SeedService
     {
         var save = new SaveData();
         ProgressionService.EnsureDefaults(save);
+        HeroDatabase.SetCustomHeroName(username);
         var starter = StarterHeroId(username);
         save.OwnedHeroIds = new List<string> { starter };
         save.TeamIds = new List<string> { starter };

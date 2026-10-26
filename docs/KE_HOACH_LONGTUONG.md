@@ -274,6 +274,32 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.10 — Tướng tự tạo làm default tài khoản mới: tên = tên đăng nhập (ĐÃ HOÀN THÀNH)
+
+- Đội hình tăng 7 → 8 tướng. Tướng mới: **tướng tự tạo** (Id `custom_hero`,
+  đứng đầu danh sách): tên hiển thị = **tên đăng nhập** của tài khoản
+  (đăng ký "huynh" thì tướng tên "huynh"); hệ Tiên phong (không bị khắc hệ);
+  chỉ số cơ bản HP 500, ATK 60, DEF 30, Tốc 60, Bạo 10%, Né 5%.
+- **Chưa có skill** (sẽ cập nhật sau): đánh thường "Đánh thường", tuyệt kỹ
+  placeholder "Chưa có tuyệt kỹ" (sát thương đơn ×1.0 — tức chỉ đánh như
+  đòn thường, không hiệu ứng đặc biệt), bị động "Chưa có bị động". Engine
+  trận không cần sửa gì vì tuyệt kỹ chạy theo dữ liệu sẵn có.
+- **Không có trong danh sách chiêu mộ**: `RecruitService.Rates` vẫn chỉ 7
+  tướng cũ (tổng 100%), không chứa `custom_hero`, nên không quay ra được
+  bằng chiêu mộ; tướng tự tạo chỉ có bằng cách tạo tài khoản mới.
+- Tài khoản mới: **luôn chỉ sở hữu tướng tự tạo** (đội hình [tướng tự tạo],
+  túi 6 món cơ bản) — Lưu Bị từ 2.9 không còn là default nữa nhưng vẫn là
+  tướng thường, quay được bằng chiêu mộ. Tài khoản cũ (kể cả 2.9) KHÔNG tự
+  nhận thêm tướng tự tạo.
+- Kỹ thuật: tên tướng tự tạo không lưu cố định trong `HeroDatabase` mà được
+  gán theo tài khoản đang đăng nhập (`SetCustomHeroName`) ở 2 chỗ: lúc tạo
+  tài khoản mới (`SeedService.CreateSeededSave`) và lúc đăng nhập
+  (`GameManager.LoadGame`); đăng xuất thì trả về tên dự phòng "Tướng Tự Tạo".
+  Vì vậy tên luôn đúng tài khoản, kể cả khi đổi tài khoản trên cùng máy.
+- Test: `tests/TestPhase210.tscn` (15 check: tên theo username, seed, không
+  vào chiêu mộ, load lại vẫn đúng tên, tài khoản cũ không tự nhận, đánh ải
+  1 một mình xong trận).
+
 ### Phase 2.9 — Thêm tướng Lưu Bị, tướng default của tài khoản mới (ĐÃ HOÀN THÀNH)
 
 - Đội hình tăng 6 → 7 tướng. Tướng mới: **Lưu Bị** (Tiên phong, HP 620,

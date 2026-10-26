@@ -31,12 +31,13 @@ public partial class TestPhase22 : Node
     {
         var a = SeedService.StarterHeroId("huynh");
         var b = SeedService.StarterHeroId("nguoi_khac");
-        Check(a == "luu_bi" && b == "luu_bi", "every new account starts with Luu Bi (default hero)");
+        Check(a == "custom_hero" && b == "custom_hero", "every new account starts with the custom hero");
         Check(HeroDatabase.Heroes.Any(h => h.Id == a), "starter hero is a valid hero");
         Check(SeedService.SeededGold == 100000 && SeedService.SeededGems == 10000, "seed gold 100000 / gems 10000");
         var save = SeedService.CreateSeededSave("huynh");
         Check(save.Gold == 100000 && save.Gems == 10000, "seeded save has test gold/gems");
         Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == a, "seeded save owns exactly the starter hero");
+        Check(HeroDatabase.Get("custom_hero").Name == "huynh", "custom hero is named after the username");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == a, "seeded save team is just the starter");
     }
 
@@ -57,7 +58,7 @@ public partial class TestPhase22 : Node
         var save = new SaveData();
         save.OwnedHeroIds = new List<string>();
         ProgressionService.EnsureDefaults(save);
-        Check(save.OwnedHeroIds.Count == 7, "legacy save with empty owned list keeps all 7 heroes");
+        Check(save.OwnedHeroIds.Count == 8, "legacy save with empty owned list keeps all 8 heroes");
     }
 
     private void CheckOneHeroBattle()
