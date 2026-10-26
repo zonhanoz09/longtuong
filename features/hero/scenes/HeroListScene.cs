@@ -221,21 +221,6 @@ public partial class HeroListScene : Control
         var unequipHero = _selectedHeroId;
         unequipAll.Pressed += () => { if (EquipmentService.UnequipAll(gm.Save, unequipHero) >= 0) { gm.SaveGame(); CallDeferred("RebuildAll"); } };
         page.AddChild(unequipAll);
-        if (selectedOwned)
-        {
-            var id = _selectedHeroId;
-            var openBtn = new Button { Text = "Mở trang bị & cường hóa cho tướng này", CustomMinimumSize = new Vector2(540, 56) };
-            UiTheme.StyleButton(openBtn, true);
-            openBtn.CustomMinimumSize = new Vector2(540, 56);
-            openBtn.Pressed += () =>
-            {
-                gm.SelectedHeroId = id;
-                var hub = UiTheme.FindHubScene(this);
-                if (hub != null && hub.IsPopupOpen) hub.OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HubScene.HeroPopupSize);
-                else GetTree().ChangeSceneToFile("res://features/hero/scenes/HeroScreen.tscn");
-            };
-            page.AddChild(openBtn);
-        }
         HideTooltip();
     }
 

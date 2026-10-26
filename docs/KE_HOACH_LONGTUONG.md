@@ -293,8 +293,9 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tab đang chọn = tướng `gm.SelectedHeroId` (mặc định tướng đầu sở hữu).
 - Nội dung mỗi tab (trang chi tiết tướng đó, rộng ~580px): header Cấp — Loại,
   chân dung placeholder, chỉ số hiệu lực, EXP + thanh EXP, kỹ năng, 4 ô ĐANG
-  MANG (ô vuông icon, xem dưới), nút "Mở trang bị & cường hóa" (chỉ tướng đã
-  sở hữu, mở popup HeroScreen như cũ).
+  MANG (ô vuông icon, xem dưới). Nút "Mở trang bị & cường hóa" trong tab
+  tướng đã BỎ theo yêu cầu Huynh sau 2.7 — vào Trang bị/Cường hóa bằng
+  widget riêng trên Hub (mở HeroScreen), không còn từ màn Danh sách tướng.
 - Phải: panel lưới trang bị (x 780–1160, rộng 380): tiêu đề "Trang bị trong
   túi" + lưới 4 cột × 7 hàng, ô vuông 64×64, cách nhau 8px (lưới 4×64+3×8 =
   280 rộng, 7×64+6×8 = 496 cao, vừa vùng 580).
