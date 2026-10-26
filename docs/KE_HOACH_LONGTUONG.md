@@ -257,6 +257,11 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   mờ) và layout đã thu chiều rộng cho vừa khung, có cắt tràn (clip) trong khung.
 
 
+> Cập nhật 2026-10-26: **Phase 2.5 — PLAN (CHƯA LÀM, chờ Huynh chốt)** — Giao diện
+> Danh sách tướng theo ảnh mẫu (danh sách trái + chi tiết giữa + trang bị phải),
+> tướng mặc định không có trang bị, tháo/mang trang bị qua lại giữa tướng và túi.
+> Xem §6.5 dưới đây. Code game hiện tại CHƯA đổi theo plan này.
+
 ### Phase 2.4 — Bỏ nút Quay lại + Danh sách tướng dạng tab
 
 - Bỏ nút Quay lại Hub ở tất cả widget (Danh sách tướng, Túi đồ, Trang bị,
@@ -268,6 +273,106 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   tuyệt kỹ/bị động, và 4 trang bị mang theo (tên món + cấp cường hóa +
   dòng tẩy luyện). Tướng chưa sở hữu có tab riêng ghi "Khóa" + số mảnh hiện có.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
+
+
+### Phase 2.5 — PLAN: Giao diện tướng kiểu ảnh mẫu + tháo/mang trang bị (CHƯA LÀM)
+
+**Nguồn tham khảo:** ảnh giao diện Võ tướng game gốc mà Huynh gửi (chỉ lấy
+bố cục và luồng, KHÔNG copy art, text, số liệu của game gốc — toàn bộ nhãn,
+tướng, chỉ số trong bản của mình vẫn là tiếng Việt + số liệu của mình).
+Ảnh đo được (tọa độ chuẩn hóa 0–1000, đã đo bằng công cụ định vị, không ước):
+danh sách tướng trái x22–148 / y130–968; header cấp x172–601 / y124–175;
+chân dung giữa x262–502 / y158–642; nút Tháo tất cả dưới chân dung
+x363–492 / y642–683; bảng chỉ số chi tiết x604–792 / y224–745;
+lưới trang bị phải x795–972 / y188–938; nút X góc phải trên x947–987 / y8–48.
+Nút X của ảnh tương ứng với nút X của popup Hub đã có — không vẽ thêm nút X
+trong widget.
+
+**2.5.1. Bố cục mới cho widget Danh sách tướng (thay layout tab của 2.4)**
+- Layout tab ở 2.4 bị thay bằng layout 3 cột theo ảnh, vì ảnh dùng danh sách
+  + chi tiết chứ không dùng tab. Popup Danh sách tướng tăng từ 1100×620 lên
+  **1180×680** (bằng popup Vào ải/Trang bị) để đủ 3 cột.
+- Cột trái (~160px): danh sách 6 tướng dạng nút dọc, tướng đang chọn tô sáng,
+  tướng chưa sở hữu xám + ghi "(Khóa)". Dưới danh sách ghi số tướng sở hữu
+  (vd 1/6). Bấm tên tướng đổi chi tiết ở giữa, không chuyển màn hình.
+- Cột giữa (~500px): header "Cấp X — Loại: <Vai trò>" (map với 等级/类型 của
+  ảnh); chân dung là khối màu + tên tướng (chưa có sprite final, giữ nguyên
+  quy ước placeholder từ các phase trước); 4 ô trang bị đang mang vây quanh
+  chân dung (Vũ khí, Giáp, Mũ, Giày — game mình có 4 ô, ảnh gốc có 6 ô nên
+  không copy đủ 6); dưới chân dung nút **"Tháo tất cả trang bị"** (map với
+  全部卸装); thanh EXP dạng nhãn "EXP x/y" (có thể thêm ProgressBar nếu gọn);
+  lưới chỉ số 2 cột; dòng kỹ năng: Đánh thường / Tuyệt kỹ / Bị động
+  (map với 技能/觉醒技能/天赋 của ảnh).
+- Cột phải (~440px): trên cùng là chỉ số chi tiết của tướng đang chọn;
+  dưới là lưới **"Trang bị có thể dùng"** (map với 能使用的装备): các món trong
+  túi, mỗi ô ghi tên ô + cấp cường hóa + dòng tẩy luyện, bấm vào là mang cho
+  tướng đang chọn. Nút 解雇 (sa thải) và 回收 (thu hồi) trong ảnh và nút
+  一键互换 (đổi nhanh) ở cuối danh sách trái KHÔNG làm trong 2.5 (xem §2.5.5).
+- Chỉ số hiển thị: chỉ hiện chỉ số engine mình thật sự có (HP/ATK/DEF/Tốc/
+  Bạo/Né + Lực chiến ước tính), KHÔNG bịa thêm 11 chỉ số như ảnh gốc
+  (vật công/vật phòng/sách lược phòng/ngăn đỡ/hợp kích/viện trợ...). Số liệu
+  trong ảnh là số cuối game (hàng triệu) — không dùng làm cân bằng của mình.
+
+**2.5.2. Quy tắc trang bị mới: mặc định không có trang bị, tháo/mang tự do**
+- Hiện tại mỗi tướng luôn có sẵn 4 món cấp 0 (kể cả chưa cường hóa vẫn cộng
+  chỉ số gốc của món). Từ 2.5, **ô trang bị có trạng thái Rỗng**: tướng mặc
+  định (tài khoản mới) có cả 4 ô Rỗng, chỉ số hiệu lực = chỉ số gốc đã scale
+  theo cấp/sao, không cộng gì thêm.
+- Tháo 1 món: món đó chuyển vào túi, ô trở thành Rỗng, chỉ số tướng giảm ngay.
+- Tháo tất cả: cả 4 món đang mang chuyển vào túi.
+- Mang từ túi: chọn món trong lưới túi → mang vào ô cùng loại của tướng đang
+  chọn. Nếu ô đã có món, món cũ tự trả về túi (hoán đổi, không mất món).
+- Không tốn Vàng khi tháo/mang trong 2.5 (ảnh cũng không thể hiện phí cho
+  thao tác này). Cường hóa/tẩy luyện giữ nguyên phí cũ, nhưng chỉ làm được
+  khi ô đang có món — ô Rỗng thì nút cường hóa/tẩy luyện bị khóa + báo
+  "Chưa mang trang bị".
+- Tướng không trang bị vẫn vào ải/bày trận được bình thường (chỉ yếu hơn),
+  không chặn luồng chơi. Chỉ tướng đã sở hữu mới được tháo/mang; tướng khóa
+  chỉ xem chi tiết, các nút trang bị bị khóa.
+
+**2.5.3. Thay đổi dữ liệu và code (khi làm)**
+- `EquipmentState` thêm cờ `IsEmpty` (mặc định false để save cũ không bị đổi:
+  món đã có trong save cũ vẫn tính là đang mang). `SaveData` thêm
+  `BagEquipment: List<BagEquipmentItem>` với mỗi món gồm `SlotId, Level,
+  RefineIndex` (món trong túi giữ nguyên cấp cường hóa + dòng tẩy luyện).
+- `ProgressionService.GetEffectiveHero`: bỏ qua hoàn toàn ô `IsEmpty` (không
+  cộng chỉ số gốc, không cộng theo cấp, không áp dòng tẩy luyện của ô đó).
+  `TryEnhance`/`TryRefine` trả về false khi ô Rỗng.
+- Mới: `EquipmentService` (hoặc method trong ProgressionService) gồm
+  `EquipFromBag(save, heroId, bagIndex)`, `Unequip(save, heroId, slotId)`,
+  `UnequipAll(save, heroId) -> số món đã tháo`. Mọi màn hình dùng chung
+  service này, không tự sửa `HeroEquipment`/`BagEquipment` lẻ tẻ.
+- `SeedService.CreateSeededSave`: tướng khởi đầu có 4 ô Rỗng + túi khởi đầu
+  có **4 món cơ bản** (mỗi loại 1 món, cấp 0, dòng tẩy luyện mặc định) để
+  người chơi test được ngay luồng mang → tháo → mang lại cho tướng khác.
+  Số này là seed test, không phải cân bằng rơi đồ thật.
+- `EnsureDefaults` + migration: save cũ (chưa có `IsEmpty`/`BagEquipment`)
+  giữ nguyên món đang mang, `BagEquipment` khởi tạo rỗng; ô nào thiếu trong
+  save cũ thì tạo mới ở trạng thái Rỗng (thay vì món cấp 0 như trước).
+- Các màn hình chạm tới: `HeroListScene` làm lại 3 cột (chính); `HeroScreen`
+  thêm nút Tháo từng dòng + Tháo tất cả và hiển thị "Trống" cho ô Rỗng;
+  `BagScene` thêm mục liệt kê trang bị trong túi (ô/cấp/dòng) + ghi chú
+  "Mang trang bị trong màn Danh sách tướng"; `HubScene` đổi
+  `HeroListPopupSize` thành 1180×680.
+
+**2.5.4. Tiêu chí qua (test headless `TestPhase25`)**
+- Tướng 4 ô Rỗng có chỉ số hiệu lực đúng bằng chỉ số gốc đã scale (không cộng
+  trang bị); mang 1 món từ túi thì chỉ số tăng đúng phần của món đó.
+- Tháo 1 món → món vào túi, ô Rỗng, chỉ số giảm; mang lại → chỉ số hồi như cũ.
+- Mang món mới vào ô đã có món → món cũ về túi, không mất món, tổng số món
+  (đang mang + trong túi) không đổi; Tháo tất cả → 4 ô Rỗng, túi tăng đúng 4.
+- Cường hóa/tẩy luyện ô Rỗng thất bại; save mới (seed) có tướng khởi đầu
+  0 món đang mang + đúng 4 món trong túi; save cũ vẫn giữ nguyên món đang mang.
+- Mở popup Danh sách tướng: có đủ 3 cột (danh sách trái, chi tiết giữa,
+  lưới túi phải), không còn TabContainer của 2.4, không có nút Quay lại.
+
+**2.5.5. Ngoài phạm vi 2.5 (làm sau, không lén đưa vào)**
+- Sa thải tướng (解雇), thu hồi (回收), đổi nhanh 1 chạm (一键互换): ảnh hưởng
+  sở hữu/đội hình, cần thiết kế riêng.
+- Rơi trang bị từ ải, shop trang bị, độ hiếm/phẩm chất trang bị, tab Túi đồ
+  đầy đủ trong màn tướng (túi đồ vẫn là widget riêng như hiện tại).
+- Sprite chân dung final (chân dung vẫn là khối màu + tên như các phase trước).
+- Thêm chỉ số mới kiểu ảnh gốc (chỉ làm khi engine combat thật sự dùng chúng).
 
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).
