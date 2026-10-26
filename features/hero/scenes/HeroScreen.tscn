@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://chotyiwiiqn8e"]
 
 [ext_resource type="Script" path="res://features/hero/scenes/HeroScreen.cs" id="1_hero"]
 
@@ -9,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.633607, 0.993291)
 script = ExtResource("1_hero")
 
 [node name="TitleLabel" type="Label" parent="."]
@@ -32,8 +33,8 @@ offset_left = 420.0
 offset_top = 50.0
 offset_right = 1120.0
 offset_bottom = 300.0
-autowrap_mode = 3
 text = "Dang tai..."
+autowrap_mode = 3
 
 [node name="EquipScroll" type="ScrollContainer" parent="."]
 layout_mode = 0
@@ -44,11 +45,7 @@ offset_bottom = 480.0
 horizontal_scroll_mode = 3
 
 [node name="EquipBox" type="VBoxContainer" parent="EquipScroll"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 1100.0
-offset_bottom = 0.0
+layout_mode = 2
 
 [node name="StarLabel" type="Label" parent="."]
 layout_mode = 0
@@ -56,8 +53,8 @@ offset_left = 20.0
 offset_top = 490.0
 offset_right = 1120.0
 offset_bottom = 530.0
-autowrap_mode = 3
 text = "Tuong Tinh..."
+autowrap_mode = 3
 
 [node name="StarUpButton" type="Button" parent="."]
 layout_mode = 0
@@ -89,12 +86,8 @@ offset_left = 20.0
 offset_top = 590.0
 offset_right = 1120.0
 offset_bottom = 620.0
-autowrap_mode = 3
 text = "Chieu mo..."
-
-[connection signal="pressed" from="StarUpButton" to="." method="OnStarUpPressed"]
-[connection signal="pressed" from="UnlockStarButton" to="." method="OnUnlockStarPressed"]
-[connection signal="pressed" from="RecruitButton" to="." method="OnRecruitPressed"]
+autowrap_mode = 3
 
 [node name="UnequipAllButton" type="Button" parent="."]
 layout_mode = 0
@@ -104,13 +97,16 @@ offset_right = 880.0
 offset_bottom = 580.0
 text = "Thao tat ca"
 
-[connection signal="pressed" from="UnequipAllButton" to="." method="OnUnequipAllPressed"]
-
 [node name="EquipDetailLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 630.0
 offset_right = 1120.0
 offset_bottom = 670.0
-autowrap_mode = 3
 text = "Hover vao trang bi de xem chi tiet."
+autowrap_mode = 3
+
+[connection signal="pressed" from="StarUpButton" to="." method="OnStarUpPressed"]
+[connection signal="pressed" from="UnlockStarButton" to="." method="OnUnlockStarPressed"]
+[connection signal="pressed" from="RecruitButton" to="." method="OnRecruitPressed"]
+[connection signal="pressed" from="UnequipAllButton" to="." method="OnUnequipAllPressed"]

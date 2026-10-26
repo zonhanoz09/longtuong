@@ -1,5 +1,4 @@
-[gd_scene load_steps=1 format=3]
+[gd_scene format=3 uid="uid://d0bhk0bc4gp3n"]
 
 [node name="HeroTabButton" type="Button"]
 custom_minimum_size = Vector2(160, 56)
-text = ""

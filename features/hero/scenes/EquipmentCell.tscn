@@ -1,5 +1,4 @@
-[gd_scene load_steps=1 format=3]
+[gd_scene format=3 uid="uid://cc82y80ncdge8"]
 
 [node name="EquipmentCell" type="Button"]
 custom_minimum_size = Vector2(64, 64)
-text = ""
