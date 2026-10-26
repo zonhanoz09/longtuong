@@ -11,8 +11,9 @@ public static class RecruitService
     // Weights sum to 100.
     public static readonly List<(string HeroId, int Weight)> Rates = new()
     {
-        ("quan_vu", 20), ("truong_phi", 20), ("trieu_van", 20),
-        ("dieu_thuyen", 15), ("gia_cat_luong", 15), ("lu_bo", 10),
+        // Phase 2.9: 7 heroes. Old 20s -> 18, old 15s -> 13, 10s stay 10.
+        ("luu_bi", 10), ("quan_vu", 18), ("truong_phi", 18), ("trieu_van", 18),
+        ("dieu_thuyen", 13), ("gia_cat_luong", 13), ("lu_bo", 10),
     };
 
     public static string DrawHero(Random rng)

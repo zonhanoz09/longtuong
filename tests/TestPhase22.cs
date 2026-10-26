@@ -30,8 +30,8 @@ public partial class TestPhase22 : Node
     private void CheckSeed()
     {
         var a = SeedService.StarterHeroId("huynh");
-        var b = SeedService.StarterHeroId("huynh");
-        Check(a == b, "same username => same starter hero");
+        var b = SeedService.StarterHeroId("nguoi_khac");
+        Check(a == "luu_bi" && b == "luu_bi", "every new account starts with Luu Bi (default hero)");
         Check(HeroDatabase.Heroes.Any(h => h.Id == a), "starter hero is a valid hero");
         Check(SeedService.SeededGold == 100000 && SeedService.SeededGems == 10000, "seed gold 100000 / gems 10000");
         var save = SeedService.CreateSeededSave("huynh");
@@ -57,7 +57,7 @@ public partial class TestPhase22 : Node
         var save = new SaveData();
         save.OwnedHeroIds = new List<string>();
         ProgressionService.EnsureDefaults(save);
-        Check(save.OwnedHeroIds.Count == 6, "legacy save with empty owned list keeps all 6 heroes");
+        Check(save.OwnedHeroIds.Count == 7, "legacy save with empty owned list keeps all 7 heroes");
     }
 
     private void CheckOneHeroBattle()

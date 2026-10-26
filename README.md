@@ -15,6 +15,13 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.9 — đã làm (thêm Lưu Bị, tướng default tài khoản mới)
+
+- Đội hình 6 → 7 tướng: Lưu Bị (Tiên phong cân bằng, Song Cổ Kiếm ×1.8).
+  Tài khoản mới luôn nhận Lưu Bị, bỏ luật chọn tướng theo hash tên đăng
+  nhập; tài khoản cũ không đổi. Chiêu mộ chia lại cho 7 tướng, tổng 100%.
+- Test: `tests/TestPhase29.tscn` (11 check).
+
 ## Phase 2.8 — đã làm (thêm Choàng + Uyển, thành 6 ô trang bị)
 
 - Thêm Choàng (HP + DEF) và Uyển (ATK + Tốc); mọi hệ thống (trận, cường

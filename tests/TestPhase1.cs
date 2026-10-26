@@ -32,8 +32,8 @@ public partial class TestPhase1 : Node
 
     private void CheckData()
     {
-        Check(HeroDatabase.Heroes.Count == 6, "6 heroes");
-        Check(HeroDatabase.Heroes.Select(h => h.Id).Distinct().Count() == 6, "hero ids unique");
+        Check(HeroDatabase.Heroes.Count == 7, "7 heroes");
+        Check(HeroDatabase.Heroes.Select(h => h.Id).Distinct().Count() == 7, "hero ids unique");
         Check(HeroDatabase.Heroes.All(h => h.NormalName.Length > 0 && h.UltName.Length > 0 && h.PassiveName.Length > 0 && h.PassiveDesc.Length > 0), "every hero has normal + ult + passive");
         Check(HeroDatabase.Heroes.All(h => h.Hp > 0 && h.Atk > 0 && h.Speed > 0), "hero stats positive");
     }

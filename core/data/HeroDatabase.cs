@@ -54,6 +54,8 @@ public static class HeroDatabase
 {
     public static readonly List<HeroDef> Heroes = new()
     {
+        // Phase 2.9: default starter for new accounts (balanced Vanguard leader).
+        new HeroDef { Id = "luu_bi", Name = "Lưu Bị", Role = HeroRole.Vanguard, Hp = 620, Atk = 72, Def = 42, Speed = 68, Crit = 0.12, Dodge = 0.08, NormalName = "Song Kiếm", UltName = "Song Cổ Kiếm", UltPower = 1.8, UltKind = UltKind.SingleDamage, PassiveName = "Nhân Nghĩa", PassiveDesc = "Được lòng người: tướng cân bằng, không bị khắc hệ (Tiên phong)." },
         new HeroDef { Id = "quan_vu", Name = "Quan Vũ", Role = HeroRole.Warrior, Hp = 520, Atk = 85, Def = 35, Speed = 70, Crit = 0.25, Dodge = 0.05, NormalName = "Thanh Long Trảm", UltName = "Thanh Long Yển Nguyệt", UltPower = 2.0, UltKind = UltKind.SingleDamage, PassiveName = "Võ Thánh", PassiveDesc = "Tỉ lệ bạo kích +15% so với tướng thường." },
         new HeroDef { Id = "truong_phi", Name = "Trương Phi", Role = HeroRole.Vanguard, Hp = 750, Atk = 60, Def = 55, Speed = 55, Crit = 0.10, Dodge = 0.05, DamageReduction = 0.15, NormalName = "Mâu Đâm", UltName = "Tiếng Thét Trường Bản", UltPower = 1.6, UltKind = UltKind.SingleDamage, PassiveName = "Thiết Bích", PassiveDesc = "Giảm 15% sát thương nhận vào." },
         new HeroDef { Id = "trieu_van", Name = "Triệu Vân", Role = HeroRole.Warrior, Hp = 480, Atk = 78, Def = 30, Speed = 95, Crit = 0.15, Dodge = 0.15, NormalName = "Thương Liên Kích", UltName = "Bạch Long Xuất Động", UltPower = 1.9, UltKind = UltKind.SingleDamage, PassiveName = "Thần Tốc", PassiveDesc = "Tốc độ cao nhất đội, né tránh +10%." },

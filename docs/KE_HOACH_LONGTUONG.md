@@ -274,6 +274,24 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.9 — Thêm tướng Lưu Bị, tướng default của tài khoản mới (ĐÃ HOÀN THÀNH)
+
+- Đội hình tăng 6 → 7 tướng. Tướng mới: **Lưu Bị** (Tiên phong, HP 620,
+  ATK 72, DEF 42, Tốc 68, Bạo 12%, Né 8%; đánh thường "Song Kiếm", tuyệt kỹ
+  "Song Cổ Kiếm" sát thương đơn ×1.8, bị động "Nhân Nghĩa"). Chọn Lưu Bị làm
+  tướng khởi đầu vì là chủ soái cân bằng: Tiên phong không bị khắc hệ nên
+  người mới không bị khắc chế, trụ được mà vẫn có sát thương.
+- Tài khoản mới: **luôn nhận Lưu Bị** (chỉ sở hữu 1 mình Lưu Bị, đội hình
+  [Lưu Bị], túi 6 món cơ bản). Bỏ luật seed cũ chọn tướng theo hash tên đăng
+  nhập (`(tổng mã + 31*độ dài) % số tướng`); tài khoản cũ giữ nguyên tướng
+  và đội hình, save cũ tự nhận đủ 7 tướng qua `EnsureDefaults`.
+- Chiêu mộ chia lại cho 7 tướng, tổng vẫn 100%: Lưu Bị 10%, Quan Vũ 18%,
+  Trương Phi 18%, Triệu Vân 18%, Điêu Thuyền 13%, Gia Cát Lượng 13%,
+  Lữ Bố 10% (20→18, 15→13, 10 giữ nguyên). Skill tướng chạy theo dữ liệu
+  (`UltKind`/`UltPower`) nên thêm tướng không cần sửa engine trận.
+- Test: `tests/TestPhase29.tscn` (11 check: đủ 7 tướng, seed luôn Lưu Bị,
+  tỉ lệ chiêu mộ, Lưu Bị đánh ải 1 một mình xong trận).
+
 ### Phase 2.8 — Thêm 2 loại trang bị: Choàng + Uyển (6 ô) (ĐÃ HOÀN THÀNH)
 
 - Slots tăng từ 4 lên 6: Vũ khí, Giáp, Mũ, Giày + Choàng (HP 120+25/cấp,

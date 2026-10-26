@@ -6,8 +6,8 @@ namespace LongTuong;
 
 /// <summary>
 /// Seed data for NEW accounts (Phase 2.2, test seed — not final economy balance).
-/// Starter hero is deterministic from the username so the same name always gets
-/// the same starter: index = (sum of char codes + 31 * length) % hero count.
+/// Phase 2.9: every new account starts with the same default hero, Lưu Bị.
+/// The old username-hash starter selection was removed.
 /// </summary>
 public static class SeedService
 {
@@ -15,12 +15,9 @@ public static class SeedService
     public const int SeededGems = 10000;
     public const int UnlockShards = 10;
 
-    public static string StarterHeroId(string username)
-    {
-        if (string.IsNullOrEmpty(username)) return HeroDatabase.Heroes[0].Id;
-        int sum = username.Sum(c => (int)c) + 31 * username.Length;
-        return HeroDatabase.Heroes[((sum % HeroDatabase.Heroes.Count) + HeroDatabase.Heroes.Count) % HeroDatabase.Heroes.Count].Id;
-    }
+    public const string DefaultStarterHeroId = "luu_bi";
+
+    public static string StarterHeroId(string username) => DefaultStarterHeroId;
 
     public static SaveData CreateSeededSave(string username)
     {
@@ -29,7 +26,7 @@ public static class SeedService
         var starter = StarterHeroId(username);
         save.OwnedHeroIds = new List<string> { starter };
         save.TeamIds = new List<string> { starter };
-        // Phase 2.5: starter starts with NO equipped items; the bag holds 4
+        // Phase 2.5: starter starts with NO equipped items; the bag holds 6
         // basic items (one per slot) so equip -> unequip -> re-equip can be tested.
         save.BagEquipment = ProgressionService.Slots
             .Select(s => new BagEquipmentItem { SlotId = s.Id, Level = 0, RefineIndex = 0 })
