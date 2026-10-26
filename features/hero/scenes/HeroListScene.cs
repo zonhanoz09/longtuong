@@ -166,7 +166,7 @@ public partial class HeroListScene : Control
             UiTheme.StyleButton(btn, hero.Id == _selectedHeroId);
             btn.CustomMinimumSize = new Vector2(160, 56);
             var id = hero.Id;
-            btn.Pressed += () => { _selectedHeroId = id; gm.SelectedHeroId = id; CallDeferred("RebuildAll"); };
+            btn.Pressed += () => { _selectedHeroId = id; if (gm.Save.OwnedHeroIds.Contains(id)) gm.SelectedHeroId = id; CallDeferred("RebuildAll"); };
             _tabButtons.AddChild(btn);
         }
         // Detail of the selected tab hero.

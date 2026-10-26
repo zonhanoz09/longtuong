@@ -15,6 +15,14 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.11 — đã làm (tướng mặc định luôn là tướng đã sở hữu)
+
+- Sửa lỗi: sau khi đăng nhập, tướng mặc định từng kẹt ở "quan_vu" (tướng
+  khóa với tài khoản mới) vì `LoadGame` không sửa nó. Nay tướng mặc định
+  luôn là tướng đã sở hữu (ưu tiên đội trưởng); xem tab tướng khóa không
+  đổi tướng mặc định toàn cục; đăng xuất thì xóa tướng mặc định.
+- Test: `tests/TestPhase211.tscn` (7 check).
+
 ## Phase 2.10 — đã làm (tướng tự tạo làm default tài khoản mới)
 
 - Thêm tướng tự tạo (tên = tên đăng nhập, Tiên phong, chỉ số cơ bản, chưa

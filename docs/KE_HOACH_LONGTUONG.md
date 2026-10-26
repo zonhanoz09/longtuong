@@ -274,6 +274,23 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   Tướng đã sở hữu có nút trong tab để mở popup Trang bị/Cường hóa của tướng đó.
 
 
+### Phase 2.11 — Luật: tướng mặc định luôn là tướng đã sở hữu (ĐÃ HOÀN THÀNH)
+
+- Lỗi đã sửa: `GameManager.LoadGame` trước đây không đụng tới
+  `SelectedHeroId`, nên sau khi đăng nhập tướng mặc định vẫn là giá trị
+  khởi tạo cũ "quan_vu" — tướng KHÓA với tài khoản mới (chỉ sở hữu tướng tự
+  tạo + Lưu Bị). Nay `LoadGame` ép tướng mặc định về tướng đã sở hữu: ưu
+  tiên đội trưởng (phần tử đầu của đội hình đã lọc theo sở hữu), nếu đội
+  trống thì tướng sở hữu đầu tiên, nếu không sở hữu ai thì rỗng.
+- Khi chưa đăng nhập thì không có tướng mặc định (`SelectedHeroId = ""`,
+  cả giá trị khởi tạo lẫn lúc đăng xuất) thay vì mặc định "quan_vu".
+- Xem tab tướng khóa trong Danh sách tướng chỉ đổi chi tiết đang xem, KHÔNG
+  đổi tướng mặc định toàn cục nữa (chỉ tab tướng đã sở hữu mới ghi vào
+  `SelectedHeroId`). Màn Trang bị vốn đã tự rơi về tướng sở hữu đầu tiên
+  nếu tướng đang chọn bị khóa — nay giữ nguyên làm lớp phòng thủ thứ hai.
+- Test: `tests/TestPhase211.tscn` (7 check: seed, LoadGame sửa default khóa
+  thành sở hữu, bấm tab khóa không đổi default, đăng xuất xóa default).
+
 ### Phase 2.10 — Tướng tự tạo làm default tài khoản mới: tên = tên đăng nhập (ĐÃ HOÀN THÀNH)
 
 - Đội hình tăng 7 → 8 tướng. Tướng mới: **tướng tự tạo** (Id `custom_hero`,

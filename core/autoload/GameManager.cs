@@ -11,7 +11,7 @@ public partial class GameManager : Node
     public SaveData Save { get; private set; } = new();
     public List<string> SelectedTeamIds { get; set; } = new() { "quan_vu", "truong_phi", "gia_cat_luong" };
     public string CurrentUsername { get; set; } = "";
-    public string SelectedHeroId { get; set; } = "quan_vu";
+    public string SelectedHeroId { get; set; } = "";
     public string AccountsPath => OS.GetUserDataDir() + "/accounts.json";
     public int CurrentStageId { get; set; } = 1;
     public int CurrentSeed { get; set; }
@@ -32,7 +32,7 @@ public partial class GameManager : Node
     {
         HeroDatabase.SetCustomHeroName("");
         CurrentUsername = "";
-        SelectedHeroId = "quan_vu";
+        SelectedHeroId = ""; // no account => no default hero
         Save = new SaveData();
         SelectedTeamIds = new List<string> { "quan_vu", "truong_phi", "gia_cat_luong" };
         LastBattleWon = false; LastBattleStars = 0; LastBattleReward = 0;
@@ -53,6 +53,12 @@ public partial class GameManager : Node
             SelectedTeamIds = Save.TeamIds.Where(id => Save.OwnedHeroIds.Contains(id)).ToList();
         if (SelectedTeamIds.Count == 0 && Save.OwnedHeroIds.Count > 0)
             SelectedTeamIds = new List<string> { Save.OwnedHeroIds[0] };
+        // Rule: the default hero is always an owned hero — never a locked one.
+        // (Before this fix, LoadGame left the old "quan_vu" default in place,
+        // which is locked for new accounts.)
+        if (!Save.OwnedHeroIds.Contains(SelectedHeroId))
+            SelectedHeroId = SelectedTeamIds.Count > 0 ? SelectedTeamIds[0]
+                : Save.OwnedHeroIds.Count > 0 ? Save.OwnedHeroIds[0] : "";
     }
 
     public void CreateSeededSave(string username)
