@@ -12,7 +12,7 @@ public partial class BagScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
-        UiTheme.AddCurrencyBar(this, gm);
+        if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("BackButton"));
         GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         var box = GetNode<VBoxContainer>("ItemBox");
@@ -36,5 +36,9 @@ public partial class BagScene : Control
         }
     }
 
-    private void OnBackPressed() => GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    private void OnBackPressed()
+    {
+        if (UiTheme.TryCloseHubPopup(this)) return;
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    }
 }

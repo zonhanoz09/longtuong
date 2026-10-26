@@ -23,14 +23,14 @@ text = "BAY TRAN — Chon dung 3 tuong"
 layout_mode = 0
 offset_left = 20.0
 offset_top = 60.0
-offset_right = 1260.0
+offset_right = 880.0
 offset_bottom = 400.0
 
 [node name="InfoLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 420.0
-offset_right = 1260.0
+offset_right = 880.0
 offset_bottom = 460.0
 autowrap_mode = 3
 text = "Dang tai..."

@@ -18,6 +18,10 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Cập nhật 2026-10-26: **Phase 2.1 đã hoàn thành** — đăng nhập/đăng ký local
 > (hash mật khẩu) -> Hub 7 widget (tướng sở hữu, túi đồ, trang bị, bày trận,
 > vào ải, cường hóa, chiêu mộ), save tách theo tài khoản local.
+> Cập nhật 2026-10-26: **Phase 2.3 — ĐÃ HOÀN THÀNH** — Các widget thành popup
+> trên Hub (khung riêng, kích thước khác nhau từng widget, nút X + Quay lại
+> đóng popup, Hub ở lại phía sau). Xem §6.3.
+>
 > Cập nhật 2026-10-26: **Phase 2.2 — ĐÃ HOÀN THÀNH** — UI/UX thống nhất cho
 > toàn bộ widget + Hub dạng thẻ, và seed data tài khoản mới: 1 tướng khởi đầu
 > suy ra từ tên đăng nhập + rất nhiều Vàng để test chức năng (xem §6.2 dưới đây).
@@ -234,6 +238,23 @@ khởi đầu → chiêu mộ → mở khóa tướng.
 - Mọi màn hình đều có header + thanh tiền tệ + nút về Hub, nút khóa có lý do.
 - Tài khoản 1 tướng vào ải được, chiêu mộ đủ 10 mảnh thì mở khóa tướng mới.
 - Test headless Phase 2.2 pass, các test cũ vẫn pass.
+
+
+### Phase 2.3 — Widget thành popup (kích thước riêng từng widget)
+
+- Hub ở lại phía sau: bấm thẻ widget mở popup trên nền mờ (dim) + khung viền
+  Vàng + nút X góc phải. Nút Quay lại trong widget cũng đóng popup (không
+  chuyển scene), Hub tự refresh trạng thái (Vàng/KNB, đội hình) khi đóng popup.
+- Kích thước popup theo nội dung, không đồng đều:
+  Chiêu mộ 700×360 (nhỏ nhất) | Bày trận 900×540 | Túi đồ 1020×640 |
+  Danh sách tướng 1100×620 | Trang bị/Cường hóa 1140×680 |
+  Vào ải 1180×680 (lớn nhất, 2 cột tướng + ải).
+- Widget mở từ widget khác vẫn là popup: từ Danh sách tướng bấm Xem chi tiết
+  mở popup Trang bị đè lên (đóng popup cũ trước). Trận đấu giữ nguyên màn
+  hình riêng, không phải popup — vào trận từ popup Vào ải sẽ rời Hub, về lại
+  màn chọn ải rồi về Hub như cũ.
+- Trong popup, widget không vẽ thêm thanh tiền tệ riêng (Hub đã hiện sau lớp
+  mờ) và layout đã thu chiều rộng cho vừa khung, có cắt tràn (clip) trong khung.
 
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).

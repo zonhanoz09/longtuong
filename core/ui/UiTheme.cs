@@ -51,6 +51,29 @@ public static class UiTheme
         button.AddThemeColorOverride("font_disabled_color", Muted);
     }
 
+    // True when a widget scene was opened inside the Hub popup host.
+    public static bool IsInHubPopup(Control node) => node.GetParent()?.Name == "PopupContent";
+
+    // Find the Hub that hosts this widget, via its parent chain first
+    // (works even when Hub is not the current scene, e.g. in tests), else via CurrentScene.
+    public static HubScene? FindHubScene(Control node)
+    {
+        Node? p = node.GetParent();
+        while (p != null)
+        {
+            if (p is HubScene hub) return hub;
+            p = p.GetParent();
+        }
+        return node.GetTree().CurrentScene as HubScene;
+    }
+
+    // Close the Hub popup if this widget is inside one. Returns true when it closed.
+    public static bool TryCloseHubPopup(Control node)
+    {
+        var hub = FindHubScene(node);
+        return hub != null && hub.ClosePopup();
+    }
+
     public static Label AddCurrencyBar(Control root, GameManager gm)
     {
         var label = new Label

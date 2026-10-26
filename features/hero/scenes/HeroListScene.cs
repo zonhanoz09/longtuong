@@ -11,7 +11,7 @@ public partial class HeroListScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
-        UiTheme.AddCurrencyBar(this, gm);
+        if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("BackButton"));
         GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         var box = GetNode<VBoxContainer>("HeroBox");
@@ -29,7 +29,9 @@ public partial class HeroListScene : Control
             btn.Pressed += () =>
             {
                 gm.SelectedHeroId = id;
-                GetTree().ChangeSceneToFile("res://features/hero/scenes/HeroScreen.tscn");
+                var hub = UiTheme.FindHubScene(this);
+                if (hub != null && hub.IsPopupOpen) hub.OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HubScene.HeroPopupSize);
+                else GetTree().ChangeSceneToFile("res://features/hero/scenes/HeroScreen.tscn");
             };
             row.AddChild(label);
             row.AddChild(btn);
@@ -37,5 +39,9 @@ public partial class HeroListScene : Control
         }
     }
 
-    private void OnBackPressed() => GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    private void OnBackPressed()
+    {
+        if (UiTheme.TryCloseHubPopup(this)) return;
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    }
 }

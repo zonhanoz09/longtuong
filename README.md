@@ -15,6 +15,15 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.3 — đã làm (widget thành popup, kích thước riêng)
+
+- Hub ở lại phía sau; 6 widget mở thành popup trên nền mờ, khung viền Vàng,
+  nút X góc phải, nút Quay lại đóng popup thay vì chuyển màn hình.
+- Kích thước riêng từng widget: Chiêu mộ 700×360, Bày trận 900×540,
+  Túi đồ 1020×640, Danh sách tướng 1100×620, Trang bị/Cường hóa 1140×680,
+  Vào ải 1180×680.
+- Test: `tests/TestPhase23.tscn` (mở/đóng từng popup, đúng kích thước, Back đóng popup).
+
 ## Phase 2.2 — đã làm (UI/UX + Hub thẻ + seed data)
 
 - Hệ thống UI chung (`core/ui/UiTheme.cs`): nền tối, điểm nhấn Vàng đồng, tiêu đề

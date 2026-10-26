@@ -13,7 +13,7 @@ public partial class RecruitScene : Control
         UiTheme.ApplyBackground(this);
         var gm0 = GetNode<GameManager>("/root/GameManager");
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
-        UiTheme.AddCurrencyBar(this, gm0);
+        if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm0);
         UiTheme.StyleButton(GetNode<Button>("DrawButton"), true);
         UiTheme.StyleButton(GetNode<Button>("BackButton"));
         GetNode<Button>("BackButton").Text = "← Quay lại Hub";
@@ -43,5 +43,9 @@ public partial class RecruitScene : Control
         Refresh();
     }
 
-    private void OnBackPressed() => GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    private void OnBackPressed()
+    {
+        if (UiTheme.TryCloseHubPopup(this)) return;
+        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+    }
 }

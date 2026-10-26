@@ -76,3 +76,26 @@ text = "Dang xuat"
 [connection signal="pressed" from="WidgetBox/EnhanceButton" to="." method="OnEnhancePressed"]
 [connection signal="pressed" from="WidgetBox/RecruitButton" to="." method="OnRecruitPressed"]
 [connection signal="pressed" from="WidgetBox/LogoutButton" to="." method="OnLogoutPressed"]
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+visible = false
+
+[node name="PopupFrame" type="Panel" parent="."]
+layout_mode = 0
+visible = false
+
+[node name="PopupContent" type="Control" parent="PopupFrame"]
+layout_mode = 0
+
+[node name="CloseButton" type="Button" parent="PopupFrame"]
+layout_mode = 0
+text = "X"
+
+[connection signal="pressed" from="PopupFrame/CloseButton" to="." method="OnClosePopupPressed"]

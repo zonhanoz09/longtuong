@@ -16,7 +16,7 @@ public partial class StageSelect : Control
         UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
-        UiTheme.AddCurrencyBar(this, gm);
+        if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("StartButton"), true);
         UiTheme.StyleButton(GetNode<Button>("BackButton"));
         GetNode<Button>("BackButton").Text = "← Quay lại Hub";
@@ -106,6 +106,7 @@ public partial class StageSelect : Control
 
     private void OnBackPressed()
     {
+        if (UiTheme.TryCloseHubPopup(this)) return;
         GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
     }
 }

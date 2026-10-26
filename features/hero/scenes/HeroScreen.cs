@@ -19,7 +19,7 @@ public partial class HeroScreen : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         if (!string.IsNullOrEmpty(gm.SelectedHeroId)) _selected = gm.SelectedHeroId;
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
-        UiTheme.AddCurrencyBar(this, gm);
+        if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("StarUpButton"), true);
         UiTheme.StyleButton(GetNode<Button>("UnlockStarButton"));
         UiTheme.StyleButton(GetNode<Button>("RecruitButton"));
@@ -151,6 +151,7 @@ public partial class HeroScreen : Control
 
     private void OnBackPressed()
     {
+        if (UiTheme.TryCloseHubPopup(this)) return;
         GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
     }
 }
