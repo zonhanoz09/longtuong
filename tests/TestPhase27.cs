@@ -28,13 +28,13 @@ public partial class TestPhase27 : Node
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
         Check(tabBtns.Count == 8, "8 hero tabs in a vertical button column");
         var starter = gm.Save.OwnedHeroIds[0];
-        Check(tabBtns.Count(b => b.Text.Contains("(Khóa)")) == 7, "locked heroes show (Khóa) in tab titles");
+        Check(tabBtns.Count(b => b.Text.Contains("(Khóa)")) == 6, "locked heroes show (Khóa) in tab titles (Luu Bi never locked)");
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid.Columns == 4 && grid.GetChildCount() == 28, "grid is 4 columns x 7 rows = 28 cells");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
         Check(gridButtons.Count(b => b.Disabled == false) == 6, "grid has 6 filled cells from seed");
         // Equip to a locked hero via its tab, then reopen: item leaves the grid.
-        var lockedId = HeroDatabase.Heroes.First(h => h.Id != starter).Id;
+        var lockedId = HeroDatabase.Heroes.First(h => !gm.Save.OwnedHeroIds.Contains(h.Id)).Id;
         var lockedTab = tabBtns.First(b => b.Text.Contains(HeroDatabase.Get(lockedId).Name));
         lockedTab.EmitSignal(Button.SignalName.Pressed);
         gridButtons[0].EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, DoubleClick = true });

@@ -24,7 +24,7 @@ public partial class TestPhase29 : Node
         // Default starter for new accounts, regardless of username.
         Check(SeedService.StarterHeroId("bat_ky_ten_nao") == "custom_hero", "starter is the custom hero, not Luu Bi anymore");
         var save = SeedService.CreateSeededSave("tai_khoan_moi");
-        Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == "custom_hero", "new account owns only the custom hero");
+        Check(save.OwnedHeroIds.Count == 2 && save.OwnedHeroIds[0] == "custom_hero" && save.OwnedHeroIds.Contains("luu_bi"), "new account owns the custom hero + Luu Bi");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == "custom_hero", "new account team is just the custom hero");
         // Old accounts keep their heroes; legacy migration now yields 7.
         var legacy = new SaveData { OwnedHeroIds = new List<string>() };

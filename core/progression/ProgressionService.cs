@@ -85,6 +85,10 @@ public static class ProgressionService
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
         if (save.OwnedHeroIds.Count == 0)
             save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();
+        // Luu Bi is a normal hero like any other and is never locked: any save
+        // missing him gains him on load (no shards spent, no unlock needed).
+        if (!save.OwnedHeroIds.Contains("luu_bi"))
+            save.OwnedHeroIds.Add("luu_bi");
         foreach (var hero in HeroDatabase.Heroes)
         {
             if (!save.Heroes.ContainsKey(hero.Id)) save.Heroes[hero.Id] = new HeroProgress();

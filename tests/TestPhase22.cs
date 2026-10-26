@@ -36,7 +36,7 @@ public partial class TestPhase22 : Node
         Check(SeedService.SeededGold == 100000 && SeedService.SeededGems == 10000, "seed gold 100000 / gems 10000");
         var save = SeedService.CreateSeededSave("huynh");
         Check(save.Gold == 100000 && save.Gems == 10000, "seeded save has test gold/gems");
-        Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == a, "seeded save owns exactly the starter hero");
+        Check(save.OwnedHeroIds.Count == 2 && save.OwnedHeroIds[0] == a && save.OwnedHeroIds.Contains("luu_bi"), "seeded save owns the starter + Luu Bi (never locked)");
         Check(HeroDatabase.Get("custom_hero").Name == "huynh", "custom hero is named after the username");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == a, "seeded save team is just the starter");
     }
@@ -45,7 +45,7 @@ public partial class TestPhase22 : Node
     {
         var save = SeedService.CreateSeededSave("huynh");
         var starter = save.OwnedHeroIds[0];
-        var locked = HeroDatabase.Heroes.First(h => h.Id != starter).Id;
+        var locked = HeroDatabase.Heroes.First(h => !save.OwnedHeroIds.Contains(h.Id)).Id; // not Luu Bi: he is never locked
         save.Shards[locked] = 9;
         Check(ProgressionService.CheckUnlocks(save).Count == 0 && !save.OwnedHeroIds.Contains(locked), "9 shards does not unlock");
         save.Shards[locked] = 10;

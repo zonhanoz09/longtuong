@@ -287,10 +287,15 @@ khởi đầu → chiêu mộ → mở khóa tướng.
 - **Không có trong danh sách chiêu mộ**: `RecruitService.Rates` vẫn chỉ 7
   tướng cũ (tổng 100%), không chứa `custom_hero`, nên không quay ra được
   bằng chiêu mộ; tướng tự tạo chỉ có bằng cách tạo tài khoản mới.
-- Tài khoản mới: **luôn chỉ sở hữu tướng tự tạo** (đội hình [tướng tự tạo],
-  túi 6 món cơ bản) — Lưu Bị từ 2.9 không còn là default nữa nhưng vẫn là
-  tướng thường, quay được bằng chiêu mộ. Tài khoản cũ (kể cả 2.9) KHÔNG tự
-  nhận thêm tướng tự tạo.
+- Tài khoản mới: sở hữu **tướng tự tạo + Lưu Bị** (đội hình vẫn chỉ
+  [tướng tự tạo] — tướng tự tạo mới là default; Lưu Bị sở hữu sẵn, muốn dùng
+  thì thêm vào đội ở Bày trận). Tài khoản cũ (kể cả 2.9) KHÔNG tự nhận thêm
+  tướng tự tạo.
+- Sửa sau 2.10 theo yêu cầu Huynh: **Lưu Bị không bao giờ khóa.** Lưu Bị là
+  tướng bình thường như các tướng khác, không khóa sau mảnh hay sau điều
+  kiện gì: `EnsureDefaults` tự thêm Lưu Bị vào danh sách sở hữu của mọi save
+  còn thiếu hắn khi load (không tốn mảnh), nên tab Lưu Bị không bao giờ hiện
+  "(Khóa)" nữa; chiêu mộ Lưu Bị vẫn quay ra mảnh để tăng sao như thường.
 - Kỹ thuật: tên tướng tự tạo không lưu cố định trong `HeroDatabase` mà được
   gán theo tài khoản đang đăng nhập (`SetCustomHeroName`) ở 2 chỗ: lúc tạo
   tài khoản mới (`SeedService.CreateSeededSave`) và lúc đăng nhập

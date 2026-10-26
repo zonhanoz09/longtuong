@@ -26,7 +26,7 @@ public partial class TestPhase210 : Node
         var save = SeedService.CreateSeededSave("nguoi_choi_a");
         Check(HeroDatabase.Get("custom_hero").Name == "nguoi_choi_a", "custom hero is named after the username");
         Check(SeedService.StarterHeroId("bat_ky_ai") == "custom_hero", "starter is the custom hero for any username");
-        Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == "custom_hero", "new account owns only the custom hero");
+        Check(save.OwnedHeroIds.Count == 2 && save.OwnedHeroIds[0] == "custom_hero" && save.OwnedHeroIds.Contains("luu_bi"), "new account owns the custom hero + Luu Bi (never locked)");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == "custom_hero", "new account team is just the custom hero");
         // Not in the recruit pool.
         Check(!RecruitService.Rates.Any(r => r.HeroId == "custom_hero"), "custom hero is not in the recruit pool");
@@ -41,6 +41,9 @@ public partial class TestPhase210 : Node
         var old = new SaveData { OwnedHeroIds = new List<string> { "luu_bi" } };
         ProgressionService.EnsureDefaults(old);
         Check(!old.OwnedHeroIds.Contains("custom_hero"), "old accounts do not auto-gain the custom hero");
+        var old2 = new SaveData { OwnedHeroIds = new List<string> { "quan_vu" } };
+        ProgressionService.EnsureDefaults(old2);
+        Check(old2.OwnedHeroIds.Contains("luu_bi"), "old accounts gain Luu Bi on load (never locked)");
         // The placeholder hero can still fight (plain 1.0x ult, no engine special-case).
         var eff = ProgressionService.GetEffectiveHero(save, "custom_hero");
         var engine = new BattleEngine(new List<HeroDef> { eff }, HeroDatabase.GetStage(1), 123);
