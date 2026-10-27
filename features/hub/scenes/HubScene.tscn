@@ -191,7 +191,7 @@ offset_left = 360.0
 offset_top = 12.0
 offset_right = 510.0
 offset_bottom = 92.0
-text = "Danh sach tuong"
+text = "Vo tuong"
 
 [node name="BagButton" type="Button" parent="FunctionBar"]
 custom_minimum_size = Vector2(0, 56)

@@ -15,6 +15,13 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.15 — đã làm (nút Võ tướng + ESC tắt popup)
+
+- Nút dưới đầu tiên đổi thành "Võ tướng", bấm mở popup danh sách
+  tướng (tiêu đề Võ Tướng). ESC tắt mọi popup đang mở trên Hub, không
+  có popup thì ESC không làm gì; nút X vẫn hoạt động như cũ.
+- Test: `tests/TestPhase215.tscn` (11 check).
+
 ## Phase 2.14 — đã làm (Hub theo ảnh phác thứ hai)
 
 - Vùng mới: trên y 0–306, giữa y 306–612, dưới y 612–720. Trên phải chỉ

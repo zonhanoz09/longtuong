@@ -83,7 +83,7 @@ public partial class HubScene : Control
         }
         var functions = new (string Node, string Text, bool Primary)[]
         {
-            ("HeroListButton", "Danh sách\ntướng", false),
+            ("HeroListButton", "Võ\ntướng", false),
             ("BagButton", "Túi đồ", false),
             ("FormationButton", "Bày trận", true),
             ("EnhanceButton", "Cường hóa", false),
@@ -104,6 +104,20 @@ public partial class HubScene : Control
     }
 
     public override void _Process(double delta) => StepCharacter((float)delta);
+
+    /// <summary>ESC closes the open Hub popup (any widget, not just Vo tuong).
+    /// Unhandled input only, so widgets that consume a key keep it; a held
+    /// key's echo events are ignored; with no popup open, ESC does nothing
+    /// (it never quits the game from the Hub).</summary>
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!IsPopupOpen) return;
+        if (@event is InputEventKey key && key.Pressed && !key.Echo && key.Keycode == Key.Escape)
+        {
+            ClosePopup();
+            GetViewport()?.SetInputAsHandled();
+        }
+    }
 
     /// <summary>Advance the courtyard character by delta seconds. Public so
     /// headless tests can drive it without waiting for rendered frames.</summary>

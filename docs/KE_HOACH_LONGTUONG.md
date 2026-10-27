@@ -301,6 +301,27 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.15 — Nút Võ tướng + ESC tắt popup (ĐÃ HOÀN THÀNH)
+
+- Nút dưới đầu tiên đổi từ "Danh sách tướng" thành "Võ tướng" theo
+  ảnh phác mới (bấm vào mở đúng popup Danh sách tướng, tiêu đề trong
+  popup vốn đã là "Võ Tướng" từ bản sửa trên editor của Huynh).
+  Popup Võ tướng hiện có đủ 3 cột như ảnh: danh sách tướng trái,
+  chi tiết giữa (cấp/loại, chân dung, EXP, chỉ số, kỹ năng, ô trang bị
+  đang mang), lưới trang bị phải. Chưa làm theo ảnh ở 2 điểm, để đợt
+  sau nếu Huynh muốn khớp hẳn: ô đang mang hiện xếp thành 1 hàng dưới
+  chân dung (ảnh vẽ 3 ô trái + 3 ô phải ôm quanh chân dung), và ảnh
+  có tab "Trang sức" riêng (game mình chưa có hệ trang sức tách khỏi
+  6 ô trang bị: Vũ khí/Giáp/Mũ/Giày/Choàng/Uyển).
+- ESC tắt popup: `HubScene._UnhandledInput` — chỉ khi popup đang mở,
+  chỉ phím ESC bấm thật (bỏ qua phím lặp khi giữ phím), áp cho mọi
+  popup Hub (không riêng Võ tướng); không có popup thì ESC không làm
+  gì, không thoát game. Nút X vẫn tắt như cũ.
+- Test: `tests/TestPhase215.tscn` (11 check, ALL PASS: bấm Võ tướng mở
+  popup HeroListScene tiêu đề Võ Tướng, ESC tắt + ẩn lớp mờ, ESC echo
+  không tắt, ESC khi không có popup không làm gì, Enter không tắt,
+  ESC tắt cả popup Chiêu mộ). CI thêm 2.15.
+
 ### Phase 2.14 — Hub theo ảnh phác thứ hai: Vào ải/Đăng xuất lên trên, 5 nút xuống dưới (ĐÃ HOÀN THÀNH)
 
 - Ảnh phác thứ hai đo được (khung ngoài y 11–460, vạch ngang y 202 và

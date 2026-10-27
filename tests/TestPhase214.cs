@@ -46,7 +46,7 @@ public partial class TestPhase214 : Node
             Check(btn.GlobalPosition == new Vector2(x, 624) && btn.Size == new Vector2(w, 80), $"bottom button {node} at x={x} width={w}");
         }
         var first = hub.GetNode<Button>("FunctionBar/HeroListButton");
-        Check(first.Text.Contains("Danh sách"), "first bottom button is Danh sach tuong");
+        Check(first.Text.Contains("Võ"), "first bottom button is Vo tuong");
 
         // Equipment access is preserved through Cuong hoa (same HeroScreen).
         var enhance = hub.GetNode<Button>("FunctionBar/EnhanceButton");
