@@ -11,71 +11,241 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_hub")
 
-[node name="TitleLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 10.0
-offset_right = 600.0
-offset_bottom = 40.0
-text = "HUB — DAI BAN DOANH"
+; ---- Vung 1 (tren, y 0-320): avatar trai + icon tinh nang phai ----
+; Ti le do tu anh phac cua Huynh: tren 44.5% (0-320/720), cot avatar 21.3% (0-273/1280).
 
-[node name="StatusLabel" type="Label" parent="."]
+[node name="TopBar" type="Control" parent="."]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 50.0
-offset_right = 1260.0
-offset_bottom = 90.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1280.0
+offset_bottom = 320.0
+
+[node name="AvatarPanel" type="Panel" parent="TopBar"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 272.0
+offset_bottom = 304.0
+
+[node name="AvatarBox" type="VBoxContainer" parent="TopBar/AvatarPanel"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 240.0
+offset_bottom = 272.0
+
+[node name="AvatarPortrait" type="ColorRect" parent="TopBar/AvatarPanel/AvatarBox"]
+layout_mode = 0
+custom_minimum_size = Vector2(80, 80)
+color = Color(0.2, 0.35, 0.6, 1)
+
+[node name="AvatarNameLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
+layout_mode = 0
 autowrap_mode = 3
-text = "Dang tai..."
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.91, 0.72, 0.29, 1)
+text = "Nguoi choi"
 
-[node name="WidgetBox" type="GridContainer" parent="."]
-columns = 2
+[node name="AvatarHeroLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 110.0
-offset_right = 620.0
-offset_bottom = 620.0
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Tuong dai dien"
 
-[node name="HeroListButton" type="Button" parent="WidgetBox"]
-custom_minimum_size = Vector2(0, 56)
-text = "Danh sach tuong so huu"
+[node name="AvatarCurrencyLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
+layout_mode = 0
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.91, 0.72, 0.29, 1)
+text = "Vang: 0 | KNB: 0"
 
-[node name="BagButton" type="Button" parent="WidgetBox"]
+[node name="AvatarStatusLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
+layout_mode = 0
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
+text = "So huu: 0 tuong"
+
+[node name="AvatarDivider" type="ColorRect" parent="TopBar"]
+layout_mode = 0
+offset_left = 272.0
+offset_top = 16.0
+offset_right = 274.0
+offset_bottom = 304.0
+color = Color(0.91, 0.72, 0.29, 1)
+
+[node name="FeatureIcons" type="Control" parent="TopBar"]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 16.0
+offset_right = 1264.0
+offset_bottom = 304.0
+
+[node name="HeroListButton" type="Button" parent="TopBar/FeatureIcons"]
 custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 12.0
+offset_top = 84.0
+offset_right = 172.0
+offset_bottom = 204.0
+text = "Danh sach tuong"
+
+[node name="BagButton" type="Button" parent="TopBar/FeatureIcons"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 212.0
+offset_top = 84.0
+offset_right = 372.0
+offset_bottom = 204.0
 text = "Tui do"
 
-[node name="EquipmentButton" type="Button" parent="WidgetBox"]
+[node name="EquipmentButton" type="Button" parent="TopBar/FeatureIcons"]
 custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 412.0
+offset_top = 84.0
+offset_right = 572.0
+offset_bottom = 204.0
 text = "Trang bi"
 
-[node name="FormationButton" type="Button" parent="WidgetBox"]
+[node name="EnhanceButton" type="Button" parent="TopBar/FeatureIcons"]
 custom_minimum_size = Vector2(0, 56)
-text = "Bay tran"
-
-[node name="StageButton" type="Button" parent="WidgetBox"]
-custom_minimum_size = Vector2(0, 56)
-text = "Vao ai"
-
-[node name="EnhanceButton" type="Button" parent="WidgetBox"]
-custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 612.0
+offset_top = 84.0
+offset_right = 772.0
+offset_bottom = 204.0
 text = "Cuong hoa"
 
-[node name="RecruitButton" type="Button" parent="WidgetBox"]
+[node name="RecruitButton" type="Button" parent="TopBar/FeatureIcons"]
 custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 812.0
+offset_top = 84.0
+offset_right = 972.0
+offset_bottom = 204.0
 text = "Chieu mo"
 
-[node name="LogoutButton" type="Button" parent="WidgetBox"]
+[node name="TopSeparator" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 318.0
+offset_right = 1280.0
+offset_bottom = 320.0
+color = Color(0.91, 0.72, 0.29, 1)
+
+; ---- Vung 2 (giua, y 320-643): san nhan vat di chuyen ----
+
+[node name="Courtyard" type="Control" parent="."]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 320.0
+offset_right = 1280.0
+offset_bottom = 643.0
+
+[node name="CourtyardBackground" type="ColorRect" parent="Courtyard"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1280.0
+offset_bottom = 323.0
+color = Color(0.1, 0.16, 0.1, 1)
+
+[node name="CourtyardHintLabel" type="Label" parent="Courtyard"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = 20.0
+offset_top = 8.0
+offset_right = 1260.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
+text = "Bam vao san de nhan vat di chuyen - de yen, nhan vat se tu di dao"
+
+[node name="HubCharacter" type="Control" parent="Courtyard"]
+layout_mode = 0
+offset_left = 608.0
+offset_top = 110.0
+offset_right = 672.0
+offset_bottom = 206.0
+
+[node name="CharacterBody" type="ColorRect" parent="Courtyard/HubCharacter"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 64.0
+offset_bottom = 96.0
+color = Color(0.2, 0.35, 0.6, 1)
+
+[node name="CharacterNameLabel" type="Label" parent="Courtyard/HubCharacter"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = -20.0
+offset_top = 100.0
+offset_right = 84.0
+offset_bottom = 124.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Tuong"
+
+[node name="BottomSeparator" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 641.0
+offset_right = 1280.0
+offset_bottom = 643.0
+color = Color(0.91, 0.72, 0.29, 1)
+
+; ---- Vung 3 (duoi, y 643-720): icon chuc nang ----
+
+[node name="FunctionBar" type="Control" parent="."]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 643.0
+offset_right = 1280.0
+offset_bottom = 720.0
+
+[node name="FormationButton" type="Button" parent="FunctionBar"]
 custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 16.0
+offset_top = 10.0
+offset_right = 416.0
+offset_bottom = 67.0
+text = "Bay tran"
+
+[node name="StageButton" type="Button" parent="FunctionBar"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 440.0
+offset_top = 10.0
+offset_right = 840.0
+offset_bottom = 67.0
+text = "Vao ai"
+
+[node name="LogoutButton" type="Button" parent="FunctionBar"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 864.0
+offset_top = 10.0
+offset_right = 1264.0
+offset_bottom = 67.0
 text = "Dang xuat"
 
-[connection signal="pressed" from="WidgetBox/HeroListButton" to="." method="OnHeroListPressed"]
-[connection signal="pressed" from="WidgetBox/BagButton" to="." method="OnBagPressed"]
-[connection signal="pressed" from="WidgetBox/EquipmentButton" to="." method="OnEquipmentPressed"]
-[connection signal="pressed" from="WidgetBox/FormationButton" to="." method="OnFormationPressed"]
-[connection signal="pressed" from="WidgetBox/StageButton" to="." method="OnStagePressed"]
-[connection signal="pressed" from="WidgetBox/EnhanceButton" to="." method="OnEnhancePressed"]
-[connection signal="pressed" from="WidgetBox/RecruitButton" to="." method="OnRecruitPressed"]
-[connection signal="pressed" from="WidgetBox/LogoutButton" to="." method="OnLogoutPressed"]
+[connection signal="pressed" from="TopBar/FeatureIcons/HeroListButton" to="." method="OnHeroListPressed"]
+[connection signal="pressed" from="TopBar/FeatureIcons/BagButton" to="." method="OnBagPressed"]
+[connection signal="pressed" from="TopBar/FeatureIcons/EquipmentButton" to="." method="OnEquipmentPressed"]
+[connection signal="pressed" from="TopBar/FeatureIcons/EnhanceButton" to="." method="OnEnhancePressed"]
+[connection signal="pressed" from="TopBar/FeatureIcons/RecruitButton" to="." method="OnRecruitPressed"]
+[connection signal="pressed" from="FunctionBar/FormationButton" to="." method="OnFormationPressed"]
+[connection signal="pressed" from="FunctionBar/StageButton" to="." method="OnStagePressed"]
+[connection signal="pressed" from="FunctionBar/LogoutButton" to="." method="OnLogoutPressed"]
+[connection signal="gui_input" from="Courtyard" to="." method="OnCourtyardGuiInput"]
 
 [node name="Dim" type="ColorRect" parent="."]
 layout_mode = 3
@@ -97,4 +267,3 @@ layout_mode = 0
 [node name="CloseButton" type="Button" parent="PopupFrame"]
 layout_mode = 0
 text = "X"
-

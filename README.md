@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.13 — đã làm (Hub chia 3 vùng theo ảnh phác)
+
+- Đo từ ảnh phác: trên 44,5%, giữa 44,8%, dưới 10,7%, cột avatar 21,3%
+  → trên 1280×720 là y 0–320, giữa y 320–643, dưới y 643–720.
+- Trên: thẻ avatar trái (tên, tướng đại diện + Lv/sao, Vàng/KNB, sở hữu/
+  thắng/ải/đội hình) + 5 icon tính năng phải (Danh sách tướng, Túi đồ,
+  Trang bị, Cường hóa, Chiêu mộ). Giữa: sân, tướng mặc định đi lại được
+  (click sân để di chuyển, để yên tự đi dạo, tốc độ 140px/s). Dưới: 3 icon
+  chức năng (Bày trận, Vào ải, Đăng xuất). Đủ 8 widget cũ, popup giữ nguyên.
+- Test: `tests/TestPhase213.tscn` (22 check); test 2.3, 2.11, 2.12 chạy lại vẫn xanh.
+
 ## Phase 2.12 — đã làm (pilot scene-first: Danh sách tướng lên Godot scene)
 
 - Khung tĩnh của màn Danh sách tướng (label chi tiết, chân dung, thanh

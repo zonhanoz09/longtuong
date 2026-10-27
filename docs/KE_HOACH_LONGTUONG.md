@@ -301,6 +301,37 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.13 — Hub chia 3 vùng theo ảnh phác của Huynh (ĐÃ HOÀN THÀNH)
+
+- Ảnh phác đo được (không ước): khung ngoài y 11–413, vạch ngang y 190 và
+  y 370, vạch dọc avatar x 157–159 (trên ảnh 715×445) → tỉ lệ: vùng trên
+  44.5%, vùng giữa 44.8%, thanh dưới 10.7%, cột avatar 21.3%.
+  Map sang viewport 1280×720 của game: trên y 0–320, giữa y 320–643,
+  dưới y 643–720, avatar x 0–273.
+- `HubScene.tscn` viết lại theo đúng 3 vùng, kiểu scene-first như 2.12:
+  vùng trên = `AvatarPanel` trái (tên tài khoản, tướng đại diện + Lv/sao,
+  Vàng/KNB, sở hữu/thắng/ải/đội hình) + `FeatureIcons` phải (5 icon:
+  Danh sách tướng, Túi đồ, Trang bị, Cường hóa, Chiêu mộ);
+  vùng giữa = `Courtyard` (sân, nhân vật tướng mặc định di chuyển);
+  vùng dưới = `FunctionBar` (3 icon: Bày trận, Vào ải, Đăng xuất).
+  Cả 8 widget cũ vẫn đủ (5 + 3), không mất chức năng nào.
+- Nhân vật giữa: khối màu placeholder + tên tướng (chưa có sprite final,
+  như các phase trước), xuất phát giữa sân (608, 110, tọa độ local của
+  sân), vùng đi x 80–1136 / y 40–207 (tọa độ góc trái-trên của nhân vật
+  64×96), tốc độ 140px/s, click vào sân → đi tới điểm click (trừ nửa
+  thân 32×48), để yên 2–5s → tự đi dạo tới điểm ngẫu nhiên trong vùng,
+  lúc đi có nhún nhẹ (chỉ nhún thân, không làm lệch vị trí đã track).
+  Thanh tiền tệ góc phải cũ của `UiTheme.AddCurrencyBar` bị bỏ (trùng
+  vùng icon tính năng) — Vàng/KNB chuyển vào trong thẻ avatar.
+  `TitleLabel`/`StatusLabel`/`WidgetBox` cũ bị xóa; popup các widget
+  và kích thước popup từng widget giữ nguyên như 2.3.
+- Test: `tests/TestPhase213.tscn` (22 check, ALL PASS: 3 vùng đúng tọa
+  độ/kích thước, avatar hiện đúng tên + tướng mặc định đã sở hữu, đủ
+  8 nút, nhân vật đi tới đích + dừng đúng đích + click sân đổi hướng,
+  popup vẫn mở/đóng được). Kiểm chứng thật 2026-10-27: `dotnet build`
+  0 error (6 warning cũ từ test 2.5/2.7/2.11/2.12, không phải file mới);
+  test 2.3, 2.11, 2.12 chạy lại vẫn ALL PASS.
+
 ### Phase 2.11 — Luật: tướng mặc định luôn là tướng đã sở hữu (ĐÃ HOÀN THÀNH)
 
 - Lỗi đã sửa: `GameManager.LoadGame` trước đây không đụng tới

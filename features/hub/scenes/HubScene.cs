@@ -1,12 +1,16 @@
 using Godot;
+using System;
 using System.Linq;
 
 namespace LongTuong;
 
 /// <summary>
-/// Hub stays on screen; every widget opens as a popup panel on top of it
-/// (dim background + gold-bordered frame + X button). Each widget has its own
-/// popup size, tuned to its content: small for Recruit, large for Hero/Stage.
+/// Hub in 3 zones, measured from Huynh's sketch (1280x720):
+/// top 0-320 = avatar (left, 0-273) + feature icons (right),
+/// middle 320-643 = courtyard where the default hero walks,
+/// bottom 643-720 = function bar. Every widget still opens as a popup
+/// panel on top of the Hub (dim background + gold-bordered frame + X).
+/// Popup sizes are unchanged from Phase 2.3.
 /// </summary>
 [GlobalClass]
 public partial class HubScene : Control
@@ -19,49 +23,164 @@ public partial class HubScene : Control
     public static readonly Vector2 StagePopupSize = new(1180, 680);
     public static readonly Vector2 RecruitPopupSize = new(700, 360);
 
+    // Zone bounds on the 1280x720 viewport, from the sketch proportions:
+    // top 44.5%, middle 44.8%, bottom 10.7%; avatar column 21.3%.
+    public static readonly Rect2 TopBarRect = new(0, 0, 1280, 320);
+    public static readonly Rect2 CourtyardRect = new(0, 320, 1280, 323);
+    public static readonly Rect2 FunctionBarRect = new(0, 643, 1280, 77);
+
+    // Walk area, in Courtyard-local coordinates, for the character's
+    // top-left corner (character body is 64x96; hint label sits at y 8-36).
+    public static readonly Rect2 WalkArea = new(80, 40, 1056, 167);
+    public static readonly Vector2 CharacterStart = new(608, 110);
+    public const float CharacterSpeed = 140f;
+
     public bool IsPopupOpen { get; private set; }
+    public Vector2 CharacterPosition => _character?.Position ?? CharacterStart;
+    public bool IsCharacterMoving => _hasTarget;
+
     private Panel? _popupFrame;
     private Control? _popupContent;
     private ColorRect? _dim;
     private Button? _closeButton;
+    private Control? _character;
+    private ColorRect? _characterBody;
+    private Label? _characterName;
+    private Vector2 _target;
+    private bool _hasTarget;
+    private float _idleTimer = 3f;
+    private float _bobTime;
+    private readonly Random _random = new();
 
     public override void _Ready()
     {
         UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
-        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
-        UiTheme.AddCurrencyBar(this, gm);
-        RefreshStatus();
-        var teamNames = string.Join(", ", gm.SelectedTeamIds.Select(id => HeroDatabase.Get(id).Name));
-        var cards = new (string Node, string Text, bool Primary)[]
+        var avatarPanel = GetNode<Panel>("TopBar/AvatarPanel");
+        var panelStyle = new StyleBoxFlat
         {
-            ("HeroListButton", $"Danh sách tướng sở hữu\n{gm.Save.OwnedHeroIds.Count}/6 tướng — xem cấp, sao, mảnh", false),
-            ("BagButton", $"Túi đồ\n{gm.Save.Gold} Vàng — {gm.Save.Gems} KNB", false),
-            ("EquipmentButton", "Trang bị\nCường hóa, tẩy luyện 4 món", false),
-            ("FormationButton", $"Bày trận\nĐội hình: {teamNames}", true),
-            ("StageButton", $"Vào ải\nẢi tiếp theo: {gm.Save.LastStage + 1}/10", true),
-            ("EnhanceButton", "Cường hóa\nNâng cấp trang bị tướng", false),
-            ("RecruitButton", "Chiêu mộ\n100 Vàng = 5 mảnh, tỉ lệ công khai", false),
-            ("LogoutButton", "Đăng xuất\nVề màn hình đăng nhập", false),
+            BgColor = UiTheme.Panel,
+            BorderColor = UiTheme.Gold,
+            BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2,
+            CornerRadiusTopLeft = 12, CornerRadiusTopRight = 12, CornerRadiusBottomLeft = 12, CornerRadiusBottomRight = 12,
         };
-        foreach (var (node, text, primary) in cards)
+        avatarPanel.AddThemeStyleboxOverride("panel", panelStyle);
+        var feature = new (string Node, string Text, bool Primary)[]
         {
-            var btn = GetNode<Button>($"WidgetBox/{node}");
+            ("HeroListButton", "Danh sách\ntướng", false),
+            ("BagButton", "Túi đồ", false),
+            ("EquipmentButton", "Trang bị", false),
+            ("EnhanceButton", "Cường hóa", false),
+            ("RecruitButton", "Chiêu mộ", false),
+        };
+        foreach (var (node, text, primary) in feature)
+        {
+            var btn = GetNode<Button>($"TopBar/FeatureIcons/{node}");
             btn.Text = text;
             UiTheme.StyleButton(btn, primary);
         }
+        var functions = new (string Node, string Text, bool Primary)[]
+        {
+            ("FormationButton", "Bày trận", true),
+            ("StageButton", "Vào ải", true),
+            ("LogoutButton", "Đăng xuất", false),
+        };
+        foreach (var (node, text, primary) in functions)
+        {
+            var btn = GetNode<Button>($"FunctionBar/{node}");
+            btn.Text = text;
+            UiTheme.StyleButton(btn, primary);
+        }
+        _character = GetNode<Control>("Courtyard/HubCharacter");
+        _characterBody = GetNode<ColorRect>("Courtyard/HubCharacter/CharacterBody");
+        _characterName = GetNode<Label>("Courtyard/HubCharacter/CharacterNameLabel");
+        _character.Position = CharacterStart;
+        RefreshAvatar();
         SetupPopupHost();
     }
 
-    private void RefreshStatus()
+    public override void _Process(double delta) => StepCharacter((float)delta);
+
+    /// <summary>Advance the courtyard character by delta seconds. Public so
+    /// headless tests can drive it without waiting for rendered frames.</summary>
+    public void StepCharacter(float delta)
+    {
+        if (_character == null) return;
+        if (_hasTarget)
+        {
+            var toTarget = _target - _character.Position;
+            var dist = toTarget.Length();
+            var step = CharacterSpeed * delta;
+            if (dist <= Math.Max(step, 2f))
+            {
+                _character.Position = _target;
+                _hasTarget = false;
+                _idleTimer = 2f + (float)_random.NextDouble() * 3f; // idle 2-5s, then wander
+                if (_characterBody != null) _characterBody.Position = Vector2.Zero;
+            }
+            else
+            {
+                _character.Position += toTarget / dist * step;
+                // Walk bob (idle placeholder has no walk animation yet):
+                // bounce only the body sprite, never the tracked position.
+                _bobTime += delta * 10f;
+                if (_characterBody != null)
+                    _characterBody.Position = new Vector2(0, (float)Math.Sin(_bobTime) * 3f);
+            }
+            return;
+        }
+        _idleTimer -= delta;
+        if (_idleTimer <= 0f)
+            MoveCharacterTo(new Vector2(
+                WalkArea.Position.X + (float)_random.NextDouble() * WalkArea.Size.X,
+                WalkArea.Position.Y + (float)_random.NextDouble() * WalkArea.Size.Y));
+    }
+
+    /// <summary>Set the character's destination (top-left corner, clamped
+    /// to the walk area). Click handling converts a click point to this
+    /// form by subtracting half the body size first.</summary>
+    public void MoveCharacterTo(Vector2 position)
+    {
+        _target = new Vector2(
+            Math.Clamp(position.X, WalkArea.Position.X, WalkArea.Position.X + WalkArea.Size.X),
+            Math.Clamp(position.Y, WalkArea.Position.Y, WalkArea.Position.Y + WalkArea.Size.Y));
+        _hasTarget = true;
+    }
+
+    private void OnCourtyardGuiInput(InputEvent @event)
+    {
+        if (IsPopupOpen) return;
+        if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+            MoveCharacterTo(mb.Position - new Vector2(32, 48));
+    }
+
+    private void RefreshAvatar()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
-        var status = GetNode<Label>("StatusLabel");
-        UiTheme.StyleBody(status, 17);
         var teamNames = string.Join(", ", gm.SelectedTeamIds.Select(id => HeroDatabase.Get(id).Name));
-        var starter = gm.Save.OwnedHeroIds.Count > 0 ? HeroDatabase.Get(gm.Save.OwnedHeroIds[0]).Name : "?";
-        status.Text = $"Chào {gm.CurrentUsername} | Tướng đại diện: {starter} | Sở hữu: {gm.Save.OwnedHeroIds.Count}/6 tướng | Thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage} | Đội hình: {teamNames}";
+        var heroId = gm.SelectedHeroId;
+        if (string.IsNullOrEmpty(heroId) || !gm.Save.OwnedHeroIds.Contains(heroId))
+            heroId = gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : "";
+        GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarNameLabel").Text =
+            string.IsNullOrEmpty(gm.CurrentUsername) ? "Chưa đăng nhập" : gm.CurrentUsername;
+        if (!string.IsNullOrEmpty(heroId))
+        {
+            var hero = HeroDatabase.Get(heroId);
+            var prog = ProgressionService.ProgressOf(gm.Save, heroId);
+            GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text =
+                $"Tướng: {hero.Name} · Lv {prog.Level} · ★{prog.Stars}";
+            if (_characterName != null) _characterName.Text = hero.Name;
+        }
+        else
+        {
+            GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text = "Chưa có tướng";
+            if (_characterName != null) _characterName.Text = "—";
+        }
+        GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel").Text =
+            $"Vàng: {gm.Save.Gold}  |  KNB: {gm.Save.Gems}";
+        GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarStatusLabel").Text =
+            $"Sở hữu: {gm.Save.OwnedHeroIds.Count}/{HeroDatabase.Heroes.Count} tướng | Thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage} | Đội hình: {teamNames}";
     }
 
     private void SetupPopupHost()
@@ -132,7 +251,7 @@ public partial class HubScene : Control
         ClosePopupSilently();
         if (_dim != null) _dim.Visible = false;
         if (_popupFrame != null) _popupFrame.Visible = false;
-        RefreshStatus();
+        RefreshAvatar();
         return true;
     }
 
