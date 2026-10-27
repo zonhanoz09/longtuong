@@ -1,11 +1,12 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LongTuong;
 
 /// <summary>
-/// Phase 2.18 hero/equipment screen (popup 1000x600, all sizes fixed), with a
+/// Phase 2.19 hero/equipment screen (popup 1000x600, all sizes fixed), with a
 /// Phase 2.12 scene-first pilot: the static layout now lives in
 /// HeroListScene.tscn (detail labels, portrait placeholder, EXP bar,
 /// equipped slots, unequip-all button) and the code only fills in data.
@@ -134,7 +135,7 @@ public partial class HeroListScene : Control
         _tabButtonTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroTabButton.tscn");
         _cellTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/EquipmentCell.tscn");
         _selectedHeroId = gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId) ? gm.SelectedHeroId
-            : gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : HeroDatabase.Heroes[0].Id;
+            : gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : "";
         BuildTabs();
         BuildGrid();
     }
@@ -235,16 +236,32 @@ public partial class HeroListScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
         ClearBox(_tabButtons);
+        // Phase 2.19: the popup shows ONLY owned (recruited) heroes — no
+        // locked tabs at all. A dismissed hero therefore vanishes from this
+        // list entirely (it can come back only by re-unlocking with shards).
+        var ownedHeroes = HeroDatabase.Heroes.Where(h => gm.Save.OwnedHeroIds.Contains(h.Id)).ToList();
+        if (ownedHeroes.Count == 0)
+        {
+            // Unreachable in practice (EnsureDefaults always keeps the two
+            // permanent heroes), but never crash on an empty roster.
+            _selectedHeroId = "";
+            _nameLabel.Text = "Chưa sở hữu tướng nào";
+            ClearBox(_leftEquippedBox);
+            ClearBox(_rightEquippedBox);
+            _dismissButton.Disabled = true;
+            return;
+        }
+        if (!gm.Save.OwnedHeroIds.Contains(_selectedHeroId))
+            _selectedHeroId = ownedHeroes[0].Id;
         // Vertical tab buttons (Godot 4.7 TabContainer only supports Top/Bottom,
         // so vertical tabs are a button column — same look and behavior).
-        foreach (var hero in HeroDatabase.Heroes)
+        foreach (var hero in ownedHeroes)
         {
-            bool owned = gm.Save.OwnedHeroIds.Contains(hero.Id);
             var btn = InstantiateTabButton();
-            btn.Text = owned ? hero.Name : $"{hero.Name} (Khóa)";
+            btn.Text = hero.Name;
             UiTheme.StyleButton(btn, hero.Id == _selectedHeroId);
             var id = hero.Id;
-            btn.Pressed += () => { _selectedHeroId = id; if (gm.Save.OwnedHeroIds.Contains(id)) gm.SelectedHeroId = id; CallDeferred("RebuildAll"); };
+            btn.Pressed += () => { _selectedHeroId = id; gm.SelectedHeroId = id; CallDeferred("RebuildAll"); };
             _tabButtons.AddChild(btn);
         }
         // Detail of the selected tab hero: fill the static scene nodes.

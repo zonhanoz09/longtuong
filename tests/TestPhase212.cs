@@ -50,7 +50,7 @@ public partial class TestPhase212 : Node
         var nameLabel = detail.GetNode<Label>("DetailNameLabel");
         Check(nameLabel.Text.Contains("testscene"), "detail name label shows the current tab hero (custom hero = username)");
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-        Check(tabBtns.Count == 8 && tabBtns.All(b => b.CustomMinimumSize == new Vector2(160, 56)), "8 tab buttons at template size 160x56");
+        Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count && tabBtns.All(b => b.CustomMinimumSize == new Vector2(160, 56) && !b.Text.Contains("(Khóa)")), "tab buttons are one per owned hero at template size 160x56, no locked tabs (2.19)");
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
         Check(gridButtons.Count == 28 && gridButtons.All(b => b.CustomMinimumSize == new Vector2(64, 64)), "28 grid cells at template size 64x64");

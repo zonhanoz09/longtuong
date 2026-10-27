@@ -15,6 +15,13 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.19 — đã làm (popup Võ tướng chỉ hiện tướng sở hữu)
+
+- Popup Võ tướng chỉ tạo tab cho tướng đã chiêu mộ/sở hữu, không còn
+  tab tướng khóa hay hậu tố "(Khóa)". Tướng bị sa thải biến mất khỏi
+  list ngay và khi mở lại, muốn thấy lại phải mở khóa bằng 10 mảnh.
+- Test: `tests/TestPhase219.tscn` (11 check).
+
 ## Phase 2.18 — đã làm (canh lại cột giữa popup Võ tướng + nút Sa thải)
 
 - Cột giữa canh theo ảnh phác: hàng chân dung flush 2 mép (ô 56×56,

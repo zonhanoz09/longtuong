@@ -301,6 +301,32 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.19 — Popup Võ tướng chỉ hiện tướng đã sở hữu (ĐÃ HOÀN THÀNH)
+
+- `HeroListScene` chỉ tạo tab cho tướng trong `OwnedHeroIds` (theo
+  thứ tự roster), không còn tab tướng khóa, không còn hậu tố
+  \"(Khóa)\" trong popup này. Tài khoản mới chỉ thấy 2 tab (tướng tự
+  tạo + Lưu Bị); tướng chiêu mộ được thêm vào thì mở popup lại sẽ
+  thấy tab mới. Tướng bị sa thải biến mất khỏi list ngay sau khi
+  bấm Sa thải (và vẫn biến mất khi mở popup lại) — muốn thấy lại
+  phải mở khóa lại bằng 10 mảnh, không còn hiển thị dạng khóa.
+- Hệ quả: không còn mang đồ cho tướng khóa từ popup Võ tướng (tính
+  năng 2.7) vì tướng khóa không có tab nữa; mang đồ chỉ làm được
+  cho tướng đã sở hữu. Các widget khác không đổi: Bày trận vẫn hiện
+  tướng khóa (để biết cần chiêu mộ ai), Chiêu mộ vẫn là nơi mở khóa.
+- Trường hợp rỗng: `EnsureDefaults` luôn giữ 2 tướng vĩnh viễn nên
+  thực tế không rỗng được, nhưng code vẫn có guard không crash nếu
+  danh sách sở hữu rỗng (hiện \"Chưa sở hữu tướng nào\", tắt Sa thải).
+- Test: `tests/TestPhase219.tscn` (11 check, ALL PASS: tab = đúng số
+  tướng sở hữu, không tab khóa, chiêu mộ thêm thì có tab, sa thải
+  rồi mở lại thì mất tab). Test 2.4 (sửa luôn lỗi cũ từ 2.16: test
+  lấy HBox đầu tiên trong DetailBox tưởng là hàng chân dung nhưng
+  thực ra là EquipmentTabs — nay tìm PortraitRow theo tên), 2.7
+  (bỏ test mang đồ cho tướng khóa, thay bằng mang đồ cho tướng sở
+  hữu), 2.11 (bỏ test bấm tab khóa, thay bằng không có tab khóa +
+  bấm tab sở hữu đổi tướng mặc định), 2.12/2.16/2.17/2.18 cập nhật
+  theo số tab sở hữu, vẫn pass; CI thêm 2.19.
+
 ### Phase 2.18 — Canh lại cột giữa popup Võ tướng theo ảnh phác + nút Sa thải (ĐÃ HOÀN THÀNH)
 
 - Cột giữa canh đúng ảnh phác (đo từ ảnh 432×548: 3 ô mỗi bên cao

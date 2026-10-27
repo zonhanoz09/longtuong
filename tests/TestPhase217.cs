@@ -50,9 +50,9 @@ public partial class TestPhase217 : Node
         Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 540 && tabs.Size.X >= 160 && tabs.Size.X <= 180,
             "hero tabs column at (16,50), height 540");
         var tabBtns = tabs.GetChildren().OfType<Button>().ToList();
-        Check(tabBtns.Count == 8, "all 8 hero tabs still present");
-        Check(!tabBtns.First(b => b.Text.Contains("nhan")).Text.Contains("(Khóa)"),
-            "custom hero tab is not locked for a seeded account");
+        Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count, "tabs are owned heroes only (2.19)");
+        Check(!tabBtns.Any(b => b.Text.Contains("(Khóa)")) && !tabBtns.Any(b => b.Text.Contains("Quan Vũ")),
+            "no locked tabs, and a locked hero (Quan Vu) has no tab at all");
         var detail = heroList.GetNode<VBoxContainer>("DetailBox");
         Check(detail.Position == new Vector2(192, 50) && detail.Size == new Vector2(440, 540),
             "detail column is (192,50) 440x540");

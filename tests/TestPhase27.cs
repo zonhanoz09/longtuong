@@ -26,19 +26,18 @@ public partial class TestPhase27 : Node
         Check(HubScene.HeroListPopupSize == new Vector2(1000, 600), "hero list popup is 1000x600 (2.18)");
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-        Check(tabBtns.Count == 8, "8 hero tabs in a vertical button column");
+        Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count, "tabs are owned heroes only in a vertical button column (2.19)");
         var starter = gm.Save.OwnedHeroIds[0];
-        Check(tabBtns.Count(b => b.Text.Contains("(Khóa)")) == 6, "locked heroes show (Khóa) in tab titles (Luu Bi never locked)");
+        Check(tabBtns.All(b => !b.Text.Contains("(Khóa)")) && !tabBtns.Any(b => b.Text.Contains("Quan Vũ")),
+            "no locked tabs, and a locked hero (Quan Vu) has no tab at all");
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid.Columns == 4 && grid.GetChildCount() == 28, "grid is 4 columns x 7 rows = 28 cells");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
         Check(gridButtons.Count(b => b.Disabled == false) == 6, "grid has 6 filled cells from seed");
-        // Equip to a locked hero via its tab, then reopen: item leaves the grid.
-        var lockedId = HeroDatabase.Heroes.First(h => !gm.Save.OwnedHeroIds.Contains(h.Id)).Id;
-        var lockedTab = tabBtns.First(b => b.Text.Contains(HeroDatabase.Get(lockedId).Name));
-        lockedTab.EmitSignal(Button.SignalName.Pressed);
+        // Equip to the selected owned hero, then reopen: item leaves the grid.
+        // (2.19 removed equipping to locked heroes: they have no tab anymore.)
         gridButtons[0].EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, DoubleClick = true });
-        Check(!gm.Save.HeroEquipment[lockedId]["weapon"].IsEmpty, "grid item equips to a locked hero's tab");
+        Check(!gm.Save.HeroEquipment[starter]["weapon"].IsEmpty, "grid item equips to the selected owned hero");
         hub.ClosePopup();
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;

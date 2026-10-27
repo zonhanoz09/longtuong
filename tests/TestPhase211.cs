@@ -25,7 +25,8 @@ public partial class TestPhase211 : Node
         gm.LoadGame();
         Check(gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId), "after LoadGame, default hero is owned again");
         Check(gm.SelectedHeroId == "custom_hero", "after LoadGame, default hero is the team leader (custom hero)");
-        // Viewing a locked tab must not make it the global default.
+        // Phase 2.19: there is no locked tab at all — the popup shows only
+        // owned heroes, so a locked hero can never become the default here.
         var hubScene = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn");
         Check(hubScene != null, "hub scene loads for default-hero test");
         if (hubScene != null)
@@ -35,9 +36,11 @@ public partial class TestPhase211 : Node
             hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
             var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
             var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-            var lockedTab = tabBtns.First(b => b.Text.Contains("(Khóa)"));
-            lockedTab.EmitSignal(Button.SignalName.Pressed);
-            Check(gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId), "pressing a locked tab does not make it the global default");
+            Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count && tabBtns.All(b => !b.Text.Contains("(Khóa)")),
+                "popup tabs are owned heroes only, no locked tabs");
+            var luuTab = tabBtns.First(b => b.Text.Contains("Lưu Bị"));
+            luuTab.EmitSignal(Button.SignalName.Pressed);
+            Check(gm.SelectedHeroId == "luu_bi", "pressing an owned tab makes it the global default");
             hub.ClosePopup();
             hub.QueueFree();
         }

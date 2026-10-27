@@ -44,17 +44,21 @@ public partial class TestPhase24 : Node
         var tabButtons = heroList?.GetNodeOrNull<VBoxContainer>("TabButtons");
         var tabBtns = tabButtons?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
         // TabButtons is a VBoxContainer, so its buttons stack vertically by construction.
-        Check(tabButtons != null && tabBtns.Count == HeroDatabase.Heroes.Count, "hero tabs are a vertical button column, one per hero");
+        Check(tabButtons != null && tabBtns.Count == HeroDatabase.Heroes.Count, "hero tabs are a vertical button column, one per owned hero (legacy save owns all 8)");
         var grid = heroList?.GetNodeOrNull<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid != null && grid.Columns == 4, "equipment grid has 4 columns");
         Check(grid != null && grid.GetChildCount() == 28, "equipment grid has 28 cells (4x7) when bag is empty");
         if (grid != null)
             Check(grid.GetChildren().OfType<Button>().All(b => b.Text == ""), "grid cells are icon-only (no text)");
         var page = heroList?.GetNodeOrNull<VBoxContainer>("DetailBox");
-        var equippedBox = page?.GetChildren().OfType<HBoxContainer>().FirstOrDefault();
-        Check(equippedBox != null && equippedBox.GetChildren().OfType<Button>().Count() == 6, "hero tab page has 6 equipped icon slots");
-        if (equippedBox != null)
-            Check(equippedBox.GetChildren().OfType<Button>().All(b => b.Text == ""), "equipped slots are icon-only (no text)");
+        // Since 2.16 the first HBox in DetailBox is EquipmentTabs, not the
+        // portrait row — find PortraitRow by name, then its two slot columns.
+        var portraitRow = page?.GetNodeOrNull<HBoxContainer>("PortraitRow");
+        var equippedBtns = portraitRow?.GetChildren().OfType<VBoxContainer>()
+            .SelectMany(v => v.GetChildren().OfType<Button>()).ToList()
+            ?? new System.Collections.Generic.List<Button>();
+        Check(portraitRow != null && equippedBtns.Count == 6, "hero tab page has 6 equipped icon slots");
+        Check(equippedBtns.All(b => b.Text == ""), "equipped slots are icon-only (no text)");
         hub.ClosePopup();
         hub.QueueFree();
         GD.Print(_failures == 0 ? "TEST PHASE2.4: ALL PASS" : $"TEST PHASE2.4: {_failures} FAILURES");

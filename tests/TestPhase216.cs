@@ -38,7 +38,7 @@ public partial class TestPhase216 : Node
         Check(title.Text == "Vo Tuong" && title.HorizontalAlignment == HorizontalAlignment.Center, "title is centred Vo Tuong");
 
         var tabs = heroList.GetNode<VBoxContainer>("TabButtons");
-        // Tabs width is content-driven (longest hero name + "(Khóa)"), so
+        // Tabs width is content-driven (longest owned hero name), so
         // only the position, height and a sane width range are asserted.
         Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 540 && tabs.Size.X >= 160 && tabs.Size.X <= 180, "hero tabs column at left (16,50), height 540, width 160-180");
         var detail = heroList.GetNode<VBoxContainer>("DetailBox");

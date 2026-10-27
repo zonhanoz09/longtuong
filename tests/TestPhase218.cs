@@ -97,23 +97,36 @@ public partial class TestPhase218 : Node
         Check(dismiss.Text == "Sa thải", "dismiss button is labelled Sa thai");
         Check(dismiss.Disabled, "dismiss is disabled for the custom hero (never-locked)");
 
-        // Dismiss from the UI: switch to a dismissible hero, press Sa thải.
+        // Dismiss from the UI: give the account Quan Vu, reopen so the new
+        // tab appears (2.19: tabs are built from the owned list only), then
+        // switch to him and press Sa thải.
         var save = gm.Save;
         save.OwnedHeroIds.Add("quan_vu");
         save.TeamIds = new List<string> { "custom_hero", "quan_vu" };
         gm.SelectedTeamIds = new List<string>(save.TeamIds);
-        var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
+        hub.ClosePopup();
+        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
+        var tabBtns = heroList2.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
+        var dismiss2 = heroList2.GetNode<Button>("DetailBox/DismissRow/DismissButton");
+        Check(tabBtns.Any(b => b.Text.Contains("Quan Vũ")), "newly owned hero appears as a tab after reopen");
         var quanTab = tabBtns.First(b => b.Text.Contains("Quan Vũ"));
         quanTab.EmitSignal(Button.SignalName.Pressed);
         // Tab press rebuilds via CallDeferred, so wait two frames for it.
         await ToSignal(GetTree(), "process_frame");
         await ToSignal(GetTree(), "process_frame");
-        Check(!dismiss.Disabled, "dismiss is enabled for an owned, re-unlockable hero");
-        dismiss.EmitSignal(Button.SignalName.Pressed);
+        Check(!dismiss2.Disabled, "dismiss is enabled for an owned, re-unlockable hero");
+        dismiss2.EmitSignal(Button.SignalName.Pressed);
+        // Dismiss rebuilds via CallDeferred, so wait for the tab list to refresh.
+        await ToSignal(GetTree(), "process_frame");
+        await ToSignal(GetTree(), "process_frame");
         Check(!gm.Save.OwnedHeroIds.Contains("quan_vu"), "pressing Sa thai removes the hero from the owned list");
         Check(gm.SelectedHeroId == "custom_hero", "default hero falls back after dismiss");
         Check(gm.Save.TeamIds.Contains("custom_hero") && !gm.Save.TeamIds.Contains("quan_vu"),
             "team no longer contains the dismissed hero");
+        // 2.19: the dismissed hero's tab is gone from the list entirely.
+        var tabBtnsAfter = heroList2.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
+        Check(!tabBtnsAfter.Any(b => b.Text.Contains("Quan Vũ")), "dismissed hero has no tab in the popup anymore");
 
         hub.ClosePopup();
         hub.QueueFree();
