@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.21 — đã làm (màn trận "ĐẤU TRƯỜNG" tự động + popup kết quả)
+
+- Trận đánh tự động hoàn toàn từng lượt (~1 giây/lượt ở x1), tuyệt
+  kỹ tự tung khi đầy nộ, chỉ còn nút Tăng tốc (x1 → x2 → x3 → x1).
+  Sân đấu: lưới đội hình 2 bên gương nhau + vòng "Thú cưỡi" chờ,
+  ô tướng hiện tên + HP + nộ, không còn nhật ký.
+- Kết thúc: popup Thắng/Thua trận; thắng có sao, dòng thưởng và 5
+  ô thưởng trống (chưa rơi item), thua chỉ có nút Thoát. Thưởng
+  cộng ngay khi thắng, Thoát về Hub.
+- Test: `tests/TestPhase221.tscn` (31 check).
+
 ## Phase 2.20 — đã làm (Bày trận kéo thả 7 ô + hiệu ứng vị trí)
 
 - Popup Bày trận: list tướng sở hữu (tướng đã bày không hiện) kéo thả

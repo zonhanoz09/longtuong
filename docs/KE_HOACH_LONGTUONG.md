@@ -301,6 +301,47 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.21 — Màn trận "ĐẤU TRƯỜNG" tự động + popup kết quả (ĐÃ HOÀN THÀNH)
+
+- `BattleScene` viết lại theo ảnh phác: tiêu đề "ĐẤU TRƯỜNG" giữa
+  trên; mỗi bên một vòng tròn "Thú cưỡi" trống ở góc trên ngoài
+  (chưa có hệ thú cưỡi, chỉ là chỗ chờ); dưới là lưới đội hình
+  2 bên (ta trái, địch phải, gương nhau, Tiền gần giữa sân).
+- Trận đánh tự động hoàn toàn: Timer chạy từng lượt cho người xem
+  (mỗi lượt ~1 giây ở x1), tuyệt kỹ tự tung khi nộ đầy 100, không
+  còn nút Đánh thường / Tuyệt kỹ / Tự động / Quay lại, không còn
+  nhật ký trận đấu. Nút duy nhất trong trận là "Tăng tốc", bấm để
+  đổi x1 → x2 → x3 → về x1 (nhịp = 1 giây / tốc độ). Ô tướng chỉ
+  hiện tướng đã bày đúng vị trí đội hình (ô chưa bày để trống),
+  mỗi ô gồm tên + thanh HP + thanh nộ; ô của tướng đang đánh viền
+  vàng, tướng gục xám đi; có dòng "Lượt: tên (Ta/Địch) — Nộ x/100"
+  dưới sân để theo dõi.
+- Lưới ta: đúng 7 ô đội hình (Hậu 3, Trung 3, Tiền 1, 2 ô trống
+  Tiền trên/dưới là placeholder). Lưới địch tạm thời (đội hình
+  địch thật để phase sau): 3 tướng địch xếp vào Tiền giữa + Trung
+  trên + Trung dưới, các ô còn lại trống; vị trí địch tạm này chỉ
+  để hiển thị, chưa ảnh hưởng engine (địch vẫn chưa có Position
+  nên không hưởng bonus vị trí, ta đánh vẫn nhắm địch thấp máu
+  nhất như cũ).
+- Kết thúc trận: popup kết quả hiện giữa sân, sân vẫn thấy xung
+  quanh. Thắng: tiêu đề "Thắng trận", dòng sao, dòng thưởng
+  (Vàng, KNB, EXP/mảnh mỗi tướng), nhãn "Phần thưởng" + 5 ô vuông
+  trống (chưa có item rơi ra nên 5 ô trống), nút "Thoát". Thua:
+  tiêu đề "Thua trận", dòng "Thử lại với đội hình khác.", chỉ có
+  nút "Thoát", không có thưởng và không có ô thưởng. Thưởng cộng
+  ngay khi thắng qua `ApplyBattleResult` (popup chỉ để xem);
+  "Thoát" về Hub. Trong trận không có nút thoát giữa chừng (theo
+  ảnh, chỉ có Tăng tốc); nút Tăng tốc bị khóa sau khi trận kết
+  thúc.
+- Test: `tests/TestPhase221.tscn` (31 check, ALL PASS: tiêu đề,
+  vòng Thú cưỡi, không còn log/nút đánh tay, lưới 9 ô mỗi bên,
+  địch ở Tiền giữa, ô tướng có tên + HP + nộ, Tăng tốc xoay
+  x1→x2→x3→x1, chạy từng lượt tới popup thắng (đội 5 tướng mạnh
+  vs ải 1) và popup thua (tướng tự tạo đơn độc vs ải 1), thưởng
+  cộng ngay khi thắng). Toàn bộ test cũ 0–2.20 vẫn pass; CI thêm
+  2.21. Lưu ý: test chạy trận bằng `StepBattle()` trực tiếp thay
+  vì chờ Timer thật (Timer chỉ chạy khi có frame).
+
 ### Phase 2.20 — Bày trận kéo thả 7 ô + hiệu ứng vị trí trong trận (ĐÃ HOÀN THÀNH)
 
 - Popup Bày trận làm lại theo ảnh phác (đo từ ảnh: lưới 7 ô tròn,
