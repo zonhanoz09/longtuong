@@ -293,11 +293,11 @@ public partial class HeroListScene : Control
         // the normal/passive detail in a smaller line below it.
         _skillsValueLabel.Text = heroDef.UltName;
         _skillsDetailLabel.Text = $"Đánh thường: {heroDef.NormalName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}";
-        // Dismiss: only for an owned, re-unlockable hero when another hero
+        // Dismiss: only for an owned, non-permanent hero when another hero
         // remains (see ProgressionService.DismissHero for the full rules).
         bool selectedOwned = gm.Save.OwnedHeroIds.Contains(_selectedHeroId);
         _dismissButton.Disabled = !selectedOwned || _selectedHeroId == "custom_hero"
-            || _selectedHeroId == "luu_bi" || gm.Save.OwnedHeroIds.Count <= 1;
+            || gm.Save.OwnedHeroIds.Count <= 1;
         // 6 equipped icon slots (equipped items live ONLY here, never in the
         // grid), flanking the portrait: first 3 slots left, last 3 right.
         ClearBox(_leftEquippedBox);

@@ -105,11 +105,7 @@ public partial class GameManager : Node
         Save.Gold += rewardGold;
         Save.Gems += 5 + (firstClear ? 20 : 0);
         foreach (var heroId in SelectedTeamIds)
-        {
             ProgressionService.AddExp(Save, heroId, 40 + CurrentStageId * 10);
-            ProgressionService.AddShards(Save, heroId, 2);
-        }
-        ProgressionService.CheckUnlocks(Save);
         SaveGame();
     }
 }

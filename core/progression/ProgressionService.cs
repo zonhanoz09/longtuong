@@ -53,7 +53,6 @@ public static class ProgressionService
     public const int MaxEnhanceLevel = 10;
     public const int StarChartNodes = 12;
     public const int RecruitCostGold = 100;
-    public const int RecruitShards = 5;
     public const int RefineCostGold = 100;
 
     public static readonly List<EquipmentSlotDef> Slots = new()
@@ -71,13 +70,12 @@ public static class ProgressionService
         { "Bạo kích +3%", "Né tránh +3%", "Tốc độ +5", "Tấn công +10%", "HP +10%" };
 
     public static int ExpToNext(int level) => 100 + 50 * (level - 1);
-    public static int StarUpCost(int currentStars) => 10 * currentStars;
+
     public static int EnhanceCost(int currentLevel) => 100 * (currentLevel + 1);
 
     public static void EnsureDefaults(SaveData save)
     {
         save.Heroes ??= new Dictionary<string, HeroProgress>();
-        save.Shards ??= new Dictionary<string, int>();
         save.HeroEquipment ??= new Dictionary<string, Dictionary<string, EquipmentState>>();
         save.StageStars ??= new Dictionary<string, int>();
         save.OwnedHeroIds ??= new List<string>();
@@ -85,20 +83,17 @@ public static class ProgressionService
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
         if (save.OwnedHeroIds.Count == 0)
             save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();
-        // Luu Bi is a normal hero like any other and is never locked: any save
-        // missing him gains him on load (no shards spent, no unlock needed).
-        if (!save.OwnedHeroIds.Contains("luu_bi"))
-            save.OwnedHeroIds.Add("luu_bi");
-        // Phase 2.17: same rule for the custom hero — old accounts also gain
-        // it on load (no shards spent). Its display name still comes from the
-        // username (SetCustomHeroName in GameManager.LoadGame / seeded saves),
-        // so this only grants ownership, never a name.
+        // Phase 2.22: the custom hero is the ONLY permanent hero — old
+        // accounts missing it gain it on load. Every other hero (including
+        // Luu Bi) is unlocked via recruit (a later feature), never granted
+        // here. Its display name still comes from the username
+        // (SetCustomHeroName in GameManager.LoadGame / seeded saves), so
+        // this only grants ownership, never a name.
         if (!save.OwnedHeroIds.Contains("custom_hero"))
             save.OwnedHeroIds.Add("custom_hero");
         foreach (var hero in HeroDatabase.Heroes)
         {
             if (!save.Heroes.ContainsKey(hero.Id)) save.Heroes[hero.Id] = new HeroProgress();
-            if (!save.Shards.ContainsKey(hero.Id)) save.Shards[hero.Id] = 0;
             if (!save.HeroEquipment.ContainsKey(hero.Id))
             {
                 var dict = new Dictionary<string, EquipmentState>();
@@ -130,22 +125,6 @@ public static class ProgressionService
         if (p.Level >= MaxLevel) p.Exp = 0;
     }
 
-    public static void AddShards(SaveData save, string heroId, int amount)
-    {
-        EnsureDefaults(save);
-        save.Shards[heroId] += amount;
-    }
-
-    public static bool TryStarUp(SaveData save, string heroId)
-    {
-        var p = ProgressOf(save, heroId);
-        int cost = StarUpCost(p.Stars);
-        if (p.Stars >= MaxStars || save.Shards[heroId] < cost) return false;
-        save.Shards[heroId] -= cost;
-        p.Stars++;
-        return true;
-    }
-
     public static bool TryEnhance(SaveData save, string heroId, string slotId)
     {
         EnsureDefaults(save);
@@ -169,36 +148,19 @@ public static class ProgressionService
 
     public static int StarChartPoints(SaveData save) => save.StageStars.Values.Sum();
 
-    // Unlock any locked hero that reached 10 shards (costs 10 shards). Returns newly unlocked ids.
-    public static List<string> CheckUnlocks(SaveData save)
-    {
-        EnsureDefaults(save);
-        var unlocked = new List<string>();
-        foreach (var hero in HeroDatabase.Heroes)
-        {
-            if (!save.OwnedHeroIds.Contains(hero.Id) && save.Shards[hero.Id] >= SeedService.UnlockShards)
-            {
-                save.Shards[hero.Id] -= SeedService.UnlockShards;
-                save.OwnedHeroIds.Add(hero.Id);
-                unlocked.Add(hero.Id);
-            }
-        }
-        return unlocked;
-    }
     /// <summary>Phase 2.18: dismiss a hero = remove it from the owned roster
-    /// only. Equipped items return to the bag (never lost); shards reset to 0
-    /// so the hero does not instantly auto-unlock on the next battle win
-    /// (CheckUnlocks triggers at 10 shards); level/stars are kept, so
-    /// re-unlocking restores them. Blocked for the two never-locked heroes
-    /// (custom + Luu Bi: EnsureDefaults would restore them on the next load,
-    /// so dismiss would be a no-op), for heroes not owned, and for the last
-    /// owned hero (an empty roster cannot battle).</summary>
+    /// only. Equipped items return to the bag (never lost); level/stars are
+    /// kept, so re-recruiting the hero later restores them. Blocked for the
+    /// only permanent hero (custom: EnsureDefaults would restore it on the
+    /// next load, so dismiss would be a no-op), for heroes not owned, and
+    /// for the last owned hero (an empty roster cannot battle). Phase 2.22:
+    /// Luu Bi is a normal hero now, so he CAN be dismissed.</summary>
     public static bool DismissHero(SaveData save, string heroId)
     {
         EnsureDefaults(save);
         save.TeamIds ??= new List<string>();
         if (!save.OwnedHeroIds.Contains(heroId)) return false;
-        if (heroId == "custom_hero" || heroId == "luu_bi") return false;
+        if (heroId == "custom_hero") return false;
         if (save.OwnedHeroIds.Count <= 1) return false;
         foreach (var slot in Slots)
         {
@@ -220,7 +182,6 @@ public static class ProgressionService
         }
         if (save.TeamIds.Count == 0 && save.OwnedHeroIds.Count > 0)
             save.TeamIds.Add(save.OwnedHeroIds[0]);
-        save.Shards[heroId] = 0;
         return true;
     }
 

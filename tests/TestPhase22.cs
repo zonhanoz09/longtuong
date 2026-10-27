@@ -12,7 +12,7 @@ public partial class TestPhase22 : Node
     public override void _Ready()
     {
         CheckSeed();
-        CheckUnlock();
+        CheckNoShardUnlock();
         CheckLegacyMigration();
         CheckOneHeroBattle();
         CheckUiTheme();
@@ -36,21 +36,20 @@ public partial class TestPhase22 : Node
         Check(SeedService.SeededGold == 100000 && SeedService.SeededGems == 10000, "seed gold 100000 / gems 10000");
         var save = SeedService.CreateSeededSave("huynh");
         Check(save.Gold == 100000 && save.Gems == 10000, "seeded save has test gold/gems");
-        Check(save.OwnedHeroIds.Count == 2 && save.OwnedHeroIds[0] == a && save.OwnedHeroIds.Contains("luu_bi"), "seeded save owns the starter + Luu Bi (never locked)");
+        Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == a, "seeded save owns ONLY the starter (2.22: Luu Bi is recruit-only now)");
         Check(HeroDatabase.Get("custom_hero").Name == "huynh", "custom hero is named after the username");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == a, "seeded save team is just the starter");
     }
 
-    private void CheckUnlock()
+    private void CheckNoShardUnlock()
     {
+        // Phase 2.22: shards are gone, so nothing auto-unlocks a locked hero
+        // on load — locked heroes stay locked until recruit (a later feature).
         var save = SeedService.CreateSeededSave("huynh");
-        var starter = save.OwnedHeroIds[0];
-        var locked = HeroDatabase.Heroes.First(h => !save.OwnedHeroIds.Contains(h.Id)).Id; // not Luu Bi: he is never locked
-        save.Shards[locked] = 9;
-        Check(ProgressionService.CheckUnlocks(save).Count == 0 && !save.OwnedHeroIds.Contains(locked), "9 shards does not unlock");
-        save.Shards[locked] = 10;
-        var unlocked = ProgressionService.CheckUnlocks(save);
-        Check(unlocked.Contains(locked) && save.OwnedHeroIds.Contains(locked) && save.Shards[locked] == 0, "10 shards unlocks hero and spends 10 shards");
+        var locked = HeroDatabase.Heroes.First(h => !save.OwnedHeroIds.Contains(h.Id)).Id;
+        ProgressionService.EnsureDefaults(save);
+        Check(!save.OwnedHeroIds.Contains(locked), "locked hero stays locked after EnsureDefaults (no shard unlock)");
+        Check(save.OwnedHeroIds.Count == 1, "new account still owns only the starter after EnsureDefaults");
     }
 
     private void CheckLegacyMigration()

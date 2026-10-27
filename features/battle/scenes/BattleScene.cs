@@ -243,11 +243,11 @@ public partial class BattleScene : Control
         int expPerHero = 40 + gm.CurrentStageId * 10;
         // Rewards are applied immediately on win; the popup is display-only.
         gm.ApplyBattleResult(_engine.PlayerWon, stars, rewardGold);
-        ShowResultPopup(_engine.PlayerWon, stars, rewardGold, gems, expPerHero, 2);
+        ShowResultPopup(_engine.PlayerWon, stars, rewardGold, gems, expPerHero);
         Refresh();
     }
 
-    private void ShowResultPopup(bool won, int stars, int gold, int gems, int expPerHero, int shardsPerHero)
+    private void ShowResultPopup(bool won, int stars, int gold, int gems, int expPerHero)
     {
         bool win = won;
         var popup = new Control { Name = "ResultPopup" };
@@ -286,7 +286,7 @@ public partial class BattleScene : Control
             vbox.AddChild(starsLabel);
             var rewardLabel = new Label
             {
-                Text = $"Thưởng: +{gold} Vàng, +{gems} Kim Nguyên Bảo, +{expPerHero} EXP mỗi tướng, +{shardsPerHero} mảnh mỗi tướng",
+                Text = $"Thưởng: +{gold} Vàng, +{gems} Kim Nguyên Bảo, +{expPerHero} EXP mỗi tướng",
                 HorizontalAlignment = HorizontalAlignment.Center,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             };

@@ -21,12 +21,12 @@ public partial class TestPhase217 : Node
 
     private void RunChecks()
     {
-        // Old account (pre-2.10, no custom hero, no Luu Bi) gains both on load.
+        // Old account (pre-2.10, no custom hero, no Luu Bi) gains the custom
+        // hero on load; 2.22: it does NOT gain Luu Bi anymore.
         var old = new SaveData { OwnedHeroIds = new List<string> { "quan_vu", "truong_phi" } };
         ProgressionService.EnsureDefaults(old);
         Check(old.OwnedHeroIds.Contains("custom_hero"), "old account gains the custom hero on load");
-        Check(old.OwnedHeroIds.Contains("luu_bi"), "old account still gains Luu Bi on load");
-        Check(old.Shards["custom_hero"] == 0, "custom hero grant costs no shards");
+        Check(!old.OwnedHeroIds.Contains("luu_bi"), "old account does NOT gain Luu Bi on load anymore (2.22)");
 
         var gm = GetNode<GameManager>("/root/GameManager");
         gm.CreateSeededSave("nhan");

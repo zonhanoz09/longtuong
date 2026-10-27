@@ -23,29 +23,29 @@ public partial class TestPhase218 : Node
     {
         // --- DismissHero rules, on plain saves (no scene needed) ---
         var s = SeedService.CreateSeededSave("test218");
-        // Seeded: custom + luu_bi owned, team = [custom]. Give a third hero
-        // so dismiss has somewhere to fall back to.
+        // Seeded (2.22): only custom owned, team = [custom]. Give two more
+        // heroes so dismiss has somewhere to fall back to.
         s.OwnedHeroIds.Add("quan_vu");
+        s.OwnedHeroIds.Add("luu_bi");
         s.TeamIds = new List<string> { "custom_hero", "quan_vu" };
-        s.Shards["quan_vu"] = 12;
         EquipmentService.EquipFromBag(s, "quan_vu", 0);
         int bagBefore = s.BagEquipment.Count;
-        Check(ProgressionService.DismissHero(s, "quan_vu"), "dismissing an owned, re-unlockable hero succeeds");
+        Check(ProgressionService.DismissHero(s, "quan_vu"), "dismissing an owned, non-permanent hero succeeds");
         Check(!s.OwnedHeroIds.Contains("quan_vu"), "dismissed hero leaves the owned list");
         Check(s.TeamIds.Count == 1 && s.TeamIds[0] == "custom_hero", "team falls back to the remaining hero");
         Check(s.BagEquipment.Count == bagBefore + 1, "equipped item returns to the bag on dismiss (not lost)");
         Check(s.HeroEquipment["quan_vu"].Values.All(eq => eq.IsEmpty), "dismissed hero's slots are all empty");
-        Check(s.Shards["quan_vu"] == 0, "dismissed hero's shards reset to 0 (no instant auto-unlock)");
+        // 2.22: Luu Bi is a normal hero now, so he CAN be dismissed.
+        Check(ProgressionService.DismissHero(s, "luu_bi"), "Luu Bi can be dismissed now (normal hero, 2.22)");
 
         // Blocked cases.
-        Check(!ProgressionService.DismissHero(s, "custom_hero"), "custom hero cannot be dismissed (never-locked)");
-        Check(!ProgressionService.DismissHero(s, "luu_bi"), "Luu Bi cannot be dismissed (never-locked)");
+        Check(!ProgressionService.DismissHero(s, "custom_hero"), "custom hero cannot be dismissed (the only permanent hero)");
         Check(!ProgressionService.DismissHero(s, "truong_phi"), "locked hero cannot be dismissed");
         // The roster can never become empty: EnsureDefaults always keeps the
-        // two never-locked heroes (custom + Luu Bi) owned, and DismissHero
-        // also refuses the last owned hero as defence-in-depth.
-        Check(s.OwnedHeroIds.Count == 2 && s.OwnedHeroIds.Contains("custom_hero") && s.OwnedHeroIds.Contains("luu_bi"),
-            "after dismiss, only the two permanent heroes remain");
+        // custom hero owned, and DismissHero also refuses the last owned hero
+        // as defence-in-depth.
+        Check(s.OwnedHeroIds.Count == 1 && s.OwnedHeroIds.Contains("custom_hero"),
+            "after dismiss, only the permanent custom hero remains");
 
         // --- Scene layout: portrait row, stats grid, skills row, dismiss ---
         var gm = GetNode<GameManager>("/root/GameManager");
@@ -115,7 +115,7 @@ public partial class TestPhase218 : Node
         // Tab press rebuilds via CallDeferred, so wait two frames for it.
         await ToSignal(GetTree(), "process_frame");
         await ToSignal(GetTree(), "process_frame");
-        Check(!dismiss2.Disabled, "dismiss is enabled for an owned, re-unlockable hero");
+        Check(!dismiss2.Disabled, "dismiss is enabled for an owned, non-permanent hero");
         dismiss2.EmitSignal(Button.SignalName.Pressed);
         // Dismiss rebuilds via CallDeferred, so wait for the tab list to refresh.
         await ToSignal(GetTree(), "process_frame");

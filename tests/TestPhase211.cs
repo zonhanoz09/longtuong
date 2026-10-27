@@ -31,6 +31,9 @@ public partial class TestPhase211 : Node
         Check(hubScene != null, "hub scene loads for default-hero test");
         if (hubScene != null)
         {
+            // 2.22: a seeded save owns only the custom hero, so grant Quan Vu
+            // explicitly for the tab-press check (he is a normal hero now).
+            gm.Save.OwnedHeroIds.Add("quan_vu");
             var hub = hubScene.Instantiate<HubScene>();
             AddChild(hub);
             hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
@@ -38,9 +41,9 @@ public partial class TestPhase211 : Node
             var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
             Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count && tabBtns.All(b => !b.Text.Contains("(Khóa)")),
                 "popup tabs are owned heroes only, no locked tabs");
-            var luuTab = tabBtns.First(b => b.Text.Contains("Lưu Bị"));
-            luuTab.EmitSignal(Button.SignalName.Pressed);
-            Check(gm.SelectedHeroId == "luu_bi", "pressing an owned tab makes it the global default");
+            var quanTab = tabBtns.First(b => b.Text.Contains("Quan Vũ"));
+            quanTab.EmitSignal(Button.SignalName.Pressed);
+            Check(gm.SelectedHeroId == "quan_vu", "pressing an owned tab makes it the global default");
             hub.ClosePopup();
             hub.QueueFree();
         }

@@ -13,7 +13,6 @@ public static class SeedService
 {
     public const int SeededGold = 100000;
     public const int SeededGems = 10000;
-    public const int UnlockShards = 10;
 
     public const string DefaultStarterHeroId = "custom_hero";
 
@@ -25,9 +24,10 @@ public static class SeedService
         ProgressionService.EnsureDefaults(save);
         HeroDatabase.SetCustomHeroName(username);
         var starter = StarterHeroId(username);
-        // Luu Bi is never locked: every new account owns him from the start,
-        // alongside the custom hero. Team stays [custom hero] (the default).
-        save.OwnedHeroIds = new List<string> { starter, "luu_bi" };
+        // Phase 2.22: a new account owns ONLY the custom hero. Every other
+        // hero (including Luu Bi) is unlocked via recruit (a later feature).
+        // Team stays [custom hero] (the default).
+        save.OwnedHeroIds = new List<string> { starter };
         save.TeamIds = new List<string> { starter };
         // Phase 2.5: starter starts with NO equipped items; the bag holds 6
         // basic items (one per slot) so equip -> unequip -> re-equip can be tested.

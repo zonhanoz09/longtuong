@@ -32,12 +32,12 @@ public partial class TestPhase219 : Node
         if (heroList == null) { hub.QueueFree(); Finish(); return; }
 
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-        Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count, "tab count equals owned count (seeded: 2)");
+        Check(tabBtns.Count == gm.Save.OwnedHeroIds.Count, "tab count equals owned count (seeded: 1)");
         Check(tabBtns.All(b => !b.Text.Contains("(Khóa)")), "no locked tab suffix anywhere");
         Check(!tabBtns.Any(b => b.Text.Contains("Quan Vũ")) && !tabBtns.Any(b => b.Text.Contains("Triệu Vân")),
             "locked heroes (Quan Vu, Trieu Van) have no tabs");
         Check(tabBtns.Any(b => b.Text.Contains("test219")), "custom hero tab shows the username");
-        Check(tabBtns.Any(b => b.Text.Contains("Lưu Bị")), "Luu Bi tab is present (never locked)");
+        Check(!tabBtns.Any(b => b.Text.Contains("Lưu Bị")), "Luu Bi tab is ABSENT for a new account (2.22: recruit-only)");
 
         // Recruit a hero (add to owned), reopen: his tab appears.
         gm.Save.OwnedHeroIds.Add("quan_vu");
@@ -47,7 +47,7 @@ public partial class TestPhase219 : Node
         hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns2 = heroList2.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-        Check(tabBtns2.Count == 3 && tabBtns2.Any(b => b.Text.Contains("Quan Vũ")),
+        Check(tabBtns2.Count == 2 && tabBtns2.Any(b => b.Text.Contains("Quan Vũ")),
             "newly owned hero appears as a tab after reopen");
 
         // Dismiss him from the UI, reopen: his tab is gone entirely.
@@ -63,7 +63,7 @@ public partial class TestPhase219 : Node
         hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList3 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns3 = heroList3.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
-        Check(tabBtns3.Count == 2 && !tabBtns3.Any(b => b.Text.Contains("Quan Vũ")),
+        Check(tabBtns3.Count == 1 && !tabBtns3.Any(b => b.Text.Contains("Quan Vũ")),
             "dismissed hero has no tab after reopen (not shown as locked either)");
 
         hub.ClosePopup();

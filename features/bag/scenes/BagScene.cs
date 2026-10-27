@@ -17,9 +17,9 @@ public partial class BagScene : Control
         void Add(string text) { var l = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart }; UiTheme.StyleBody(l, 15); box.AddChild(l); }
         Add($"Vàng: {gm.Save.Gold} | Kim Nguyên Bảo: {gm.Save.Gems} | Trận thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage}");
         Add($"Tướng Tinh: {gm.Save.StarNodesUnlocked}/12 ô | Tổng sao ải: {ProgressionService.StarChartPoints(gm.Save)}");
-        Add("— Mảnh tướng —");
+        Add("— Tướng —");
         foreach (var hero in HeroDatabase.Heroes)
-            Add($"{hero.Name}: {gm.Save.Shards[hero.Id]} mảnh — Cấp {gm.Save.Heroes[hero.Id].Level} — Sao {gm.Save.Heroes[hero.Id].Stars}/5");
+            Add($"{hero.Name}: Cấp {gm.Save.Heroes[hero.Id].Level} — Sao {gm.Save.Heroes[hero.Id].Stars}/5");
         Add("— Trang bị (cấp cường hóa) —");
         foreach (var hero in HeroDatabase.Heroes)
         {

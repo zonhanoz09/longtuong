@@ -14,7 +14,6 @@ public partial class TestPhase2 : Node
     public override void _Ready()
     {
         CheckExpAndLevel();
-        CheckStarUp();
         CheckScaling();
         CheckEquipment();
         CheckStarChart();
@@ -48,19 +47,6 @@ public partial class TestPhase2 : Node
         s2.Heroes["quan_vu"].Level = 60;
         ProgressionService.AddExp(s2, "quan_vu", 99999);
         Check(s2.Heroes["quan_vu"].Level == 60, "level capped at 60");
-    }
-
-    private void CheckStarUp()
-    {
-        var s = Fresh();
-        Check(ProgressionService.StarUpCost(1) == 10 && ProgressionService.StarUpCost(4) == 40, "star-up cost 10*stars");
-        s.Shards["quan_vu"] = 9;
-        Check(!ProgressionService.TryStarUp(s, "quan_vu"), "star-up fails with 9/10 shards");
-        s.Shards["quan_vu"] = 10;
-        Check(ProgressionService.TryStarUp(s, "quan_vu") && s.Heroes["quan_vu"].Stars == 2 && s.Shards["quan_vu"] == 0, "star-up 1->2 spends 10 shards");
-        s.Heroes["quan_vu"].Stars = 5;
-        s.Shards["quan_vu"] = 999;
-        Check(!ProgressionService.TryStarUp(s, "quan_vu"), "star-up fails at max 5 stars");
     }
 
     private void CheckScaling()
@@ -119,15 +105,14 @@ public partial class TestPhase2 : Node
     private void CheckRecruit()
     {
         Check(RecruitService.Rates.Sum(r => r.Weight) == 100, "recruit rates sum to 100");
+        // Phase 2.22: recruit is disabled pending its rework — TryRecruit
+        // never charges gold, whatever the balance.
         var s = Fresh(); s.Gold = 50;
-        Check(!RecruitService.TryRecruit(s, new Random(1), out _) && s.Gold == 50, "recruit fails with insufficient gold");
+        Check(!RecruitService.TryRecruit(s, new Random(1), out _) && s.Gold == 50, "disabled recruit charges nothing (low gold)");
         var s2 = Fresh();
-        Check(RecruitService.TryRecruit(s2, new Random(42), out var heroId) && s2.Gold == 100000 - 100 && s2.Shards[heroId] == 5, "recruit costs 100 and grants 5 shards");
-        var s3 = Fresh();
-        RecruitService.TryRecruit(s3, new Random(42), out var h1);
-        var s4 = Fresh();
-        RecruitService.TryRecruit(s4, new Random(42), out var h2);
-        Check(h1 == h2, "same recruit seed => same hero");
+        Check(!RecruitService.TryRecruit(s2, new Random(42), out _) && s2.Gold == 100000, "disabled recruit charges nothing (full gold)");
+        // The draw core stays deterministic for the future rework.
+        Check(RecruitService.DrawHero(new Random(42)) == RecruitService.DrawHero(new Random(42)), "same draw seed => same hero");
     }
 
     private void CheckEffectiveBattle()
@@ -148,14 +133,14 @@ public partial class TestPhase2 : Node
         try
         {
             var s = Fresh();
-            s.Heroes["lu_bo"].Level = 12; s.Heroes["lu_bo"].Stars = 4; s.Shards["lu_bo"] = 33;
+            s.Heroes["lu_bo"].Level = 12; s.Heroes["lu_bo"].Stars = 4;
             s.HeroEquipment["lu_bo"]["weapon"].IsEmpty = false; s.HeroEquipment["lu_bo"]["weapon"].Level = 5; s.HeroEquipment["lu_bo"]["weapon"].RefineIndex = 2;
             s.StarNodesUnlocked = 3; s.Gems = 77;
             SaveManager.Save(path, s);
             var loaded = SaveManager.Load(path);
             ProgressionService.EnsureDefaults(loaded);
             Check(loaded.Heroes["lu_bo"].Level == 12 && loaded.Heroes["lu_bo"].Stars == 4, "save/load preserves hero level/stars");
-            Check(loaded.Shards["lu_bo"] == 33 && loaded.Gems == 77 && loaded.StarNodesUnlocked == 3, "save/load preserves shards/gems/star nodes");
+            Check(loaded.Gems == 77 && loaded.StarNodesUnlocked == 3, "save/load preserves gems/star nodes");
             Check(loaded.HeroEquipment["lu_bo"]["weapon"].Level == 5 && loaded.HeroEquipment["lu_bo"]["weapon"].RefineIndex == 2, "save/load preserves equipment");
             var empty = new SaveData();
             ProgressionService.EnsureDefaults(empty);

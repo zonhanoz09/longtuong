@@ -301,6 +301,37 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.22 — Loại bỏ hoàn toàn mảnh tướng (ĐÃ HOÀN THÀNH)
+
+- Mảnh tướng không còn trong game: xóa `SaveData.Shards`,
+  `AddShards`, `CheckUnlocks`, `TryStarUp`/`StarUpCost`,
+  `RecruitShards`, `SeedService.UnlockShards` và mọi dòng hiển thị
+  mảnh (màn Trang bị/Cường hóa, Túi đồ). Thắng trận không còn
+  +2 mảnh, popup thắng chỉ còn Vàng/KNB/EXP (+ sao ải).
+- Tài khoản mới chỉ sở hữu tướng tự tạo (không còn Lưu Bị mặc
+  định); tài khoản cũ cũng không được tặng Lưu Bị khi load nữa.
+  Lưu Bị trở thành tướng thường: mở bằng chiêu mộ (feature sau)
+  và có thể sa thải được. Tướng tự tạo là tướng vĩnh viễn duy
+  nhất, vẫn không sa thải được và vẫn là tướng mặc định.
+- Nút Tăng sao bị xóa khỏi màn Trang bị/Cường hóa (sao vẫn hiển
+  thị và vẫn nhân chỉ số, nhưng tạm thời không có cách tăng sao
+  cho tới khi chiêu mộ mới ra mắt).
+- Chiêu mộ tạm khóa (theo lệnh Huynh, làm ở feature sau):
+  `TryRecruit` luôn trả false và không trừ Vàng; nút Chiêu mộ ở
+  màn Trang bị/Cường hóa và nút Quay ở màn Chiêu mộ đều bị khóa
+  kèm dòng "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau".
+  `DrawHero` + tỉ lệ công khai giữ nguyên làm lõi quay cho bản
+  chiêu mộ mới.
+- Save cũ: mảnh đã tích lũy bỏ luôn, không quy đổi. File save cũ
+  có field `Shards` vẫn load được bình thường (field thừa tự bị
+  bỏ qua khi đọc JSON).
+- Test: `tests/TestPhase222.tscn` (ALL PASS: tài khoản mới chỉ có
+  tướng tự tạo, chiêu mộ không trừ Vàng, sa thải Lưu Bị được,
+  thắng trận không mở khóa tướng khóa, save cũ có field Shards
+  vẫn load được, nút Tăng sao biến mất, nút chiêu mộ bị khóa).
+  Toàn bộ test cũ 0–2.21 đã cập nhật theo luật mới và vẫn pass;
+  CI thêm 2.22.
+
 ### Phase 2.21 — Màn trận "ĐẤU TRƯỜNG" tự động + popup kết quả (ĐÃ HOÀN THÀNH)
 
 - `BattleScene` viết lại theo ảnh phác: tiêu đề "ĐẤU TRƯỜNG" giữa

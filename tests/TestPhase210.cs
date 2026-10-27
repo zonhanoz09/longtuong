@@ -26,7 +26,7 @@ public partial class TestPhase210 : Node
         var save = SeedService.CreateSeededSave("nguoi_choi_a");
         Check(HeroDatabase.Get("custom_hero").Name == "nguoi_choi_a", "custom hero is named after the username");
         Check(SeedService.StarterHeroId("bat_ky_ai") == "custom_hero", "starter is the custom hero for any username");
-        Check(save.OwnedHeroIds.Count == 2 && save.OwnedHeroIds[0] == "custom_hero" && save.OwnedHeroIds.Contains("luu_bi"), "new account owns the custom hero + Luu Bi (never locked)");
+        Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == "custom_hero", "new account owns ONLY the custom hero (2.22: Luu Bi is recruit-only now)");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == "custom_hero", "new account team is just the custom hero");
         // Not in the recruit pool.
         Check(!RecruitService.Rates.Any(r => r.HeroId == "custom_hero"), "custom hero is not in the recruit pool");
@@ -37,14 +37,15 @@ public partial class TestPhase210 : Node
         Check(gm.SelectedHeroId == "custom_hero" && HeroDatabase.Get("custom_hero").Name == "ten_moi", "GameManager seed names the custom hero");
         gm.LoadGame();
         Check(HeroDatabase.Get("custom_hero").Name == "ten_moi", "reload after login keeps the custom hero name");
-        // Phase 2.17 supersedes the 2.10 rule: old accounts DO gain the
-        // custom hero on load, like Luu Bi (no shards spent, never locked).
+        // Phase 2.17: old accounts DO gain the custom hero on load.
+        // Phase 2.22 supersedes the 2.10 rule: Luu Bi is NO LONGER granted
+        // on load — he is a normal recruit-only hero now.
         var old = new SaveData { OwnedHeroIds = new List<string> { "luu_bi" } };
         ProgressionService.EnsureDefaults(old);
         Check(old.OwnedHeroIds.Contains("custom_hero"), "old accounts gain the custom hero on load (2.17)");
         var old2 = new SaveData { OwnedHeroIds = new List<string> { "quan_vu" } };
         ProgressionService.EnsureDefaults(old2);
-        Check(old2.OwnedHeroIds.Contains("luu_bi"), "old accounts gain Luu Bi on load (never locked)");
+        Check(!old2.OwnedHeroIds.Contains("luu_bi"), "old accounts do NOT gain Luu Bi on load anymore (2.22)");
         Check(old2.OwnedHeroIds.Contains("custom_hero"), "old accounts gain the custom hero on load too (2.17)");
         // The placeholder hero can still fight (plain 1.0x ult, no engine special-case).
         var eff = ProgressionService.GetEffectiveHero(save, "custom_hero");

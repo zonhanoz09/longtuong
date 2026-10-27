@@ -14,10 +14,13 @@ public partial class RecruitScene : Control
         var gm0 = GetNode<GameManager>("/root/GameManager");
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm0);
-        UiTheme.StyleButton(GetNode<Button>("DrawButton"), true);
+        var drawBtn = GetNode<Button>("DrawButton");
+        UiTheme.StyleButton(drawBtn, true);
+        drawBtn.Disabled = true; // Phase 2.22: recruit pending rework.
         _statusLabel = GetNode<Label>("StatusLabel");
         _goldLabel = GetNode<Label>("GoldLabel");
-        GetNode<Label>("RatesLabel").Text = $"Tỉ lệ công khai (1 lượt = 5 mảnh 1 tướng): {RecruitService.RatesText()}.";
+        if (_statusLabel != null) _statusLabel.Text = "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau.";
+        GetNode<Label>("RatesLabel").Text = $"Tỉ lệ công khai (cho bản chiêu mộ mới): {RecruitService.RatesText()}.";
         Refresh();
     }
 
@@ -34,10 +37,10 @@ public partial class RecruitScene : Control
         if (RecruitService.TryRecruit(gm.Save, new System.Random(), out var heroId))
         {
             string unlock = !ownedBefore.Contains(heroId) && gm.Save.OwnedHeroIds.Contains(heroId) ? $" Đã mở khóa tướng {HeroDatabase.Get(heroId).Name}!" : "";
-            if (_statusLabel != null) _statusLabel.Text = $"Chúc mừng! Nhận 5 mảnh {HeroDatabase.Get(heroId).Name}.{unlock}";
+            if (_statusLabel != null) _statusLabel.Text = $"Chúc mừng! Nhận tướng {HeroDatabase.Get(heroId).Name}.{unlock}";
             gm.SaveGame();
         }
-        else if (_statusLabel != null) _statusLabel.Text = "Không đủ Vàng (cần 100)! Thắng ải để kiếm thêm.";
+        else if (_statusLabel != null) _statusLabel.Text = "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau.";
         Refresh();
     }
 

@@ -16,7 +16,7 @@ public class SaveData
     public Dictionary<string, int> StageStars { get; set; } = new();
     public Dictionary<string, HeroProgress> Heroes { get; set; } = new();
     public List<string> OwnedHeroIds { get; set; } = new();
-    public Dictionary<string, int> Shards { get; set; } = new();
+
     public Dictionary<string, Dictionary<string, EquipmentState>> HeroEquipment { get; set; } = new();
     public List<BagEquipmentItem> BagEquipment { get; set; } = new();
     public int StarNodesUnlocked { get; set; } = 0;

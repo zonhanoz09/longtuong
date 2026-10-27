@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.22 — đã làm (loại bỏ hoàn toàn mảnh tướng)
+
+- Xóa sạch mảnh tướng: không còn mảnh trong save, chiêu mộ, tăng
+  sao, thưởng trận hay hiển thị. Nút Tăng sao bị xóa; thưởng
+  thắng chỉ còn Vàng/KNB/EXP.
+- Tài khoản mới chỉ có tướng tự tạo; Lưu Bị thành tướng thường
+  (mở bằng chiêu mộ ở feature sau, sa thải được). Chiêu mộ tạm
+  khóa kèm dòng "đang được làm lại", không trừ Vàng. Save cũ có
+  mảnh vẫn load được, mảnh cũ bỏ luôn không quy đổi.
+- Test: `tests/TestPhase222.tscn` (ALL PASS).
+
 ## Phase 2.21 — đã làm (màn trận "ĐẤU TRƯỜNG" tự động + popup kết quả)
 
 - Trận đánh tự động hoàn toàn từng lượt (~1 giây/lượt ở x1), tuyệt

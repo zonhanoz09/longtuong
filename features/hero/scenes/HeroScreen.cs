@@ -21,9 +21,10 @@ public partial class HeroScreen : Control
         if (!string.IsNullOrEmpty(gm.SelectedHeroId)) _selected = gm.SelectedHeroId;
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
-        UiTheme.StyleButton(GetNode<Button>("StarUpButton"), true);
         UiTheme.StyleButton(GetNode<Button>("UnlockStarButton"));
-        UiTheme.StyleButton(GetNode<Button>("RecruitButton"));
+        var recruitBtn = GetNode<Button>("RecruitButton");
+        UiTheme.StyleButton(recruitBtn);
+        recruitBtn.Disabled = true; // Phase 2.22: recruit pending rework.
         UiTheme.StyleButton(GetNode<Button>("UnequipAllButton"));
         if (!gm.Save.OwnedHeroIds.Contains(_selected) && gm.Save.OwnedHeroIds.Count > 0) _selected = gm.Save.OwnedHeroIds[0];
         ProgressionService.EnsureDefaults(gm.Save);
@@ -122,7 +123,7 @@ public partial class HeroScreen : Control
         var eff = ProgressionService.GetEffectiveHero(save, _selected);
         var next = p.Level >= ProgressionService.MaxLevel ? "MAX" : $"{p.Exp}/{ProgressionService.ExpToNext(p.Level)}";
         if (_detailLabel != null)
-            _detailLabel.Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — Cấp {p.Level} (EXP {next}) — Sao {p.Stars}/5 — Mảnh: {save.Shards[_selected]}\n" +
+            _detailLabel.Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — Cấp {p.Level} (EXP {next}) — Sao {p.Stars}/5\n" +
                 $"Hiệu lực: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}\n" +
                 $"Đánh thường: {hero.NormalName} | Tuyệt kỹ: {hero.UltName} | Bị động: {hero.PassiveName} — {hero.PassiveDesc}\n" +
                 $"Vàng: {save.Gold} | Kim Nguyên Bảo: {save.Gems} | Trận thắng: {save.Wins}\n{_status}";
@@ -146,18 +147,10 @@ public partial class HeroScreen : Control
         {
             int points = ProgressionService.StarChartPoints(save);
             int nextCost = (save.StarNodesUnlocked + 1) * 2;
-            _starLabel.Text = $"Tướng Tinh: đã mở {save.StarNodesUnlocked}/12 ô (+3% HP/ATK toàn đội mỗi ô) — Điểm sao ải: {points} — Ô tiếp theo cần {nextCost} điểm. Tăng sao tốn {ProgressionService.StarUpCost(p.Stars)} mảnh (hiện có {save.Shards[_selected]}).";
+            _starLabel.Text = $"Tướng Tinh: đã mở {save.StarNodesUnlocked}/12 ô (+3% HP/ATK toàn đội mỗi ô) — Điểm sao ải: {points} — Ô tiếp theo cần {nextCost} điểm.";
         }
         if (_recruitLabel != null)
-            _recruitLabel.Text = $"Chiêu mộ: 100 Vàng = 5 mảnh 1 tướng ngẫu nhiên. Tỉ lệ công khai: {RecruitService.RatesText()}.";
-    }
-
-    private void OnStarUpPressed()
-    {
-        var gm = GetNode<GameManager>("/root/GameManager");
-        if (ProgressionService.TryStarUp(gm.Save, _selected)) { _status = "Tăng sao thành công!"; gm.SaveGame(); }
-        else _status = "Tăng sao thất bại: đã tối đa hoặc không đủ mảnh!";
-        Refresh();
+            _recruitLabel.Text = "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau.";
     }
 
     private void OnUnlockStarPressed()
@@ -173,10 +166,10 @@ public partial class HeroScreen : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         if (RecruitService.TryRecruit(gm.Save, new System.Random(), out var heroId))
         {
-            _status = $"Chiêu mộ được 5 mảnh {HeroDatabase.Get(heroId).Name}!";
+            _status = $"Chiêu mộ được {HeroDatabase.Get(heroId).Name}!";
             gm.SaveGame();
         }
-        else _status = "Không đủ Vàng để chiêu mộ (cần 100)!";
+        else _status = "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau.";
         Refresh();
     }
 

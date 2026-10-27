@@ -4,8 +4,12 @@ using System.Linq;
 
 namespace LongTuong;
 
-/// <summary>Recruit (shard gacha). Rates are public and shown in the UI.
-/// One draw costs 100 Gold and grants 5 shards of a single hero.</summary>
+/// <summary>Recruit (gacha). Phase 2.22: the shard system was removed, and
+/// the new recruit grant (direct hero unlock / star-up on duplicates) is a
+/// later feature, so TryRecruit is temporarily disabled: it never charges
+/// gold and always returns false. DrawHero + Rates stay as the (shard-free)
+/// random draw core for that future rework, and rates are still shown in
+/// the UI.</summary>
 public static class RecruitService
 {
     // Weights sum to 100.
@@ -30,13 +34,10 @@ public static class RecruitService
 
     public static bool TryRecruit(SaveData save, Random rng, out string heroId)
     {
+        // Phase 2.22: recruit is disabled pending its rework (see the class
+        // comment). Never charge gold while there is no grant to give.
         heroId = "";
-        if (save.Gold < ProgressionService.RecruitCostGold) return false;
-        save.Gold -= ProgressionService.RecruitCostGold;
-        heroId = DrawHero(rng);
-        ProgressionService.AddShards(save, heroId, ProgressionService.RecruitShards);
-        ProgressionService.CheckUnlocks(save);
-        return true;
+        return false;
     }
 
     public static string RatesText() => string.Join(", ",

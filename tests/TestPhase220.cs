@@ -41,7 +41,7 @@ public partial class TestPhase220 : Node
         Check(save.TeamIds.Contains("custom_hero"), "2.20: seeded team contains main");
 
         // --- Migration from an old save (TeamIds, no Formation) ---
-        // Note: a seeded save owns only [custom, luu_bi], so the old team must
+        // Note: a seeded save owns only [custom], so the old team must
         // be granted ownership first, like a real old account would have.
         var old = SeedService.CreateSeededSave("Old220");
         old.OwnedHeroIds = new List<string> { "custom_hero", "luu_bi", "quan_vu", "truong_phi", "gia_cat_luong" };
