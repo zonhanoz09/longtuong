@@ -19,9 +19,10 @@ namespace LongTuong;
 public partial class HubScene : Control
 {
     // Popup content sizes (width x height), one per widget.
-    // Phase 2.17: shrunk from 1180x660 to match the sketch (Hub stays visible
-    // around the popup: frame is 1036x596, centred at (122, 62) on 1280x720).
-    public static readonly Vector2 HeroListPopupSize = new(1000, 560);
+    // Phase 2.18: 1000x600 (was 1000x560 in 2.17 — the dismiss button, the
+    // stats grid and the "Kinh nghiệm" title need 40px more, still smaller
+    // than the original 1180x660; frame is 1036x636, centred at (122, 42)).
+    public static readonly Vector2 HeroListPopupSize = new(1000, 600);
     public static readonly Vector2 BagPopupSize = new(1020, 640);
     public static readonly Vector2 HeroPopupSize = new(1140, 680);
     public static readonly Vector2 FormationPopupSize = new(900, 540);

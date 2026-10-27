@@ -39,11 +39,14 @@ public partial class TestPhase212 : Node
             && detail.GetNodeOrNull<VBoxContainer>("PortraitRow/LeftEquippedBox") != null
             && detail.GetNodeOrNull<VBoxContainer>("PortraitRow/RightEquippedBox") != null
             && detail.GetNodeOrNull<ProgressBar>("DetailExpBar") != null
-            && detail.GetNodeOrNull<Label>("DetailStatsLabel") != null
-            && detail.GetNodeOrNull<Label>("DetailSkillsLabel") != null
+            && detail.GetNodeOrNull<GridContainer>("DetailStatsGrid") != null
+            && detail.GetNodeOrNull<HBoxContainer>("SkillsRow") != null
+            && detail.GetNodeOrNull<Label>("SkillsDetailLabel") != null
+            && detail.GetNodeOrNull<HBoxContainer>("DismissRow") != null
+            && detail.GetNodeOrNull<Button>("DismissRow/DismissButton") != null
             && detail.GetNodeOrNull<Label>("DetailPortraitLabel") == null
             && detail.GetNodeOrNull<Label>("DetailExpLabel") == null
-            && detail.GetNodeOrNull<Button>("UnequipAllButton") == null, "detail structure (tabs, portrait flanked by 3+3 equipped slots, exp bar only — 2.17 removed portrait label, EXP text line and unequip-all button) is in the scene");
+            && detail.GetNodeOrNull<Button>("UnequipAllButton") == null, "detail structure (tabs, portrait flanked by 3+3 equipped slots, exp bar, stats grid, skills row, dismiss button — 2.17 removed portrait label, EXP text line and unequip-all button) is in the scene");
         var nameLabel = detail.GetNode<Label>("DetailNameLabel");
         Check(nameLabel.Text.Contains("testscene"), "detail name label shows the current tab hero (custom hero = username)");
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();

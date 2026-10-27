@@ -301,6 +301,48 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.18 — Canh lại cột giữa popup Võ tướng theo ảnh phác + nút Sa thải (ĐÃ HOÀN THÀNH)
+
+- Cột giữa canh đúng ảnh phác (đo từ ảnh 432×548: 3 ô mỗi bên cao
+  ~69, gap ~28, ô trái sát mép trái, ô phải sát mép phải, thanh EXP
+  full chiều rộng cột, chỉ số thành 2 cặp mỗi hàng, Kỹ năng + tên
+  tuyệt kỹ cùng một hàng, nút Sa thải sát mép phải dưới cùng):
+  hàng chân dung flush 2 mép cột — ô đang mang 56×56 (lưới túi vẫn
+  64×64), gap 6, tổng chiều cao cột ô = 3×56 + 2×6 = 180 = chiều cao
+  chân dung, chân dung giãn đầy phần giữa (Fill+Expand) nên ô phải
+  luôn sát mép phải; trên thanh EXP có tiêu đề \"Kinh nghiệm\" căn
+  giữa; chỉ số làm lại thành GridContainer 4 cột (nhãn 130, giá trị
+  80, nhãn 130, giá trị 80) nên mọi giá trị thẳng hàng, không còn
+  đoạn text cách khoảng như trước; hàng Kỹ năng gồm nhãn rộng 200 +
+  tên tuyệt kỹ; dưới là dòng chi tiết nhỏ (đánh thường | bị động);
+  giữa chỉ số và kỹ năng có đường kẻ vàng.
+- Vì thêm nút Sa thải + lưới chỉ số + tiêu đề Kinh nghiệm, popup
+  cao thêm 40px: 1000×600 (vẫn nhỏ hơn bản 1180×660 gốc, khung
+  1036×636 ở (122, 42), Hub vẫn thấy xung quanh), cột giữa 440×540.
+  Lưới túi, tab tướng, tab Trang sức khóa giữ nguyên.
+- Không bịa chỉ số: ảnh phác ghi \"Trí\" và \"Vị trí Trung quân\" nhưng
+  engine không có dữ liệu Trí hay vị trí quân (Tiền/Trung/Hậu quân),
+  nên lưới chỉ số dùng đúng 8 chỉ số thật có: Sức, Sinh mệnh, Nhanh,
+  Chiến lực, Phòng thủ, Bạo, Né, Vị trí trong quân (Tiên phong/Võ/
+  Mưu/Phụ). Muốn có Trí/Trung quân thật thì phải thêm dữ liệu vào
+  engine ở một phase riêng, không phải chỉ sửa layout.
+- Nút Sa thải (viền đỏ, 120×36, sát mép phải): bấm thì tướng đó bị
+  xóa khỏi danh sách sở hữu (`ProgressionService.DismissHero`): đồ
+  đang mang trả hết về túi (không mất món), mảnh reset về 0 để
+  tướng không tự mở lại ở trận thắng tiếp theo (luật mở khóa tự động
+  khi đủ 10 mảnh), cấp/sao giữ nguyên nên mở lại bằng 10 mảnh sẽ
+  khôi phục; đội hình bỏ tướng đó, nếu rỗng thì lấy tướng sở hữu
+  đầu tiên, tướng mặc định chuyển theo; tab tướng đó chuyển thành
+  \"(Khóa)\". Nút bị khóa (xám) với: tướng chưa sở hữu, tướng tự tạo
+  và Lưu Bị (2 tướng vĩnh viễn — `EnsureDefaults` sẽ cấp lại ngay
+  lần load sau nên sa thải chỉ là no-op), và tướng sở hữu cuối cùng
+  (đội hình không bao giờ rỗng vì 2 tướng vĩnh viễn luôn còn).
+- Test: `tests/TestPhase218.tscn` (27 check, ALL PASS: luật sa thải
+  trên save thuần + bấm Sa thải trên UI thật, hàng chân dung 180px,
+  ô 56×56, lưới 4 cột 16 ô, hàng Kỹ năng, nút khóa/mở đúng từng
+  trường hợp). Test 2.5/2.6/2.7/2.10/2.11/2.12/2.15/2.16/2.17 cập nhật
+  theo kích thước 1000×600 và node mới, vẫn pass; CI thêm 2.18.
+
 ### Phase 2.17 — Thu nhỏ popup Võ tướng, xóa phần dư thừa, tài khoản cũ nhận tướng tự tạo (ĐÃ HOÀN THÀNH)
 
 - Popup thu từ 1180×660 xuống **1000×560 cố định** theo ảnh phác:

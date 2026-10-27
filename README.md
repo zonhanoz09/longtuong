@@ -15,6 +15,18 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.18 — đã làm (canh lại cột giữa popup Võ tướng + nút Sa thải)
+
+- Cột giữa canh theo ảnh phác: hàng chân dung flush 2 mép (ô 56×56,
+  gap 6, cao 180), tiêu đề "Kinh nghiệm" căn giữa trên thanh EXP,
+  chỉ số thành lưới 4 cột (nhãn 130 / giá trị 80) cho thẳng hàng,
+  hàng Kỹ năng + tên tuyệt kỹ, nút Sa thải sát mép phải dưới cùng.
+- Popup 1000×600 (cao thêm 40px so với 2.17 để vừa nội dung mới).
+- Nút Sa thải: xóa tướng khỏi danh sách sở hữu, đồ trả về túi, mảnh
+  reset về 0, cấp/sao giữ lại; khóa với tướng chưa sở hữu, tướng tự
+  tạo, Lưu Bị và tướng cuối cùng.
+- Test: `tests/TestPhase218.tscn` (27 check).
+
 ## Phase 2.17 — đã làm (thu nhỏ popup Võ tướng, xóa phần dư thừa)
 
 - Popup Võ tướng thu từ 1180×660 xuống **1000×560 cố định**, Hub thấy

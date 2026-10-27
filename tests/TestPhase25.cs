@@ -99,7 +99,7 @@ public partial class TestPhase25 : Node
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
-        Check(HubScene.HeroListPopupSize == new Vector2(1000, 560), "hero list popup is 1000x560 (2.17)");
+        Check(HubScene.HeroListPopupSize == new Vector2(1000, 600), "hero list popup is 1000x600 (2.18)");
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "hero list popup opens");
         if (heroList == null) { hub.QueueFree(); return; }

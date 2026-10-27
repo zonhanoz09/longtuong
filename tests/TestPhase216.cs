@@ -32,7 +32,7 @@ public partial class TestPhase216 : Node
         Check(heroList != null, "popup widget is the hero list scene");
         if (heroList == null) { hub.QueueFree(); Finish(); return; }
 
-        Check(heroList.Position == Vector2.Zero && heroList.Size == new Vector2(1000, 560), "popup content is 1000x560 (2.17)");
+        Check(heroList.Position == Vector2.Zero && heroList.Size == new Vector2(1000, 600), "popup content is 1000x600 (2.18)");
         Check(heroList.Scale == Vector2.One, "popup root is not scaled (editor scale artifact fixed)");
         var title = heroList.GetNode<Label>("TitleLabel");
         Check(title.Text == "Vo Tuong" && title.HorizontalAlignment == HorizontalAlignment.Center, "title is centred Vo Tuong");
@@ -40,11 +40,11 @@ public partial class TestPhase216 : Node
         var tabs = heroList.GetNode<VBoxContainer>("TabButtons");
         // Tabs width is content-driven (longest hero name + "(Khóa)"), so
         // only the position, height and a sane width range are asserted.
-        Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 500 && tabs.Size.X >= 160 && tabs.Size.X <= 180, "hero tabs column at left (16,50), height 500, width 160-180");
+        Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 540 && tabs.Size.X >= 160 && tabs.Size.X <= 180, "hero tabs column at left (16,50), height 540, width 160-180");
         var detail = heroList.GetNode<VBoxContainer>("DetailBox");
-        Check(detail.Position == new Vector2(192, 50) && detail.Size == new Vector2(440, 500), "detail column in the middle (192,50) 440x500");
+        Check(detail.Position == new Vector2(192, 50) && detail.Size == new Vector2(440, 540), "detail column in the middle (192,50) 440x540");
         var gridPanel = heroList.GetNode<VBoxContainer>("GridPanel");
-        Check(gridPanel.Position == new Vector2(648, 50) && gridPanel.Size == new Vector2(336, 500), "bag grid column at right (648,50) 336x500");
+        Check(gridPanel.Position == new Vector2(648, 50) && gridPanel.Size == new Vector2(336, 540), "bag grid column at right (648,50) 336x540");
 
         var equipTab = heroList.GetNode<Button>("DetailBox/EquipmentTabs/EquipmentTabButton");
         var accessoryTab = heroList.GetNode<Button>("DetailBox/EquipmentTabs/AccessoryTabButton");
@@ -56,15 +56,18 @@ public partial class TestPhase216 : Node
         var right = heroList.GetNode<VBoxContainer>("DetailBox/PortraitRow/RightEquippedBox").GetChildren().OfType<Button>().ToList();
         var portrait = heroList.GetNode<ColorRect>("DetailBox/PortraitRow/DetailPortrait");
         Check(left.Count == 3 && right.Count == 3, "equipped slots are 3 left + 3 right");
-        Check(left.Concat(right).All(b => b.CustomMinimumSize == new Vector2(64, 64)), "equipped cells are 64x64");
+        Check(left.Concat(right).All(b => b.CustomMinimumSize == new Vector2(56, 56)), "equipped cells are 56x56 (2.18)");
         Check(row.GetChildren().IndexOf(portrait) == 1, "portrait sits between the left and right slot columns");
-        Check(portrait.CustomMinimumSize == new Vector2(260, 200), "portrait is 260x200");
+        Check(portrait.CustomMinimumSize == new Vector2(260, 180), "portrait is 260x180 (matches the 3x56+2x6 icon columns)");
 
-        var stats = heroList.GetNode<Label>("DetailBox/DetailStatsLabel");
-        Check(stats.Text.Contains("Sức:") && stats.Text.Contains("Sinh mệnh:") && stats.Text.Contains("Nhanh:")
-            && stats.Text.Contains("Chiến lực:") && stats.Text.Contains("Vị trí trong quân:"), "stats grid has Suc / Sinh menh / Nhanh / Chien luc / Vi tri");
-        var skills = heroList.GetNode<Label>("DetailBox/DetailSkillsLabel");
-        Check(skills.Text.Contains("Kỹ năng"), "detail shows Ky nang");
+        var statsGrid = heroList.GetNode<GridContainer>("DetailBox/DetailStatsGrid");
+        Check(statsGrid.Columns == 4 && statsGrid.GetChildCount() == 16, "stats grid is 4 columns x 4 rows (label, value, label, value)");
+        Check(heroList.GetNode<Label>("DetailBox/DetailStatsGrid/StatAtkLabel").Text == "Sức:"
+            && heroList.GetNode<Label>("DetailBox/DetailStatsGrid/StatHpLabel").Text == "Sinh mệnh:"
+            && heroList.GetNode<Label>("DetailBox/DetailStatsGrid/StatRoleLabel").Text == "Vị trí trong quân:", "stats grid labels are Suc / Sinh menh / Vi tri");
+        var skillsLabel = heroList.GetNode<Label>("DetailBox/SkillsRow/SkillsLabel");
+        var skillsValue = heroList.GetNode<Label>("DetailBox/SkillsRow/SkillsValueLabel");
+        Check(skillsLabel.Text == "Kỹ năng" && !string.IsNullOrEmpty(skillsValue.Text), "skills row shows Ky nang + the ult name");
 
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();

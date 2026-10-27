@@ -185,6 +185,38 @@ public static class ProgressionService
         }
         return unlocked;
     }
+    /// <summary>Phase 2.18: dismiss a hero = remove it from the owned roster
+    /// only. Equipped items return to the bag (never lost); shards reset to 0
+    /// so the hero does not instantly auto-unlock on the next battle win
+    /// (CheckUnlocks triggers at 10 shards); level/stars are kept, so
+    /// re-unlocking restores them. Blocked for the two never-locked heroes
+    /// (custom + Luu Bi: EnsureDefaults would restore them on the next load,
+    /// so dismiss would be a no-op), for heroes not owned, and for the last
+    /// owned hero (an empty roster cannot battle).</summary>
+    public static bool DismissHero(SaveData save, string heroId)
+    {
+        EnsureDefaults(save);
+        save.TeamIds ??= new List<string>();
+        if (!save.OwnedHeroIds.Contains(heroId)) return false;
+        if (heroId == "custom_hero" || heroId == "luu_bi") return false;
+        if (save.OwnedHeroIds.Count <= 1) return false;
+        foreach (var slot in Slots)
+        {
+            var eq = save.HeroEquipment[heroId][slot.Id];
+            if (!eq.IsEmpty)
+            {
+                save.BagEquipment.Add(new BagEquipmentItem { SlotId = slot.Id, Level = eq.Level, RefineIndex = eq.RefineIndex });
+                eq.IsEmpty = true;
+            }
+        }
+        save.OwnedHeroIds.Remove(heroId);
+        save.TeamIds.Remove(heroId);
+        if (save.TeamIds.Count == 0 && save.OwnedHeroIds.Count > 0)
+            save.TeamIds.Add(save.OwnedHeroIds[0]);
+        save.Shards[heroId] = 0;
+        return true;
+    }
+
     public static bool TryUnlockStarNode(SaveData save)
     {
         if (save.StarNodesUnlocked >= StarChartNodes) return false;

@@ -11,11 +11,12 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_list")
 
-; Phase 2.17 — popup thu nho con 1000x560 (fix cung, theo anh phac):
-; trai: tab tuong doc 160x500; giua: 440x500 (tab Trang bi/Trang suc + chan dung
-; om 3 o trai + 3 o phai + thanh EXP + chi so + ky nang, khong con dong Chan dung,
-; khong con dong EXP/Sao/Manh, khong con nut Thao tat ca); phai: 336x500 luoi
-; trang bi trong tui 4 cot, co dinh 28 o (o co item hien item do, o trong de trong).
+; Phase 2.18 — cot giua canh theo anh phac (popup 1000x600, fix cung):
+; hang chan dung flush 2 mep cot: o trai 56 + chan dung gian day + o phai 56,
+; moi cot o cao 180 (3 o 56, gap 6); duoi la tieu de "Kinh nghiem" can giua +
+; thanh EXP full cot; luoi chi so 4 cot (nhan, gia tri, nhan, gia tri) de
+; moi gia tri thang hang; hang Ky nang (nhan rong 200 + ten tuyet ky);
+; duoi cung, sat mep phai, la nut Sa thai. Tab Trang suc van khoa xam.
 
 [node name="TitleLabel" type="Label" parent="."]
 layout_mode = 0
@@ -31,7 +32,7 @@ layout_mode = 0
 offset_left = 16.0
 offset_top = 50.0
 offset_right = 176.0
-offset_bottom = 550.0
+offset_bottom = 590.0
 
 [node name="DetailBox" type="VBoxContainer" parent="."]
 clip_contents = true
@@ -39,7 +40,7 @@ layout_mode = 0
 offset_left = 192.0
 offset_top = 50.0
 offset_right = 632.0
-offset_bottom = 550.0
+offset_bottom = 590.0
 theme_override_constants/separation = 2
 
 [node name="DetailNameLabel" type="Label" parent="DetailBox"]
@@ -65,38 +66,182 @@ text = "Trang suc"
 
 [node name="PortraitRow" type="HBoxContainer" parent="DetailBox"]
 layout_mode = 2
-alignment = 1
 
 [node name="LeftEquippedBox" type="VBoxContainer" parent="DetailBox/PortraitRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(56, 0)
+theme_override_constants/separation = 6
 
 [node name="DetailPortrait" type="ColorRect" parent="DetailBox/PortraitRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(260, 200)
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(260, 180)
 color = Color(0.2, 0.35, 0.6, 1)
 
 [node name="RightEquippedBox" type="VBoxContainer" parent="DetailBox/PortraitRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(56, 0)
+theme_override_constants/separation = 6
+
+[node name="DetailExpTitleLabel" type="Label" parent="DetailBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(420, 0)
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Kinh nghiệm"
 
 [node name="DetailExpBar" type="ProgressBar" parent="DetailBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(420, 20)
 
-[node name="DetailStatsLabel" type="Label" parent="DetailBox"]
+[node name="DetailStatsGrid" type="GridContainer" parent="DetailBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(420, 0)
+columns = 4
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 4
+
+[node name="StatAtkLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Sức:"
+
+[node name="StatAtkValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatHpLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Sinh mệnh:"
+
+[node name="StatHpValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatSpeedLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Nhanh:"
+
+[node name="StatSpeedValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatPowerLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Chiến lực:"
+
+[node name="StatPowerValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatDefLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Phòng thủ:"
+
+[node name="StatDefValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatCritLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Bạo:"
+
+[node name="StatCritValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatDodgeLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Né:"
+
+[node name="StatDodgeValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatRoleLabel" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(130, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Vị trí trong quân:"
+
+[node name="StatRoleValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="StatsDivider" type="ColorRect" parent="DetailBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(420, 2)
+color = Color(0.72, 0.58, 0.25, 1)
+
+[node name="SkillsRow" type="HBoxContainer" parent="DetailBox"]
+layout_mode = 2
+
+[node name="SkillsLabel" type="Label" parent="DetailBox/SkillsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+text = "Kỹ năng"
+
+[node name="SkillsValueLabel" type="Label" parent="DetailBox/SkillsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(236, 0)
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
 
-[node name="DetailSkillsLabel" type="Label" parent="DetailBox"]
+[node name="SkillsDetailLabel" type="Label" parent="DetailBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(420, 0)
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
+
+[node name="DismissRow" type="HBoxContainer" parent="DetailBox"]
+layout_mode = 2
+alignment = 2
+
+[node name="DismissButton" type="Button" parent="DetailBox/DismissRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
+text = "Sa thải"
 
 [node name="GridPanel" type="VBoxContainer" parent="."]
 clip_contents = true
@@ -104,14 +249,14 @@ layout_mode = 0
 offset_left = 648.0
 offset_top = 50.0
 offset_right = 984.0
-offset_bottom = 550.0
+offset_bottom = 590.0
 
 [node name="GridTitleLabel" type="Label" parent="GridPanel"]
 layout_mode = 2
 text = "TRANG BI TRONG TUI"
 
 [node name="GridScroll" type="ScrollContainer" parent="GridPanel"]
-custom_minimum_size = Vector2(320, 460)
+custom_minimum_size = Vector2(320, 500)
 layout_mode = 2
 horizontal_scroll_mode = 3
 

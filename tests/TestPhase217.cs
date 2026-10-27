@@ -37,37 +37,37 @@ public partial class TestPhase217 : Node
         AddChild(hub);
         hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         Check(hub.IsPopupOpen, "Vo tuong button opens the popup");
-        Check(HubScene.HeroListPopupSize == new Vector2(1000, 560), "hero list popup size is fixed 1000x560");
+        Check(HubScene.HeroListPopupSize == new Vector2(1000, 600), "hero list popup size is fixed 1000x600 (2.18)");
         var frame = hub.GetNode<Control>("PopupFrame");
-        Check(frame.Size == new Vector2(1036, 596) && frame.Position == new Vector2(122, 62),
-            "popup frame is 1036x596 centred at (122,62), Hub visible around it");
+        Check(frame.Size == new Vector2(1036, 636) && frame.Position == new Vector2(122, 42),
+            "popup frame is 1036x636 centred at (122,42), Hub visible around it");
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "popup widget is the hero list scene");
         if (heroList == null) { hub.QueueFree(); Finish(); return; }
-        Check(heroList.Position == Vector2.Zero && heroList.Size == new Vector2(1000, 560), "popup content is 1000x560");
+        Check(heroList.Position == Vector2.Zero && heroList.Size == new Vector2(1000, 600), "popup content is 1000x600 (2.18)");
 
         var tabs = heroList.GetNode<VBoxContainer>("TabButtons");
-        Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 500 && tabs.Size.X >= 160 && tabs.Size.X <= 180,
-            "hero tabs column at (16,50), height 500");
+        Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 540 && tabs.Size.X >= 160 && tabs.Size.X <= 180,
+            "hero tabs column at (16,50), height 540");
         var tabBtns = tabs.GetChildren().OfType<Button>().ToList();
         Check(tabBtns.Count == 8, "all 8 hero tabs still present");
         Check(!tabBtns.First(b => b.Text.Contains("nhan")).Text.Contains("(Khóa)"),
             "custom hero tab is not locked for a seeded account");
         var detail = heroList.GetNode<VBoxContainer>("DetailBox");
-        Check(detail.Position == new Vector2(192, 50) && detail.Size == new Vector2(440, 500),
-            "detail column is (192,50) 440x500");
+        Check(detail.Position == new Vector2(192, 50) && detail.Size == new Vector2(440, 540),
+            "detail column is (192,50) 440x540");
         var gridPanel = heroList.GetNode<VBoxContainer>("GridPanel");
-        Check(gridPanel.Position == new Vector2(648, 50) && gridPanel.Size == new Vector2(336, 500),
-            "bag grid column is (648,50) 336x500");
+        Check(gridPanel.Position == new Vector2(648, 50) && gridPanel.Size == new Vector2(336, 540),
+            "bag grid column is (648,50) 336x540");
 
         // Removed nodes (2.17 deletions).
         Check(detail.GetNodeOrNull<Label>("DetailPortraitLabel") == null, "portrait label node is removed");
         Check(detail.GetNodeOrNull<Label>("DetailExpLabel") == null, "EXP/stars/shards text label node is removed");
         Check(detail.GetNodeOrNull<Button>("UnequipAllButton") == null, "unequip-all button node is removed");
         Check(detail.GetNode<ProgressBar>("DetailExpBar") != null, "experience bar is kept");
-        Check(detail.GetChildren().Count == 6, "detail column has exactly 6 children (name, tabs, portrait row, exp bar, stats, skills)");
-        var skills = detail.GetNode<Label>("DetailSkillsLabel");
-        Check(skills.Position.Y + skills.Size.Y <= 500, "detail content fits its fixed 500px column (no overflow)");
+        Check(detail.GetChildren().Count == 10, "detail column has exactly 10 children (name, tabs, portrait row, exp title, exp bar, stats grid, divider, skills row, skills detail, dismiss row)");
+        var dismissRow = detail.GetNode<HBoxContainer>("DismissRow");
+        Check(dismissRow.Position.Y + dismissRow.Size.Y <= 540, "detail content fits its fixed 540px column (no overflow)");
         var accessoryTab = detail.GetNode<Button>("EquipmentTabs/AccessoryTabButton");
         Check(accessoryTab.Text == "Trang sức" && accessoryTab.Disabled, "Trang suc tab stays locked");
 

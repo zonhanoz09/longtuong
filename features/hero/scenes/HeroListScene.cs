@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace LongTuong;
 
 /// <summary>
-/// Phase 2.17 hero/equipment screen (popup 1000x560, all sizes fixed), with a
+/// Phase 2.18 hero/equipment screen (popup 1000x600, all sizes fixed), with a
 /// Phase 2.12 scene-first pilot: the static layout now lives in
 /// HeroListScene.tscn (detail labels, portrait placeholder, EXP bar,
 /// equipped slots, unequip-all button) and the code only fills in data.
@@ -55,8 +55,10 @@ public partial class HeroListScene : Control
     // Detail area: static scene nodes (HeroListScene.tscn), code only sets text/values.
     private Label? _nameLabel;
     private ProgressBar? _expBar;
-    private Label? _statsLabel;
-    private Label? _skillsLabel;
+    private Dictionary<string, Label>? _statValues;
+    private Label? _skillsValueLabel;
+    private Label? _skillsDetailLabel;
+    private Button? _dismissButton;
     private VBoxContainer? _leftEquippedBox;
     private VBoxContainer? _rightEquippedBox;
     private PackedScene? _tabButtonTemplate;
@@ -89,8 +91,34 @@ public partial class HeroListScene : Control
         });
         _nameLabel = GetNode<Label>("DetailBox/DetailNameLabel");
         _expBar = GetNode<ProgressBar>("DetailBox/DetailExpBar");
-        _statsLabel = GetNode<Label>("DetailBox/DetailStatsLabel");
-        _skillsLabel = GetNode<Label>("DetailBox/DetailSkillsLabel");
+        _statValues = new Dictionary<string, Label>
+        {
+            ["atk"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatAtkValue"),
+            ["hp"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatHpValue"),
+            ["speed"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatSpeedValue"),
+            ["power"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatPowerValue"),
+            ["def"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatDefValue"),
+            ["crit"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatCritValue"),
+            ["dodge"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatDodgeValue"),
+            ["role"] = GetNode<Label>("DetailBox/DetailStatsGrid/StatRoleValue"),
+        };
+        _skillsValueLabel = GetNode<Label>("DetailBox/SkillsRow/SkillsValueLabel");
+        _skillsDetailLabel = GetNode<Label>("DetailBox/SkillsDetailLabel");
+        _dismissButton = GetNode<Button>("DetailBox/DismissRow/DismissButton");
+        // Small bottom-right button (sketch scale), red border for a
+        // destructive action — deliberately NOT UiTheme.StyleButton, which
+        // forces 56px height and would push the detail column past 540px.
+        _dismissButton.AddThemeFontSizeOverride("font_size", 15);
+        _dismissButton.AddThemeColorOverride("font_color", UiTheme.Text);
+        var dismissNormal = new StyleBoxFlat { BgColor = UiTheme.Panel, BorderColor = UiTheme.EnemyRed, BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2, CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8 };
+        var dismissHover = (StyleBoxFlat)dismissNormal.Duplicate(); dismissHover.BgColor = new Color(0.30f, 0.15f, 0.15f);
+        var dismissDisabled = new StyleBoxFlat { BgColor = new Color(0.25f, 0.25f, 0.28f), BorderColor = UiTheme.Muted, BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2, CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8 };
+        _dismissButton.AddThemeStyleboxOverride("normal", dismissNormal);
+        _dismissButton.AddThemeStyleboxOverride("hover", dismissHover);
+        _dismissButton.AddThemeStyleboxOverride("pressed", dismissNormal);
+        _dismissButton.AddThemeStyleboxOverride("disabled", dismissDisabled);
+        _dismissButton.AddThemeColorOverride("font_disabled_color", UiTheme.Muted);
+        _dismissButton.Pressed += OnDismissPressed;
         _leftEquippedBox = GetNode<VBoxContainer>("DetailBox/PortraitRow/LeftEquippedBox");
         _rightEquippedBox = GetNode<VBoxContainer>("DetailBox/PortraitRow/RightEquippedBox");
         // Middle header tabs (sketch): Trang bi is the active view; Trang suc
@@ -168,7 +196,7 @@ public partial class HeroListScene : Control
         if (x + 280 > 1000) x = cellPos.X - 280 - 8;
         if (x < 0) x = 0;
         float y = cellPos.Y;
-        if (y + height > 560) y = 560 - height;
+        if (y + height > 600) y = 600 - height;
         if (y < 0) y = 0;
         _tooltipPanel.Position = new Vector2(x, y);
     }
@@ -184,10 +212,25 @@ public partial class HeroListScene : Control
         BuildGrid();
     }
 
+    private void OnDismissPressed()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        if (!ProgressionService.DismissHero(gm.Save, _selectedHeroId)) return;
+        // SaveGame copies SelectedTeamIds back into Save.TeamIds, so sync
+        // the GameManager state first, then save, then rebuild on the new
+        // default hero (the dismissed tab now shows as locked).
+        gm.SelectedTeamIds = new List<string>(gm.Save.TeamIds);
+        gm.SelectedHeroId = gm.Save.TeamIds.Count > 0 ? gm.Save.TeamIds[0] : gm.Save.OwnedHeroIds[0];
+        _selectedHeroId = gm.SelectedHeroId;
+        gm.SaveGame();
+        CallDeferred("RebuildAll");
+    }
+
     private void BuildTabs()
     {
         if (!IsInsideTree() || _tabButtons == null || _nameLabel == null
-            || _expBar == null || _statsLabel == null || _skillsLabel == null
+            || _expBar == null || _statValues == null || _skillsValueLabel == null
+            || _skillsDetailLabel == null || _dismissButton == null
             || _leftEquippedBox == null || _rightEquippedBox == null) return;
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
@@ -216,10 +259,28 @@ public partial class HeroListScene : Control
         _expBar.MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level);
         _expBar.Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp;
         int power = eff.Hp + eff.Atk * 5;
-        // Stats grid, in the sketch's layout, using only stats the engine
-        // really has (no invented Tri stat): Suc = ATK, Sinh menh = HP.
-        _statsLabel.Text = $"Sức: {eff.Atk}    Sinh mệnh: {eff.Hp}    Nhanh: {eff.Speed}    Chiến lực: ~{power}\nPhòng thủ: {eff.Def}    Bạo: {eff.Crit:P0}    Né: {eff.Dodge:P0}    Vị trí trong quân: {HeroDatabase.RoleName(heroDef.Role)}";
-        _skillsLabel.Text = $"Kỹ năng — Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}";
+        // Stats grid, in the sketch's 2-pair-per-row layout, using only stats
+        // the engine really has (no invented Tri stat, no invented army
+        // position: the sketch's "Trí" / "Trung quân" have no engine data, so
+        // they are not faked here — values sit in fixed label/value columns
+        // so every row lines up straight).
+        _statValues["atk"].Text = $"{eff.Atk}";
+        _statValues["hp"].Text = $"{eff.Hp}";
+        _statValues["speed"].Text = $"{eff.Speed}";
+        _statValues["power"].Text = $"~{power}";
+        _statValues["def"].Text = $"{eff.Def}";
+        _statValues["crit"].Text = $"{eff.Crit:P0}";
+        _statValues["dodge"].Text = $"{eff.Dodge:P0}";
+        _statValues["role"].Text = HeroDatabase.RoleName(heroDef.Role);
+        // Skills row (sketch): "Kỹ năng" + the ult name on one line, with
+        // the normal/passive detail in a smaller line below it.
+        _skillsValueLabel.Text = heroDef.UltName;
+        _skillsDetailLabel.Text = $"Đánh thường: {heroDef.NormalName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}";
+        // Dismiss: only for an owned, re-unlockable hero when another hero
+        // remains (see ProgressionService.DismissHero for the full rules).
+        bool selectedOwned = gm.Save.OwnedHeroIds.Contains(_selectedHeroId);
+        _dismissButton.Disabled = !selectedOwned || _selectedHeroId == "custom_hero"
+            || _selectedHeroId == "luu_bi" || gm.Save.OwnedHeroIds.Count <= 1;
         // 6 equipped icon slots (equipped items live ONLY here, never in the
         // grid), flanking the portrait: first 3 slots left, last 3 right.
         ClearBox(_leftEquippedBox);
@@ -230,6 +291,9 @@ public partial class HeroListScene : Control
         {
             var eq = gm.Save.HeroEquipment[_selectedHeroId][slot.Id];
             var slotBtn = MakeIconButton(eq.IsEmpty ? EmptyColor : SlotColors[slot.Id], !eq.IsEmpty);
+            // Equipped icons are 56x56 (grid cells stay 64x64): 3x56 + 2x6 gap
+            // = 180, exactly the portrait height, so all three columns line up.
+            slotBtn.CustomMinimumSize = new Vector2(56, 56);
             var heroId = _selectedHeroId; var slotId = slot.Id;
             string slotDetail = eq.IsEmpty ? "Ô trống — chưa mang trang bị."
                 : EquipmentService.DetailText(slotId, eq.Level, eq.RefineIndex, $"Đang mang: {heroDef.Name}");

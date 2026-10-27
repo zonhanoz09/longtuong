@@ -48,7 +48,7 @@ public partial class TestPhase26 : Node
             || tooltipPanel.Position.X + 280 <= cellRect.Position.X - 8;
         Check(beside, "tooltip sits beside the cell (right or flipped left)");
         Check(tooltipPanel.Position.X >= 0 && tooltipPanel.Position.X + 280 <= 1000
-            && tooltipPanel.Position.Y >= 0 && tooltipPanel.Position.Y + tooltipPanel.Size.Y <= 560, "tooltip is clamped inside the popup (1000x560 in 2.17)");
+            && tooltipPanel.Position.Y >= 0 && tooltipPanel.Position.Y + tooltipPanel.Size.Y <= 600, "tooltip is clamped inside the popup (1000x600 in 2.18)");
         gridButtons[0].EmitSignal(Control.SignalName.MouseExited);
         Check(tooltipPanel.Visible == false, "mouse exit hides tooltip");
         // Hover on an empty cell shows no tooltip (empty cells have no handlers).
