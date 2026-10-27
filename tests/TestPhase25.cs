@@ -120,9 +120,11 @@ public partial class TestPhase25 : Node
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var grid2 = heroList2.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == bagBefore - 1, "equipped item is no longer in the grid");
-        var page2 = heroList2.GetNode<VBoxContainer>("DetailBox");
-        var equipped2 = page2.GetChildren().OfType<HBoxContainer>().First().GetChildren().OfType<Button>().ToList();
-        Check(equipped2.Count == 6, "hero tab page has 6 equipped slots after reopen");
+        // Phase 2.16: equipped slots flank the portrait, 3 left + 3 right.
+        var left2 = heroList2.GetNode<VBoxContainer>("DetailBox/PortraitRow/LeftEquippedBox").GetChildren().OfType<Button>().ToList();
+        var right2 = heroList2.GetNode<VBoxContainer>("DetailBox/PortraitRow/RightEquippedBox").GetChildren().OfType<Button>().ToList();
+        var equipped2 = left2.Concat(right2).ToList();
+        Check(left2.Count == 3 && right2.Count == 3, "hero tab page has 3+3 equipped slots flanking the portrait after reopen");
         // Double-click the equipped slot unequips it back to the grid.
         equipped2[0].EmitSignal(Control.SignalName.GuiInput, MouseEvent(true));
         Check(gm.Save.BagEquipment.Count == bagBefore, "double-click equipped slot unequips it back to bag");

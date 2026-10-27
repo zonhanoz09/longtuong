@@ -8,7 +8,10 @@ namespace LongTuong;
 /// Phase 2.7 hero/equipment screen (popup 1180x660, all sizes fixed), with a
 /// Phase 2.12 scene-first pilot: the static layout now lives in
 /// HeroListScene.tscn (detail labels, portrait placeholder, EXP bar,
-/// equipped-slot row, unequip-all button) and the code only fills in data.
+/// equipped slots, unequip-all button) and the code only fills in data.
+/// Phase 2.16 layout (from Huynh's Vo Tuong popup sketch): the 6 equipped
+/// slots flank the portrait, 3 on the left (weapon/armor/helmet) and 3 on
+/// the right (boots/cloak/bracer), instead of a single row below it.
 /// What stays in code is genuinely data-driven: one tab button per hero
 /// (from the HeroTabButton.tscn template) and one grid/equipped cell per
 /// item (from the EquipmentCell.tscn template) — their count depends on the
@@ -56,7 +59,8 @@ public partial class HeroListScene : Control
     private ProgressBar? _expBar;
     private Label? _statsLabel;
     private Label? _skillsLabel;
-    private HBoxContainer? _equippedBox;
+    private VBoxContainer? _leftEquippedBox;
+    private VBoxContainer? _rightEquippedBox;
     private Button? _unequipAllButton;
     private PackedScene? _tabButtonTemplate;
     private PackedScene? _cellTemplate;
@@ -92,7 +96,18 @@ public partial class HeroListScene : Control
         _expBar = GetNode<ProgressBar>("DetailBox/DetailExpBar");
         _statsLabel = GetNode<Label>("DetailBox/DetailStatsLabel");
         _skillsLabel = GetNode<Label>("DetailBox/DetailSkillsLabel");
-        _equippedBox = GetNode<HBoxContainer>("DetailBox/EquippedBox");
+        _leftEquippedBox = GetNode<VBoxContainer>("DetailBox/PortraitRow/LeftEquippedBox");
+        _rightEquippedBox = GetNode<VBoxContainer>("DetailBox/PortraitRow/RightEquippedBox");
+        // Middle header tabs (sketch): Trang bi is the active view; Trang suc
+        // has no separate system in this game (the 6 slots already include
+        // cloak/bracer), so it stays locked grey instead of faking content.
+        var equipmentTab = GetNode<Button>("DetailBox/EquipmentTabs/EquipmentTabButton");
+        equipmentTab.Text = "Trang bị";
+        UiTheme.StyleButton(equipmentTab, true);
+        var accessoryTab = GetNode<Button>("DetailBox/EquipmentTabs/AccessoryTabButton");
+        accessoryTab.Text = "Trang sức";
+        UiTheme.StyleButton(accessoryTab, false);
+        accessoryTab.Disabled = true;
         _unequipAllButton = GetNode<Button>("DetailBox/UnequipAllButton");
         UiTheme.StyleButton(_unequipAllButton);
         _unequipAllButton.Pressed += () =>
@@ -184,7 +199,7 @@ public partial class HeroListScene : Control
     {
         if (!IsInsideTree() || _tabButtons == null || _nameLabel == null || _portraitLabel == null
             || _expLabel == null || _expBar == null || _statsLabel == null || _skillsLabel == null
-            || _equippedBox == null) return;
+            || _leftEquippedBox == null || _rightEquippedBox == null) return;
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
         ClearBox(_tabButtons);
@@ -214,11 +229,16 @@ public partial class HeroListScene : Control
         _expBar.MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level);
         _expBar.Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp;
         int power = eff.Hp + eff.Atk * 5;
-        _statsLabel.Text = $"Chỉ số hiệu lực — Lực chiến ~{power}: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}";
-        _skillsLabel.Text = $"Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}";
-        // 6 equipped icon slots (equipped items live ONLY here, never in the grid).
-        ClearBox(_equippedBox);
+        // Stats grid, in the sketch's layout, using only stats the engine
+        // really has (no invented Tri stat): Suc = ATK, Sinh menh = HP.
+        _statsLabel.Text = $"Sức: {eff.Atk}    Sinh mệnh: {eff.Hp}    Nhanh: {eff.Speed}    Chiến lực: ~{power}\nPhòng thủ: {eff.Def}    Bạo: {eff.Crit:P0}    Né: {eff.Dodge:P0}    Vị trí trong quân: {HeroDatabase.RoleName(heroDef.Role)}";
+        _skillsLabel.Text = $"Kỹ năng — Đánh thường: {heroDef.NormalName} | Tuyệt kỹ: {heroDef.UltName} | Bị động: {heroDef.PassiveName} — {heroDef.PassiveDesc}";
+        // 6 equipped icon slots (equipped items live ONLY here, never in the
+        // grid), flanking the portrait: first 3 slots left, last 3 right.
+        ClearBox(_leftEquippedBox);
+        ClearBox(_rightEquippedBox);
         var equippedButtons = new List<Button>();
+        int slotIndex = 0;
         foreach (var slot in ProgressionService.Slots)
         {
             var eq = gm.Save.HeroEquipment[_selectedHeroId][slot.Id];
@@ -244,7 +264,8 @@ public partial class HeroListScene : Control
                 }
             };
             equippedButtons.Add(slotBtn);
-            _equippedBox.AddChild(slotBtn);
+            (slotIndex < 3 ? _leftEquippedBox : _rightEquippedBox).AddChild(slotBtn);
+            slotIndex++;
         }
         HideTooltip();
     }

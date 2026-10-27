@@ -15,6 +15,16 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.16 — đã làm (layout popup Võ tướng theo ảnh phác)
+
+- Popup 1180×660, 3 cột: tab tướng trái, giữa là tab Trang bị (tab
+  Trang sức khóa xám vì chưa có hệ trang sức riêng) + chân dung ôm
+  bởi 6 ô đang mang chia 3 trái + 3 phải + EXP + chỉ số dạng lưới +
+  kỹ năng, phải là lưới trang bị trong túi.
+- Sửa luôn lỗi root scene bị scale 0.48/0.62 từ bản sửa trên editor
+  khiến popup hiển thị nhỏ/lệch.
+- Test: `tests/TestPhase216.tscn` (20 check).
+
 ## Phase 2.15 — đã làm (nút Võ tướng + ESC tắt popup)
 
 - Nút dưới đầu tiên đổi thành "Võ tướng", bấm mở popup danh sách

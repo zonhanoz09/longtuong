@@ -301,6 +301,33 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.16 — Layout popup Võ tướng theo ảnh phác (ĐÃ HOÀN THÀNH)
+
+- Popup giữ 1180×660, bố cục 3 cột đo từ ảnh: tiêu đề "Võ Tướng"
+  căn giữa trên; trái là cột tab tướng dọc (x 20–180, đủ 8 tướng,
+  không chỉ 5 hàng vẽ minh họa trong ảnh); giữa (x 200–700) gồm tab
+  "Trang bị" đang chọn + tab "Trang sức" khóa xám, chân dung
+  260×200 ôm bởi 6 ô đang mang chia 3 trái (Vũ khí/Giáp/Mũ) + 3 phải
+  (Giày/Choàng/Uyển), dưới là EXP, chỉ số dạng lưới (Sức/Sinh mệnh/
+  Nhanh/Chiến lực/Phòng thủ/Bạo/Né/Vị trí trong quân — chỉ dùng chỉ
+  số engine thật có, không bịa chỉ số Trí), kỹ năng, nút Tháo tất cả;
+  phải (x 720–1160) là lưới trang bị trong túi 4 cột ô 64×64.
+- Tab "Trang sức" khóa vì game chưa có hệ trang sức tách khỏi 6 ô
+  trang bị — hiện tab xám, không bấm được, không giả nội dung. Khi
+  nào có hệ trang sức thật thì mở tab này.
+- Sửa luôn lỗi do bản sửa trên editor để lại: root `HeroListScene`
+  từng bị đổi thành anchors-center + scale 0.48/0.62 khiến popup hiển
+  thị nhỏ/lệch — nay khôi phục root full-rect như bản 2.12.
+- Hành vi giữ nguyên: click đơn chọn, click đúp tháo/mang, hover
+  tooltip, cuộn lưới quá 28 món, Tháo tất cả. Chi tiết cột giữa đã
+  gọn lại (chỉ số 2 dòng, khoảng cách cột 2px) để vừa khung 560px,
+  không tràn đáy popup như lần đo đầu (cột từng phình tới 608px).
+- Test: `tests/TestPhase216.tscn` (20 check, ALL PASS: đúng vị trí 3
+  cột, tiêu đề căn giữa, root không scale, 3+3 ô 64×64, chân dung ở
+  giữa 2 cột ô, tab Trang sức khóa, mang/tháo bằng click đúp vẫn
+  chạy). Test 2.12 (cấu trúc detail) và 2.5 (ô đang mang) cập nhật
+  theo layout 3+3, vẫn pass; CI thêm 2.16.
+
 ### Phase 2.15 — Nút Võ tướng + ESC tắt popup (ĐÃ HOÀN THÀNH)
 
 - Nút dưới đầu tiên đổi từ "Danh sách tướng" thành "Võ tướng" theo
