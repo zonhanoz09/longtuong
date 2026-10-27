@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace LongTuong;
 
 /// <summary>
-/// Phase 2.7 hero/equipment screen (popup 1180x660, all sizes fixed), with a
+/// Phase 2.17 hero/equipment screen (popup 1000x560, all sizes fixed), with a
 /// Phase 2.12 scene-first pilot: the static layout now lives in
 /// HeroListScene.tscn (detail labels, portrait placeholder, EXP bar,
 /// equipped slots, unequip-all button) and the code only fills in data.
@@ -54,14 +54,11 @@ public partial class HeroListScene : Control
     private Label? _tooltipLabel;
     // Detail area: static scene nodes (HeroListScene.tscn), code only sets text/values.
     private Label? _nameLabel;
-    private Label? _portraitLabel;
-    private Label? _expLabel;
     private ProgressBar? _expBar;
     private Label? _statsLabel;
     private Label? _skillsLabel;
     private VBoxContainer? _leftEquippedBox;
     private VBoxContainer? _rightEquippedBox;
-    private Button? _unequipAllButton;
     private PackedScene? _tabButtonTemplate;
     private PackedScene? _cellTemplate;
     private string _selectedHeroId = "";
@@ -91,8 +88,6 @@ public partial class HeroListScene : Control
             CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
         });
         _nameLabel = GetNode<Label>("DetailBox/DetailNameLabel");
-        _portraitLabel = GetNode<Label>("DetailBox/DetailPortraitLabel");
-        _expLabel = GetNode<Label>("DetailBox/DetailExpLabel");
         _expBar = GetNode<ProgressBar>("DetailBox/DetailExpBar");
         _statsLabel = GetNode<Label>("DetailBox/DetailStatsLabel");
         _skillsLabel = GetNode<Label>("DetailBox/DetailSkillsLabel");
@@ -108,12 +103,6 @@ public partial class HeroListScene : Control
         accessoryTab.Text = "Trang sức";
         UiTheme.StyleButton(accessoryTab, false);
         accessoryTab.Disabled = true;
-        _unequipAllButton = GetNode<Button>("DetailBox/UnequipAllButton");
-        UiTheme.StyleButton(_unequipAllButton);
-        _unequipAllButton.Pressed += () =>
-        {
-            if (EquipmentService.UnequipAll(gm.Save, CurrentHeroId()) >= 0) { gm.SaveGame(); CallDeferred("RebuildAll"); }
-        };
         _tabButtonTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroTabButton.tscn");
         _cellTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/EquipmentCell.tscn");
         _selectedHeroId = gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId) ? gm.SelectedHeroId
@@ -176,10 +165,10 @@ public partial class HeroListScene : Control
         var rootGlobal = GetGlobalRect();
         var cellPos = cellGlobal.Position - rootGlobal.Position;
         float x = cellPos.X + cellGlobal.Size.X + 8;
-        if (x + 280 > 1180) x = cellPos.X - 280 - 8;
+        if (x + 280 > 1000) x = cellPos.X - 280 - 8;
         if (x < 0) x = 0;
         float y = cellPos.Y;
-        if (y + height > 660) y = 660 - height;
+        if (y + height > 560) y = 560 - height;
         if (y < 0) y = 0;
         _tooltipPanel.Position = new Vector2(x, y);
     }
@@ -197,8 +186,8 @@ public partial class HeroListScene : Control
 
     private void BuildTabs()
     {
-        if (!IsInsideTree() || _tabButtons == null || _nameLabel == null || _portraitLabel == null
-            || _expLabel == null || _expBar == null || _statsLabel == null || _skillsLabel == null
+        if (!IsInsideTree() || _tabButtons == null || _nameLabel == null
+            || _expBar == null || _statsLabel == null || _skillsLabel == null
             || _leftEquippedBox == null || _rightEquippedBox == null) return;
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
@@ -219,12 +208,10 @@ public partial class HeroListScene : Control
         var heroDef = HeroDatabase.Get(_selectedHeroId);
         var p = gm.Save.Heroes[_selectedHeroId];
         var eff = ProgressionService.GetEffectiveHero(gm.Save, _selectedHeroId);
-        bool selectedOwned = gm.Save.OwnedHeroIds.Contains(_selectedHeroId);
         _nameLabel.Text = $"{heroDef.Name} — Cấp {p.Level} — Loại: {HeroDatabase.RoleName(heroDef.Role)}";
-        _portraitLabel.Text = $"Chân dung: {heroDef.Name} (placeholder, chưa có sprite final)";
-        _expLabel.Text = selectedOwned
-            ? $"EXP: {p.Exp}/{ProgressionService.ExpToNext(p.Level)} — Sao: {p.Stars}/5 — Mảnh: {gm.Save.Shards[_selectedHeroId]}"
-            : $"CHƯA SỞ HỮU (cần 10 mảnh để mở khóa, hiện có {gm.Save.Shards[_selectedHeroId]} mảnh)";
+        // Phase 2.17: the portrait label and the EXP/stars/shards text line are
+        // removed; only the experience bar stays (locked heroes show an empty bar,
+        // their locked state is already shown by the tab's "(Khóa)" suffix).
         _expBar.MinValue = 0;
         _expBar.MaxValue = p.Level >= ProgressionService.MaxLevel ? 1 : ProgressionService.ExpToNext(p.Level);
         _expBar.Value = p.Level >= ProgressionService.MaxLevel ? 1 : p.Exp;

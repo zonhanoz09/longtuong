@@ -38,12 +38,12 @@ public partial class TestPhase212 : Node
             && detail.GetNodeOrNull<ColorRect>("PortraitRow/DetailPortrait") != null
             && detail.GetNodeOrNull<VBoxContainer>("PortraitRow/LeftEquippedBox") != null
             && detail.GetNodeOrNull<VBoxContainer>("PortraitRow/RightEquippedBox") != null
-            && detail.GetNodeOrNull<Label>("DetailPortraitLabel") != null
-            && detail.GetNodeOrNull<Label>("DetailExpLabel") != null
             && detail.GetNodeOrNull<ProgressBar>("DetailExpBar") != null
             && detail.GetNodeOrNull<Label>("DetailStatsLabel") != null
             && detail.GetNodeOrNull<Label>("DetailSkillsLabel") != null
-            && detail.GetNodeOrNull<Button>("UnequipAllButton") != null, "detail structure (labels, tabs, portrait flanked by 3+3 equipped slots, exp bar, unequip button) is in the scene");
+            && detail.GetNodeOrNull<Label>("DetailPortraitLabel") == null
+            && detail.GetNodeOrNull<Label>("DetailExpLabel") == null
+            && detail.GetNodeOrNull<Button>("UnequipAllButton") == null, "detail structure (tabs, portrait flanked by 3+3 equipped slots, exp bar only — 2.17 removed portrait label, EXP text line and unequip-all button) is in the scene");
         var nameLabel = detail.GetNode<Label>("DetailNameLabel");
         Check(nameLabel.Text.Contains("testscene"), "detail name label shows the current tab hero (custom hero = username)");
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
@@ -51,13 +51,14 @@ public partial class TestPhase212 : Node
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
         Check(gridButtons.Count == 28 && gridButtons.All(b => b.CustomMinimumSize == new Vector2(64, 64)), "28 grid cells at template size 64x64");
-        // Behavior preserved: double-click equips, static unequip-all button clears.
+        // Behavior preserved: double-click equips, double-clicking the
+        // equipped slot unequips it back (2.17 removed the unequip-all button).
         int bagBefore = gm.Save.BagEquipment.Count;
         gridButtons[0].EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, DoubleClick = true });
         Check(gm.Save.BagEquipment.Count == bagBefore - 1, "double-click grid item still equips (pilot keeps behavior)");
-        var unequipBtn = detail.GetNode<Button>("UnequipAllButton");
-        unequipBtn.EmitSignal(Button.SignalName.Pressed);
-        Check(gm.Save.HeroEquipment["custom_hero"].Values.All(eq => eq.IsEmpty) && gm.Save.BagEquipment.Count == bagBefore, "static unequip-all button empties all slots back to the bag");
+        var leftSlots = detail.GetNode<VBoxContainer>("PortraitRow/LeftEquippedBox").GetChildren().OfType<Button>().ToList();
+        leftSlots[0].EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, DoubleClick = true });
+        Check(gm.Save.HeroEquipment["custom_hero"]["weapon"].IsEmpty && gm.Save.BagEquipment.Count == bagBefore, "double-click equipped weapon slot unequips it back to the bag");
         hub.ClosePopup();
         hub.QueueFree();
         Finish();

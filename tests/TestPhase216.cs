@@ -32,7 +32,7 @@ public partial class TestPhase216 : Node
         Check(heroList != null, "popup widget is the hero list scene");
         if (heroList == null) { hub.QueueFree(); Finish(); return; }
 
-        Check(heroList.Position == Vector2.Zero && heroList.Size == new Vector2(1180, 660), "popup content is 1180x660");
+        Check(heroList.Position == Vector2.Zero && heroList.Size == new Vector2(1000, 560), "popup content is 1000x560 (2.17)");
         Check(heroList.Scale == Vector2.One, "popup root is not scaled (editor scale artifact fixed)");
         var title = heroList.GetNode<Label>("TitleLabel");
         Check(title.Text == "Vo Tuong" && title.HorizontalAlignment == HorizontalAlignment.Center, "title is centred Vo Tuong");
@@ -40,11 +40,11 @@ public partial class TestPhase216 : Node
         var tabs = heroList.GetNode<VBoxContainer>("TabButtons");
         // Tabs width is content-driven (longest hero name + "(Khóa)"), so
         // only the position, height and a sane width range are asserted.
-        Check(tabs.Position == new Vector2(20, 60) && tabs.Size.Y == 560 && tabs.Size.X >= 160 && tabs.Size.X <= 180, "hero tabs column at left (20,60), height 560, width 160-180");
+        Check(tabs.Position == new Vector2(16, 50) && tabs.Size.Y == 500 && tabs.Size.X >= 160 && tabs.Size.X <= 180, "hero tabs column at left (16,50), height 500, width 160-180");
         var detail = heroList.GetNode<VBoxContainer>("DetailBox");
-        Check(detail.Position == new Vector2(200, 60) && detail.Size == new Vector2(500, 560), "detail column in the middle (200,60) 500x560");
+        Check(detail.Position == new Vector2(192, 50) && detail.Size == new Vector2(440, 500), "detail column in the middle (192,50) 440x500");
         var gridPanel = heroList.GetNode<VBoxContainer>("GridPanel");
-        Check(gridPanel.Position == new Vector2(720, 60) && gridPanel.Size == new Vector2(440, 560), "bag grid column at right (720,60) 440x560");
+        Check(gridPanel.Position == new Vector2(648, 50) && gridPanel.Size == new Vector2(336, 500), "bag grid column at right (648,50) 336x500");
 
         var equipTab = heroList.GetNode<Button>("DetailBox/EquipmentTabs/EquipmentTabButton");
         var accessoryTab = heroList.GetNode<Button>("DetailBox/EquipmentTabs/AccessoryTabButton");

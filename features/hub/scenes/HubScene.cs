@@ -19,7 +19,9 @@ namespace LongTuong;
 public partial class HubScene : Control
 {
     // Popup content sizes (width x height), one per widget.
-    public static readonly Vector2 HeroListPopupSize = new(1180, 660);
+    // Phase 2.17: shrunk from 1180x660 to match the sketch (Hub stays visible
+    // around the popup: frame is 1036x596, centred at (122, 62) on 1280x720).
+    public static readonly Vector2 HeroListPopupSize = new(1000, 560);
     public static readonly Vector2 BagPopupSize = new(1020, 640);
     public static readonly Vector2 HeroPopupSize = new(1140, 680);
     public static readonly Vector2 FormationPopupSize = new(900, 540);

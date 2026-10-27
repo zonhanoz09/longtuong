@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.17 — đã làm (thu nhỏ popup Võ tướng, xóa phần dư thừa)
+
+- Popup Võ tướng thu từ 1180×660 xuống **1000×560 cố định**, Hub thấy
+  rõ xung quanh; 3 cột: tab trái 160×500, giữa 440×500, lưới phải
+  336×500.
+- Xóa: dòng \"Chân dung\", dòng EXP/Sao/Mảnh (chỉ giữ thanh EXP), nút
+  \"Tháo tất cả trang bị\" trong popup này. Giữ: tab \"Trang sức\" khóa,
+  lưới cố định 28 ô.
+- Tài khoản cũ cũng nhận tướng tự tạo khi load (không tốn mảnh).
+- Test: `tests/TestPhase217.tscn` (23 check).
+
 ## Phase 2.16 — đã làm (layout popup Võ tướng theo ảnh phác)
 
 - Popup 1180×660, 3 cột: tab tướng trái, giữa là tab Trang bị (tab

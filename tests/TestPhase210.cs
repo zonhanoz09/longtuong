@@ -37,13 +37,15 @@ public partial class TestPhase210 : Node
         Check(gm.SelectedHeroId == "custom_hero" && HeroDatabase.Get("custom_hero").Name == "ten_moi", "GameManager seed names the custom hero");
         gm.LoadGame();
         Check(HeroDatabase.Get("custom_hero").Name == "ten_moi", "reload after login keeps the custom hero name");
-        // Old (2.9) accounts do NOT auto-gain the custom hero.
+        // Phase 2.17 supersedes the 2.10 rule: old accounts DO gain the
+        // custom hero on load, like Luu Bi (no shards spent, never locked).
         var old = new SaveData { OwnedHeroIds = new List<string> { "luu_bi" } };
         ProgressionService.EnsureDefaults(old);
-        Check(!old.OwnedHeroIds.Contains("custom_hero"), "old accounts do not auto-gain the custom hero");
+        Check(old.OwnedHeroIds.Contains("custom_hero"), "old accounts gain the custom hero on load (2.17)");
         var old2 = new SaveData { OwnedHeroIds = new List<string> { "quan_vu" } };
         ProgressionService.EnsureDefaults(old2);
         Check(old2.OwnedHeroIds.Contains("luu_bi"), "old accounts gain Luu Bi on load (never locked)");
+        Check(old2.OwnedHeroIds.Contains("custom_hero"), "old accounts gain the custom hero on load too (2.17)");
         // The placeholder hero can still fight (plain 1.0x ult, no engine special-case).
         var eff = ProgressionService.GetEffectiveHero(save, "custom_hero");
         var engine = new BattleEngine(new List<HeroDef> { eff }, HeroDatabase.GetStage(1), 123);

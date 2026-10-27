@@ -11,40 +11,40 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_list")
 
-; Phase 2.16 — layout theo anh phac popup Vo Tuong (popup 1180x660):
-; trai: tab tuong doc; giua: tab Trang bi/Trang suc + chan dung om 3 o trai + 3 o phai
-; + EXP + chi so dang luoi + ky nang; phai: luoi trang bi trong tui.
-; (Ban sua tren editor truoc do de lai root anchors-center + scale 0.48/0.62
-; khien popup hien nho/lech — nay khoi phuc root full-rect nhu ban 2.12.)
+; Phase 2.17 — popup thu nho con 1000x560 (fix cung, theo anh phac):
+; trai: tab tuong doc 160x500; giua: 440x500 (tab Trang bi/Trang suc + chan dung
+; om 3 o trai + 3 o phai + thanh EXP + chi so + ky nang, khong con dong Chan dung,
+; khong con dong EXP/Sao/Manh, khong con nut Thao tat ca); phai: 336x500 luoi
+; trang bi trong tui 4 cot, co dinh 28 o (o co item hien item do, o trong de trong).
 
 [node name="TitleLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 10.0
-offset_right = 1160.0
-offset_bottom = 50.0
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 984.0
+offset_bottom = 42.0
 horizontal_alignment = 1
 text = "Vo Tuong"
 
 [node name="TabButtons" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 60.0
-offset_right = 180.0
-offset_bottom = 620.0
+offset_left = 16.0
+offset_top = 50.0
+offset_right = 176.0
+offset_bottom = 550.0
 
 [node name="DetailBox" type="VBoxContainer" parent="."]
 clip_contents = true
 layout_mode = 0
-offset_left = 200.0
-offset_top = 60.0
-offset_right = 700.0
-offset_bottom = 620.0
+offset_left = 192.0
+offset_top = 50.0
+offset_right = 632.0
+offset_bottom = 550.0
 theme_override_constants/separation = 2
 
 [node name="DetailNameLabel" type="Label" parent="DetailBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(480, 0)
+custom_minimum_size = Vector2(420, 0)
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
@@ -80,57 +80,38 @@ color = Color(0.2, 0.35, 0.6, 1)
 layout_mode = 2
 custom_minimum_size = Vector2(64, 0)
 
-[node name="DetailPortraitLabel" type="Label" parent="DetailBox"]
-layout_mode = 2
-custom_minimum_size = Vector2(480, 0)
-autowrap_mode = 3
-theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
-
-[node name="DetailExpLabel" type="Label" parent="DetailBox"]
-layout_mode = 2
-custom_minimum_size = Vector2(480, 0)
-autowrap_mode = 3
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
-
 [node name="DetailExpBar" type="ProgressBar" parent="DetailBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(480, 20)
+custom_minimum_size = Vector2(420, 20)
 
 [node name="DetailStatsLabel" type="Label" parent="DetailBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(480, 0)
+custom_minimum_size = Vector2(420, 0)
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
 
 [node name="DetailSkillsLabel" type="Label" parent="DetailBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(480, 0)
+custom_minimum_size = Vector2(420, 0)
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
 
-[node name="UnequipAllButton" type="Button" parent="DetailBox"]
-layout_mode = 2
-custom_minimum_size = Vector2(480, 56)
-text = "Tháo tất cả trang bị"
-
 [node name="GridPanel" type="VBoxContainer" parent="."]
 clip_contents = true
 layout_mode = 0
-offset_left = 720.0
-offset_top = 60.0
-offset_right = 1160.0
-offset_bottom = 620.0
+offset_left = 648.0
+offset_top = 50.0
+offset_right = 984.0
+offset_bottom = 550.0
 
 [node name="GridTitleLabel" type="Label" parent="GridPanel"]
 layout_mode = 2
 text = "TRANG BI TRONG TUI"
 
 [node name="GridScroll" type="ScrollContainer" parent="GridPanel"]
-custom_minimum_size = Vector2(420, 520)
+custom_minimum_size = Vector2(320, 460)
 layout_mode = 2
 horizontal_scroll_mode = 3
 

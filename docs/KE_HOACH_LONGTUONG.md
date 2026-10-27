@@ -301,6 +301,32 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.17 — Thu nhỏ popup Võ tướng, xóa phần dư thừa, tài khoản cũ nhận tướng tự tạo (ĐÃ HOÀN THÀNH)
+
+- Popup thu từ 1180×660 xuống **1000×560 cố định** theo ảnh phác:
+  khung 1036×596 đặt ở (122, 62) trên 1280×720 nên Hub vẫn thấy rõ
+  xung quanh, không còn gần full màn hình như ảnh chụp lỗi. 3 cột map
+  lại: tab tướng trái (16, 50) 160×500, cột giữa (192, 50) 440×500,
+  lưới túi phải (648, 50) 336×500. Tooltip kẹp lại trong 1000×560.
+- Xóa đúng 3 phần Huynh chốt: dòng \"Chân dung: ... (placeholder...)\"
+  dưới chân dung, dòng EXP/Sao/Mảnh (chỉ giữ lại thanh EXP — tướng
+  khóa hiện thanh rỗng, trạng thái khóa đã thể hiện bằng \"(Khóa)\" ở
+  tab), nút \"Tháo tất cả trang bị\" (tháo từng món vẫn bằng click đúp
+  vào ô đang mang, nút Tháo tất cả của màn Trang bị/Cường hóa riêng
+  giữ nguyên). Tab \"Trang sức\" giữ khóa xám như cũ.
+- Lưới túi giữ cố định 28 ô: ô có item hiện item đó, ô trống để trống;
+  quá 28 món thì lưới cuộn thêm hàng như 2.7 (panel cao cố định nên
+  popup không phình theo túi).
+- Đảo quyết định 2.10: tài khoản cũ cũng nhận tướng tự tạo khi load
+  qua `EnsureDefaults` (không tốn mảnh, giống luật Lưu Bị), nên tab
+  tướng tự tạo không bao giờ hiện \"(Khóa)\" nữa; tên hiển thị vẫn lấy
+  từ tên đăng nhập qua `SetCustomHeroName` lúc đăng nhập/tạo tài khoản.
+- Test: `tests/TestPhase217.tscn` (23 check, ALL PASS: kích thước
+  popup/khung/vị trí 3 cột, 3 node đã xóa + thanh EXP còn lại, nội
+  dung cột giữa vừa đúng 500px, lưới 28 ô, tài khoản cũ nhận tướng tự
+  tạo). Test 2.5/2.6/2.7/2.10/2.11/2.12/2.15/2.16 cập nhật theo kích
+  thước mới và vẫn pass; CI thêm 2.17.
+
 ### Phase 2.16 — Layout popup Võ tướng theo ảnh phác (ĐÃ HOÀN THÀNH)
 
 - Popup giữ 1180×660, bố cục 3 cột đo từ ảnh: tiêu đề "Võ Tướng"

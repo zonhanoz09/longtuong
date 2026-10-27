@@ -23,7 +23,7 @@ public partial class TestPhase27 : Node
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
-        Check(HubScene.HeroListPopupSize == new Vector2(1180, 660), "hero list popup is 1180x660");
+        Check(HubScene.HeroListPopupSize == new Vector2(1000, 560), "hero list popup is 1000x560 (2.17)");
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns = heroList.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
         Check(tabBtns.Count == 8, "8 hero tabs in a vertical button column");

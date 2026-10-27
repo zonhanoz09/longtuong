@@ -89,6 +89,12 @@ public static class ProgressionService
         // missing him gains him on load (no shards spent, no unlock needed).
         if (!save.OwnedHeroIds.Contains("luu_bi"))
             save.OwnedHeroIds.Add("luu_bi");
+        // Phase 2.17: same rule for the custom hero — old accounts also gain
+        // it on load (no shards spent). Its display name still comes from the
+        // username (SetCustomHeroName in GameManager.LoadGame / seeded saves),
+        // so this only grants ownership, never a name.
+        if (!save.OwnedHeroIds.Contains("custom_hero"))
+            save.OwnedHeroIds.Add("custom_hero");
         foreach (var hero in HeroDatabase.Heroes)
         {
             if (!save.Heroes.ContainsKey(hero.Id)) save.Heroes[hero.Id] = new HeroProgress();
