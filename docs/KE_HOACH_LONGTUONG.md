@@ -301,6 +301,28 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.14 — Hub theo ảnh phác thứ hai: Vào ải/Đăng xuất lên trên, 5 nút xuống dưới (ĐÃ HOÀN THÀNH)
+
+- Ảnh phác thứ hai đo được (khung ngoài y 11–460, vạch ngang y 202 và
+  y 393, vạch dọc avatar x 183): vùng trên 42.5% → y 0–306, giữa 42.5% →
+  y 306–612, dưới 14.9% → y 612–720 (trên ảnh 804×467).
+- Trên phải chỉ còn 2 nút, vị trí đo được map sang 1280×720: Vào ải
+  (918, 30) 148×81, Đăng xuất (1101, 30) 148×81. Dưới là 5 nút, nút đầu
+  bắt đầu x=360 (không sát mép trái như bản cũ): Danh sách tướng
+  360–510, Túi đồ 546–694, Bày trận 744–893, Cường hóa 913–1062,
+  Chiêu mộ 1096–1243, đều y 624–704.
+- Nút Trang bị riêng bị bỏ theo đúng ảnh (ảnh không có nó): trước đây
+  Trang bị và Cường hóa cùng mở một màn `HeroScreen`, nên trang bị vẫn
+  vào được bằng Cường hóa — không mất chức năng, chỉ mất nút trùng.
+  Nếu Huynh muốn giữ nút Trang bị riêng thì thêm lại 1 nút là xong.
+- Nhân vật giữa sân theo vùng mới: xuất phát (608, 105), vùng đi
+  x 80–1136 / y 40–174 (tọa độ góc trái-trên, sân cao 306 nên vùng đi
+  thấp hơn bản 2.13). Avatar, popup, kích thước popup giữ nguyên.
+- Test: `tests/TestPhase214.tscn` (13 check, ALL PASS: đúng tọa độ từng
+  nút trên/dưới, Cường hóa mở được popup trang bị, Vào ải mở popup ải);
+  test 2.13 cập nhật theo layout mới và vẫn pass. CI bổ sung 2.13 +
+  2.14 (trước đây CI dừng ở 2.12 nên test 2.13 chưa từng chạy trên CI).
+
 ### Phase 2.13 — Hub chia 3 vùng theo ảnh phác của Huynh (ĐÃ HOÀN THÀNH)
 
 - Ảnh phác đo được (không ước): khung ngoài y 11–413, vạch ngang y 190 và

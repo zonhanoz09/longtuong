@@ -15,6 +15,16 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.14 — đã làm (Hub theo ảnh phác thứ hai)
+
+- Vùng mới: trên y 0–306, giữa y 306–612, dưới y 612–720. Trên phải chỉ
+  còn Vào ải (918, 30) và Đăng xuất (1101, 30). Dưới là 5 nút từ x=360:
+  Danh sách tướng, Túi đồ, Bày trận, Cường hóa, Chiêu mộ.
+- Bỏ nút Trang bị riêng (trùng với Cường hóa, cùng mở HeroScreen);
+  trang bị vẫn vào được bằng Cường hóa.
+- Test: `tests/TestPhase214.tscn` (13 check); test 2.13 cập nhật theo
+  layout mới, CI đã thêm 2.13 + 2.14.
+
 ## Phase 2.13 — đã làm (Hub chia 3 vùng theo ảnh phác)
 
 - Đo từ ảnh phác: trên 44,5%, giữa 44,8%, dưới 10,7%, cột avatar 21,3%

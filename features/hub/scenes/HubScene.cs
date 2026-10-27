@@ -5,12 +5,15 @@ using System.Linq;
 namespace LongTuong;
 
 /// <summary>
-/// Hub in 3 zones, measured from Huynh's sketch (1280x720):
-/// top 0-320 = avatar (left, 0-273) + feature icons (right),
-/// middle 320-643 = courtyard where the default hero walks,
-/// bottom 643-720 = function bar. Every widget still opens as a popup
-/// panel on top of the Hub (dim background + gold-bordered frame + X).
+/// Hub in 3 zones, measured from Huynh's second sketch (1280x720):
+/// top 0-306 = avatar (left, 0-273) + Stage / Logout (right),
+/// middle 306-612 = courtyard where the default hero walks,
+/// bottom 612-720 = 5 function buttons, starting at x=360 as sketched.
+/// Every widget still opens as a popup panel on top of the Hub
+/// (dim background + gold-bordered frame + X).
 /// Popup sizes are unchanged from Phase 2.3.
+/// Note: the old separate Trang bi button is gone on purpose — it opened
+/// the same HeroScreen as Cuong hoa, so equipment is reached via Cuong hoa.
 /// </summary>
 [GlobalClass]
 public partial class HubScene : Control
@@ -23,16 +26,17 @@ public partial class HubScene : Control
     public static readonly Vector2 StagePopupSize = new(1180, 680);
     public static readonly Vector2 RecruitPopupSize = new(700, 360);
 
-    // Zone bounds on the 1280x720 viewport, from the sketch proportions:
-    // top 44.5%, middle 44.8%, bottom 10.7%; avatar column 21.3%.
-    public static readonly Rect2 TopBarRect = new(0, 0, 1280, 320);
-    public static readonly Rect2 CourtyardRect = new(0, 320, 1280, 323);
-    public static readonly Rect2 FunctionBarRect = new(0, 643, 1280, 77);
+    // Zone bounds on the 1280x720 viewport, from the second sketch:
+    // top 42.5%, middle 42.5%, bottom 14.9%; avatar column 21.3%.
+    public static readonly Rect2 TopBarRect = new(0, 0, 1280, 306);
+    public static readonly Rect2 CourtyardRect = new(0, 306, 1280, 306);
+    public static readonly Rect2 FunctionBarRect = new(0, 612, 1280, 108);
 
     // Walk area, in Courtyard-local coordinates, for the character's
-    // top-left corner (character body is 64x96; hint label sits at y 8-36).
-    public static readonly Rect2 WalkArea = new(80, 40, 1056, 167);
-    public static readonly Vector2 CharacterStart = new(608, 110);
+    // top-left corner (character body is 64x96 + name label to +124;
+    // courtyard is 306 tall, so max top-left y is 174).
+    public static readonly Rect2 WalkArea = new(80, 40, 1056, 134);
+    public static readonly Vector2 CharacterStart = new(608, 105);
     public const float CharacterSpeed = 140f;
 
     public bool IsPopupOpen { get; private set; }
@@ -66,25 +70,24 @@ public partial class HubScene : Control
             CornerRadiusTopLeft = 12, CornerRadiusTopRight = 12, CornerRadiusBottomLeft = 12, CornerRadiusBottomRight = 12,
         };
         avatarPanel.AddThemeStyleboxOverride("panel", panelStyle);
-        var feature = new (string Node, string Text, bool Primary)[]
+        var topActions = new (string Node, string Text, bool Primary)[]
         {
-            ("HeroListButton", "Danh sách\ntướng", false),
-            ("BagButton", "Túi đồ", false),
-            ("EquipmentButton", "Trang bị", false),
-            ("EnhanceButton", "Cường hóa", false),
-            ("RecruitButton", "Chiêu mộ", false),
+            ("StageButton", "Vào ải", true),
+            ("LogoutButton", "Đăng xuất", false),
         };
-        foreach (var (node, text, primary) in feature)
+        foreach (var (node, text, primary) in topActions)
         {
-            var btn = GetNode<Button>($"TopBar/FeatureIcons/{node}");
+            var btn = GetNode<Button>($"TopBar/TopActions/{node}");
             btn.Text = text;
             UiTheme.StyleButton(btn, primary);
         }
         var functions = new (string Node, string Text, bool Primary)[]
         {
+            ("HeroListButton", "Danh sách\ntướng", false),
+            ("BagButton", "Túi đồ", false),
             ("FormationButton", "Bày trận", true),
-            ("StageButton", "Vào ải", true),
-            ("LogoutButton", "Đăng xuất", false),
+            ("EnhanceButton", "Cường hóa", false),
+            ("RecruitButton", "Chiêu mộ", false),
         };
         foreach (var (node, text, primary) in functions)
         {
@@ -260,7 +263,6 @@ public partial class HubScene : Control
     private void Go(string path) => GetTree().ChangeSceneToFile(path);
     private void OnHeroListPressed() => OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HeroListPopupSize);
     private void OnBagPressed() => OpenPopup("res://features/bag/scenes/BagScene.tscn", BagPopupSize);
-    private void OnEquipmentPressed() => OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HeroPopupSize);
     private void OnFormationPressed() => OpenPopup("res://features/formation/scenes/FormationScene.tscn", FormationPopupSize);
     private void OnStagePressed() => OpenPopup("res://features/stage/scenes/StageSelect.tscn", StagePopupSize);
     private void OnEnhancePressed() => OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HeroPopupSize);

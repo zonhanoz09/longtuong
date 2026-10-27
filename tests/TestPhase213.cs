@@ -3,6 +3,10 @@ using System.Linq;
 
 namespace LongTuong;
 
+// Updated for Phase 2.14: same 3-zone hub, but buttons moved to the
+// second sketch — Stage/Logout top-right, 5 functions on the bottom bar,
+// and the duplicate Trang bi button removed (it opened the same
+// HeroScreen as Cuong hoa). Zone heights changed to 306/306/108.
 [GlobalClass]
 public partial class TestPhase213 : Node
 {
@@ -23,18 +27,16 @@ public partial class TestPhase213 : Node
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
 
-        // 3 zones, measured from Huynh's sketch (1280x720).
         var top = hub.GetNode<Control>("TopBar");
-        Check(top.Position == new Vector2(0, 0) && top.Size == new Vector2(1280, 320), "top zone is 0-320");
+        Check(top.Position == new Vector2(0, 0) && top.Size == new Vector2(1280, 306), "top zone is 0-306");
         var yard = hub.GetNode<Control>("Courtyard");
-        Check(yard.Position == new Vector2(0, 320) && yard.Size == new Vector2(1280, 323), "middle zone is 320-643");
+        Check(yard.Position == new Vector2(0, 306) && yard.Size == new Vector2(1280, 306), "middle zone is 306-612");
         var bar = hub.GetNode<Control>("FunctionBar");
-        Check(bar.Position == new Vector2(0, 643) && bar.Size == new Vector2(1280, 77), "bottom zone is 643-720");
-        Check(HubScene.TopBarRect == new Rect2(0, 0, 1280, 320)
-            && HubScene.CourtyardRect == new Rect2(0, 320, 1280, 323)
-            && HubScene.FunctionBarRect == new Rect2(0, 643, 1280, 77), "zone constants match the scene");
+        Check(bar.Position == new Vector2(0, 612) && bar.Size == new Vector2(1280, 108), "bottom zone is 612-720");
+        Check(HubScene.TopBarRect == new Rect2(0, 0, 1280, 306)
+            && HubScene.CourtyardRect == new Rect2(0, 306, 1280, 306)
+            && HubScene.FunctionBarRect == new Rect2(0, 612, 1280, 108), "zone constants match the scene");
 
-        // Old single-column layout is gone; avatar + all 8 widgets remain.
         Check(hub.GetNodeOrNull<Control>("WidgetBox") == null
             && hub.GetNodeOrNull<Label>("TitleLabel") == null
             && hub.GetNodeOrNull<Label>("StatusLabel") == null, "old WidgetBox/Title/Status layout removed");
@@ -43,18 +45,17 @@ public partial class TestPhase213 : Node
         Check(nameLabel.Text.Contains("testhub"), "avatar shows the username");
         var heroLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel");
         Check(heroLabel.Text.Contains("testhub"), "avatar hero is the owned default (custom hero = username)");
-        var currency = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel");
-        Check(currency.Text.Contains("Vàng:"), "currency moved into the avatar panel");
-        var featureBtns = hub.GetNode<Control>("TopBar/FeatureIcons").GetChildren().OfType<Button>().ToList();
-        Check(featureBtns.Count == 5, "top-right holds 5 feature icons");
+        var topBtns = hub.GetNode<Control>("TopBar/TopActions").GetChildren().OfType<Button>().ToList();
+        Check(topBtns.Count == 2, "top-right holds 2 actions (Vao ai, Dang xuat)");
         var functionBtns = hub.GetNode<Control>("FunctionBar").GetChildren().OfType<Button>().ToList();
-        Check(functionBtns.Count == 3, "bottom bar holds 3 function icons");
-        Check(featureBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 8, "all 8 widgets still reachable (5 + 3)");
+        Check(functionBtns.Count == 5, "bottom bar holds 5 function buttons");
+        Check(topBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 7, "all 7 sketched buttons present (2 + 5)");
+        Check(hub.GetNodeOrNull<Button>("TopBar/FeatureIcons/EquipmentButton") == null
+            && hub.GetNodeOrNull<Button>("FunctionBar/EquipmentButton") == null, "duplicate Trang bi button removed");
 
-        // Character: starts inside the walk area, moves toward a target, arrives.
         Check(hub.CharacterPosition == HubScene.CharacterStart, "character starts at the courtyard centre");
         Check(HubScene.WalkArea.HasPoint(hub.CharacterPosition), "character start is inside the walk area");
-        var target = new Vector2(900, 150);
+        var target = new Vector2(900, 140);
         var before = hub.CharacterPosition.DistanceTo(target);
         hub.MoveCharacterTo(target);
         Check(hub.IsCharacterMoving, "character is moving after MoveCharacterTo");
@@ -65,12 +66,10 @@ public partial class TestPhase213 : Node
         hub.StepCharacter(10.0f);
         Check(!hub.IsCharacterMoving && hub.CharacterPosition == target, "character arrives and stops at the target");
 
-        // Click-to-move: a left click on the courtyard (local coords) sets a new target.
         var click = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = new Vector2(300, 200) };
         yard.EmitSignal(Control.SignalName.GuiInput, click);
         Check(hub.IsCharacterMoving, "click on the courtyard starts movement");
 
-        // Popups still work from the new layout (spot-check one widget).
         hub.OpenPopup("res://features/recruit/scenes/RecruitScene.tscn", HubScene.RecruitPopupSize);
         Check(hub.IsPopupOpen, "popup still opens from the 3-zone hub");
         Check(hub.ClosePopup(), "popup closes and hub refreshes");
