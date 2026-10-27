@@ -211,6 +211,13 @@ public static class ProgressionService
         }
         save.OwnedHeroIds.Remove(heroId);
         save.TeamIds.Remove(heroId);
+        // Phase 2.20: a dismissed hero also leaves the formation.
+        if (save.Formation != null)
+        {
+            var slots = save.Formation.Where(kv => kv.Value == heroId).Select(kv => kv.Key).ToList();
+            foreach (var slot in slots) save.Formation.Remove(slot);
+            if (save.Formation.Count > 0) save.TeamIds = FormationService.FormationToTeam(save.Formation);
+        }
         if (save.TeamIds.Count == 0 && save.OwnedHeroIds.Count > 0)
             save.TeamIds.Add(save.OwnedHeroIds[0]);
         save.Shards[heroId] = 0;

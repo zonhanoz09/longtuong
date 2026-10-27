@@ -10,6 +10,9 @@ public class SaveData
     public int LastStage { get; set; } = 0;
     public int Wins { get; set; } = 0;
     public List<string> TeamIds { get; set; } = new() { "quan_vu", "truong_phi", "gia_cat_luong" };
+    // Phase 2.20: formation layout, slot id -> hero id (only filled slots).
+    // TeamIds is derived from this in grid order (FormationService).
+    public Dictionary<string, string> Formation { get; set; } = new();
     public Dictionary<string, int> StageStars { get; set; } = new();
     public Dictionary<string, HeroProgress> Heroes { get; set; } = new();
     public List<string> OwnedHeroIds { get; set; } = new();

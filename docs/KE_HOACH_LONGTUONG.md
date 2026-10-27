@@ -301,6 +301,61 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   click đúp mang đồ + nút tháo tất cả vẫn chạy). Các test cũ 2.4–2.7,
   2.11 về màn này vẫn pass nguyên vẹn (giữ nguyên tên node/path).
 
+### Phase 2.20 — Bày trận kéo thả 7 ô + hiệu ứng vị trí trong trận (ĐÃ HOÀN THÀNH)
+
+- Popup Bày trận làm lại theo ảnh phác (đo từ ảnh: lưới 7 ô tròn,
+  3 cột × 3 hàng thiếu 2 ô; nhãn Hậu x~341 / Trung x~436 / Tiền
+  x~526): trái là danh sách tướng đã sở hữu, phải là lưới 3 cột
+  (Hậu 3 ô trên/giữa/dưới, Trung 3 ô trên/giữa/dưới, Tiền chỉ 1 ô
+  giữa), dưới lưới là tên 3 cột. Popup giữ 900×540, ô tròn 96×96
+  (bo 48), cột nhãn 96 rộng, gap 16, list cuộn 240 rộng.
+- Kéo thả bằng hệ drag-and-drop của Godot (`_GetDragData` /
+  `_CanDropData` / `_DropData` trên các class riêng trong
+  `FormationScene.cs`, không cần GlobalClass mới): list → ô trống
+  thì vào, list → ô có tướng thì hoán đổi (tướng cũ về list),
+  ô → ô thì đổi chỗ, ô → list hoặc bấm vào ô thì gỡ. Tướng đã vào
+  trận không hiện trong list (khác 2.19: lúc đó Bày trận vẫn hiện
+  tướng khóa — nay list chỉ gồm tướng sở hữu chưa bày).
+- Tối đa 5 tướng (dòng "Số tướng ra trận X/5" trên lưới). Main là
+  tướng tự tạo (tên đăng nhập): luôn xuất trận, không gỡ được, chỉ
+  được ở cột Trung (kéo được giữa 3 ô Trung trên/giữa/dưới, không
+  sang Hậu/Tiền); default ở ô giữa. Lưu ngay khi kéo thả, không có
+  nút Lưu riêng, đóng bằng X/ESC như các popup Hub khác.
+- Lưu đội hình: `SaveData.Formation` (slot id → hero id, chỉ ô có
+  tướng) trong `FormationService` (`core/progression/`): `EnsureFormation`
+  sửa/migrate (save cũ chưa có Formation thì migrate từ TeamIds +
+  ép main về ô giữa, tối đa 5, bỏ tướng không sở hữu/trùng), `TryPlace`
+  / `TryRemove` (kiểm tra main ở Trung, tối đa 5, không trùng),
+  `FormationToTeam` (theo thứ tự lưới). `GameManager.LoadGame` và
+  `CreateSeededSave` đều chạy `EnsureFormation` nên đội vào trận
+  luôn bằng đội hình đã bày; `DismissHero` cũng gỡ tướng khỏi
+  Formation.
+- Vào ải (`StageSelect`) không còn chọn đội riêng: chỉ chọn ải và
+  hiện đội hình từ Bày trận (kèm vị trí từng tướng) dạng chỉ đọc;
+  muốn đổi đội thì vào Bày trận. Đây là hệ quả trực tiếp của chốt
+  "bày như thế nào thì vào trận như vậy" — đội địch tăng lên 5 để
+  sau (hiện mỗi ải vẫn 3 địch, đánh 5v3).
+- Hiệu ứng vị trí trong trận (số % do Pax chọn vì Huynh không chốt
+  số, ghi rõ để sửa sau nếu muốn khác): Tiền quân DEF +20% và địch
+  đánh đơn mục tiêu sẽ nhắm tướng Tiền trước (thay vì tướng thấp máu
+  nhất); Trung quân ATK +20%; Hậu quân mỗi vòng có 20% cơ hội đánh
+  trước (được đưa lên đầu thứ tự lượt của vòng đó, không thêm lượt
+  đánh). Engine dùng `Fighter.EffectiveAtk/EffectiveDef` (tính từ
+  vị trí, không sửa HeroDef gốc) và `BattleEngine` có thêm constructor
+  nhận list vị trí song song với list tướng; `BattleScene` lấy vị trí
+  từ `Save.Formation` và hiện `[Hậu quân]/[Trung quân]/[Tiền quân]`
+  sau tên tướng. Địch chưa có vị trí nên không hưởng bonus này.
+- Bài học: `TryPlace` bản đầu hoán đổi sai (gán ô gốc rồi xóa ô gốc
+  ngay sau đó) khiến test crash ở check hoán đổi và Godot treo ở
+  shutdown vì `Quit()` không được gọi — đã sửa thành gán/ xóa theo
+  từng trường hợp (ô trống thì xóa gốc, ô có tướng thì gán gốc bằng
+  tướng bị đổi chỗ).
+- Test: `tests/TestPhase220.tscn` (40 check, ALL PASS, gồm migration,
+  hoán đổi, tối đa 5, main ở Trung, popup 7 ô + `_DropData`, bonus
+  ATK/DEF, địch nhắm Tiền trước, Hậu đánh trước đúng 40/200 = 20%,
+  vòng đầu không trùng lượt). Toàn bộ test cũ 0–2.19 vẫn pass; CI
+  thêm 2.20.
+
 ### Phase 2.19 — Popup Võ tướng chỉ hiện tướng đã sở hữu (ĐÃ HOÀN THÀNH)
 
 - `HeroListScene` chỉ tạo tab cho tướng trong `OwnedHeroIds` (theo

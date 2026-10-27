@@ -4,6 +4,13 @@ using System.Linq;
 
 namespace LongTuong;
 
+/// <summary>
+/// Phase 2.20: stage select no longer picks a team of its own — the battle
+/// team is exactly the formation set in Bày trận ("bày như thế nào thì vào
+/// trận như vậy"). This popup only picks the stage and shows the formation
+/// team (with each hero's position) as read-only info. To change the team,
+/// close this popup and open Bày trận.
+/// </summary>
 [GlobalClass]
 public partial class StageSelect : Control
 {
@@ -15,44 +22,45 @@ public partial class StageSelect : Control
     {
         UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
+        ProgressionService.EnsureDefaults(gm.Save);
+        FormationService.EnsureFormation(gm.Save);
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         UiTheme.StyleButton(GetNode<Button>("StartButton"), true);
-        _selected.AddRange(gm.SelectedTeamIds.Where(id => gm.Save.OwnedHeroIds.Contains(id)));
-        if (_selected.Count == 0 && gm.Save.OwnedHeroIds.Count > 0) _selected.Add(gm.Save.OwnedHeroIds[0]);
+        // The battle team is the formation team (main hero always included).
+        _selected.AddRange(FormationService.FormationToTeam(gm.Save.Formation)
+            .Where(id => gm.Save.OwnedHeroIds.Contains(id)));
+        if (!_selected.Contains(FormationService.MainHeroId) && gm.Save.OwnedHeroIds.Contains(FormationService.MainHeroId))
+            _selected.Insert(0, FormationService.MainHeroId);
+        gm.SelectedTeamIds = new List<string>(_selected);
         _selectedStage = System.Math.Min(gm.CurrentStageId, 10);
         _infoLabel = GetNode<Label>("InfoLabel");
-        BuildHeroButtons();
+        BuildTeamLabels();
         BuildStageButtons();
         RefreshInfo();
     }
 
-    private void BuildHeroButtons()
+    private void BuildTeamLabels()
     {
+        var gm = GetNode<GameManager>("/root/GameManager");
         var box = GetNode<VBoxContainer>("HeroBox");
-        foreach (var hero in HeroDatabase.Heroes)
+        foreach (var heroId in _selected)
         {
-            bool owned = GetNode<GameManager>("/root/GameManager").Save.OwnedHeroIds.Contains(hero.Id);
-            var btn = new Button
+            var hero = HeroDatabase.Get(heroId);
+            var pos = FormationService.PositionOfHero(gm.Save, heroId);
+            var label = new Label
             {
-                Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — HP {hero.Hp} / ATK {hero.Atk} / Tốc {hero.Speed} — {hero.UltName}{(owned ? "" : " (KHÓA — cần 10 mảnh)")}",
-                ToggleMode = true,
-                ButtonPressed = _selected.Contains(hero.Id),
-                Disabled = !owned,
+                Text = $"{hero.Name} — {FormationService.PositionName(pos)}" +
+                       (FormationService.IsMain(heroId) ? " (Main)" : ""),
             };
-            UiTheme.StyleButton(btn);
-            var id = hero.Id;
-            btn.Pressed += () =>
-            {
-                if (btn.ButtonPressed)
-                {
-                    if (_selected.Count >= 3) { btn.ButtonPressed = false; RefreshInfo("Chỉ chọn tối đa 3 tướng!"); return; }
-                    _selected.Add(id);
-                }
-                else _selected.Remove(id);
-                RefreshInfo();
-            };
-            box.AddChild(btn);
+            UiTheme.StyleBody(label, 16);
+            box.AddChild(label);
+        }
+        if (_selected.Count == 0)
+        {
+            var label = new Label { Text = "Chưa có đội hình — hãy vào Bày trận trước." };
+            UiTheme.StyleBody(label, 16);
+            box.AddChild(label);
         }
     }
 
@@ -86,15 +94,18 @@ public partial class StageSelect : Control
     private void RefreshInfo(string? note = null)
     {
         var names = _selected.Select(id => HeroDatabase.Get(id).Name).ToList();
-        // Title/label info is updated below; team size is 1-3 since Phase 2.2.
         var stage = HeroDatabase.GetStage(_selectedStage);
         if (_infoLabel != null)
-            _infoLabel.Text = $"Đội ({_selected.Count}/3): {string.Join(", ", names)} | Ải {_selectedStage}: {stage.Name}{(note != null ? $" | {note}" : "")}";
+            _infoLabel.Text = $"Đội hình từ Bày trận ({_selected.Count}/5): {string.Join(", ", names)} | Ải {_selectedStage}: {stage.Name}{(note != null ? $" | {note}" : "")}";
     }
 
     private void OnStartPressed()
     {
-        if (_selected.Count < 1 || _selected.Count > 3) { RefreshInfo("Chọn từ 1 đến 3 tướng!"); return; }
+        if (_selected.Count < 1 || _selected.Count > FormationService.MaxTeamSize)
+        {
+            RefreshInfo("Chưa có đội hình hợp lệ — hãy vào Bày trận trước!");
+            return;
+        }
         var gm = GetNode<GameManager>("/root/GameManager");
         int seed = (int)(System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 1000000) + _selectedStage * 7919;
         gm.StartBattle(_selectedStage, new List<string>(_selected), seed);

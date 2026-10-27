@@ -29,7 +29,9 @@ public partial class BattleScene : Control
         GetNode<Button>("BackButton").Text = "← Quay lại Hub";
         var stage = HeroDatabase.GetStage(gm.CurrentStageId);
         var effectiveTeam = gm.SelectedTeamIds.Select(id => ProgressionService.GetEffectiveHero(gm.Save, id)).ToList();
-        _engine = new BattleEngine(effectiveTeam, stage, gm.CurrentSeed);
+        // Phase 2.20: position bonuses come from the saved formation.
+        var positions = gm.SelectedTeamIds.Select(id => FormationService.PositionOfHero(gm.Save, id)).ToList();
+        _engine = new BattleEngine(effectiveTeam, positions, stage, gm.CurrentSeed);
         _turnLabel = GetNode<Label>("TurnLabel");
         _logLabel = GetNode<Label>("LogLabel");
         _resultLabel = GetNode<Label>("ResultLabel");
@@ -59,7 +61,10 @@ public partial class BattleScene : Control
     {
         if (_engine == null) return;
         foreach (var (f, label) in _labels)
-            label.Text = $"{f.Name} — HP {f.Hp}/{f.MaxHp} — Nộ {f.Rage}/100{(f.Alive ? "" : " (GỤC)")}";
+        {
+            var pos = f.Position == FormationPosition.None ? "" : $" [{FormationService.PositionName(f.Position)}]";
+            label.Text = $"{f.Name}{pos} — HP {f.Hp}/{f.MaxHp} — Nộ {f.Rage}/100{(f.Alive ? "" : " (GỤC)")}";
+        }
         var cur = _engine.Current;
         if (_turnLabel != null)
             _turnLabel.Text = _engine.IsOver ? "Trận đã kết thúc."

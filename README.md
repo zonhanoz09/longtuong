@@ -15,6 +15,18 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.20 — đã làm (Bày trận kéo thả 7 ô + hiệu ứng vị trí)
+
+- Popup Bày trận: list tướng sở hữu (tướng đã bày không hiện) kéo thả
+  vào lưới 7 ô (Hậu 3, Trung 3, Tiền 1), hoán đổi/gỡ bằng kéo hoặc bấm
+  ô, tối đa 5 tướng, tự lưu khi kéo thả, không nút Lưu riêng.
+- Main (tướng tự tạo) luôn xuất trận, chỉ ở cột Trung (kéo được giữa
+  3 ô Trung), default ô giữa. Đội vào trận đúng bằng đội hình đã bày;
+  màn Vào ải không chọn đội riêng nữa.
+- Hiệu ứng vị trí: Tiền DEF +20% và chịu đòn đơn mục tiêu trước,
+  Trung ATK +20%, Hậu 20% cơ hội đánh trước mỗi vòng.
+- Test: `tests/TestPhase220.tscn` (40 check).
+
 ## Phase 2.19 — đã làm (popup Võ tướng chỉ hiện tướng sở hữu)
 
 - Popup Võ tướng chỉ tạo tab cho tướng đã chiêu mộ/sở hữu, không còn

@@ -17,7 +17,7 @@ offset_left = 20.0
 offset_top = 10.0
 offset_right = 600.0
 offset_bottom = 40.0
-text = "CHON DOI HINH (3 TUONG) VA AI"
+text = "CHON AI — DOI HINH TU BAY TRAN"
 
 [node name="HeroBox" type="VBoxContainer" parent="."]
 layout_mode = 0

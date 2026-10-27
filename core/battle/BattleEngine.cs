@@ -29,11 +29,21 @@ public class BattleEngine
         : this(playerIds.Select(id => HeroDatabase.Get(id)).ToList(), stage, seed) { }
 
     public BattleEngine(List<HeroDef> playerDefs, StageDef stage, int seed)
+        : this(playerDefs, null, stage, seed) { }
+
+    // playerPositions parallels playerDefs (None when absent); enemies have
+    // no formation positions yet (their team grows in a later phase).
+    public BattleEngine(List<HeroDef> playerDefs, List<FormationPosition>? playerPositions, StageDef stage, int seed)
     {
         Stage = stage;
         Seed = seed;
         _rng = new Random(seed);
-        foreach (var def in playerDefs) PlayerFighters.Add(new Fighter(def, true));
+        for (int i = 0; i < playerDefs.Count; i++)
+        {
+            var f = new Fighter(playerDefs[i], true);
+            if (playerPositions != null && i < playerPositions.Count) f.Position = playerPositions[i];
+            PlayerFighters.Add(f);
+        }
         foreach (var id in stage.EnemyIds) EnemyFighters.Add(new Fighter(HeroDatabase.Get(id).WithScale(stage.Scale), false));
         RebuildOrder();
     }
@@ -41,7 +51,7 @@ public class BattleEngine
     public static int CalculateDamage(Fighter attacker, Fighter defender, double power, bool critHit, bool dodged, double variance)
     {
         if (dodged) return 0;
-        double dmg = attacker.Def.Atk * power * (100.0 / (100.0 + defender.Def.Def));
+        double dmg = attacker.EffectiveAtk * power * (100.0 / (100.0 + defender.EffectiveDef));
         if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= 1.25;
         if (critHit) dmg *= 1.5;
         dmg *= variance;
@@ -67,9 +77,34 @@ public class BattleEngine
 
     private void RebuildOrder()
     {
-        _order = PlayerFighters.Concat(EnemyFighters).Where(f => f.Alive)
+        var alive = PlayerFighters.Concat(EnemyFighters).Where(f => f.Alive).ToList();
+        // Phase 2.20 — Hậu quân: each alive rear player hero has a 20% chance
+        // (seeded RNG, so a given seed still replays deterministically) to act
+        // first this round. First-movers go before everyone else, once each;
+        // they do NOT get an extra action.
+        var first = new List<Fighter>();
+        foreach (var f in PlayerFighters.Where(f => f.Alive && f.Position == FormationPosition.Rear))
+            if (_rng.NextDouble() < 0.20) first.Add(f);
+        first = first.OrderByDescending(f => f.Def.Speed).ToList();
+        var rest = alive.Where(f => !first.Contains(f))
             .OrderByDescending(f => f.Def.Speed).ThenByDescending(f => f.IsPlayer ? 1 : 0).ToList();
+        _order = first.Concat(rest).ToList();
         _orderIndex = 0;
+    }
+
+    // Single-target choice. Phase 2.20 — Tiền quân: an enemy attack targets
+    // an alive front (Tiền) player hero first, instead of the lowest-HP foe.
+    // Player attacks keep the old lowest-HP rule (enemies have no positions).
+    private Fighter? PickTarget(Fighter actor)
+    {
+        var foes = EnemiesOf(actor).Where(f => f.Alive).ToList();
+        if (foes.Count == 0) return null;
+        if (!actor.IsPlayer)
+        {
+            var front = foes.FirstOrDefault(f => f.Position == FormationPosition.Front);
+            if (front != null) return front;
+        }
+        return foes.OrderBy(f => f.Hp).First();
     }
 
     private void Advance()
@@ -144,12 +179,17 @@ public class BattleEngine
                 return;
             }
             var foes = EnemiesOf(actor).Where(f => f.Alive).ToList();
-            var targets = actor.Def.UltKind == UltKind.AoEDamage ? foes
-                : new List<Fighter> { foes.OrderBy(f => f.Hp).First() };
-            foreach (var t in targets) Hit(actor, t, power);
+            if (actor.Def.UltKind == UltKind.AoEDamage)
+            {
+                foreach (var t in foes) Hit(actor, t, power);
+                return;
+            }
+            var single = PickTarget(actor);
+            if (single == null) return;
+            Hit(actor, single, power);
             return;
         }
-        var foe = EnemiesOf(actor).Where(f => f.Alive).OrderBy(f => f.Hp).FirstOrDefault();
+        var foe = PickTarget(actor);
         if (foe == null) return;
         Hit(actor, foe, power);
         actor.Rage = Math.Min(100, actor.Rage + 20);

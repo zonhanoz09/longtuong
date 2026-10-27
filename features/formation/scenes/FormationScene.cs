@@ -4,63 +4,245 @@ using System.Linq;
 
 namespace LongTuong;
 
+// Drag source for the owned-hero list: dragging starts with "heroId|" data.
+public partial class FormationDragButton : Button
+{
+    public string HeroId { get; set; } = "";
+
+    public override Variant _GetDragData(Vector2 atPosition)
+    {
+        if (string.IsNullOrEmpty(HeroId)) return default;
+        var preview = new Label { Text = HeroDatabase.Get(HeroId).Name };
+        preview.AddThemeFontSizeOverride("font_size", 17);
+        preview.AddThemeColorOverride("font_color", UiTheme.Gold);
+        SetDragPreview(preview);
+        return $"{HeroId}|";
+    }
+}
+
+// A formation slot: a round (96x96, radius 48) button. Dragging a filled slot
+// starts with "heroId|slotId" data; dropping onto it calls OnSlotDrop.
+public partial class FormationSlotButton : Button
+{
+    public string SlotId { get; set; } = "";
+    public string HeroId { get; set; } = "";
+    public System.Action<string, string?>? OnSlotDrop;
+
+    public override Variant _GetDragData(Vector2 atPosition)
+    {
+        if (string.IsNullOrEmpty(HeroId)) return default;
+        var preview = new Label { Text = HeroDatabase.Get(HeroId).Name };
+        preview.AddThemeFontSizeOverride("font_size", 17);
+        preview.AddThemeColorOverride("font_color", UiTheme.Gold);
+        SetDragPreview(preview);
+        return $"{HeroId}|{SlotId}";
+    }
+
+    public override bool _CanDropData(Vector2 atPosition, Variant data)
+    {
+        return data.VariantType == Variant.Type.String && data.AsString().Contains("|");
+    }
+
+    public override void _DropData(Vector2 atPosition, Variant data)
+    {
+        var parts = data.AsString().Split('|');
+        if (parts.Length < 2) return;
+        string? from = string.IsNullOrEmpty(parts[1]) ? null : parts[1];
+        OnSlotDrop?.Invoke(parts[0], from);
+    }
+}
+
+// The owned-hero list area: dropping a slot hero here removes it from the
+// formation (back to the list). Dropping a list hero here is a no-op.
+public partial class FormationListBox : VBoxContainer
+{
+    public System.Action<string>? OnListDrop;
+
+    public override bool _CanDropData(Vector2 atPosition, Variant data)
+    {
+        return data.VariantType == Variant.Type.String && data.AsString().Contains("|");
+    }
+
+    public override void _DropData(Vector2 atPosition, Variant data)
+    {
+        var parts = data.AsString().Split('|');
+        if (parts.Length < 2) return;
+        if (string.IsNullOrEmpty(parts[1])) return; // came from the list itself
+        OnListDrop?.Invoke(parts[0]);
+    }
+}
+
+/// <summary>
+/// Phase 2.20 formation popup (900x540, inside the Hub popup host).
+/// Left: owned heroes NOT yet deployed (deployed heroes do not show here).
+/// Right: the 7-slot grid from the sketch (Hậu 3, Trung 3, Tiền 1), with the
+/// column names underneath. Drag list -> empty slot to deploy, list -> filled
+/// slot to swap (the occupant goes back to the list), slot -> slot to swap,
+/// slot -> list or click a filled slot to remove (main hero excepted).
+/// The main hero (tướng tự tạo) always deploys and can only sit in the Trung
+/// column (top/middle/bottom). Every change saves immediately; there is no
+/// Save button — close with X or ESC like the other Hub popups.
+/// </summary>
 [GlobalClass]
 public partial class FormationScene : Control
 {
-    private readonly List<string> _selected = new();
-    private Label? _infoLabel;
+    private FormationListBox? _listBox;
+    private GridContainer? _grid;
+    private Label? _countLabel;
+    private Label? _noteLabel;
+    private readonly Dictionary<string, FormationSlotButton> _slots = new();
 
     public override void _Ready()
     {
         UiTheme.ApplyBackground(this);
         var gm = GetNode<GameManager>("/root/GameManager");
         ProgressionService.EnsureDefaults(gm.Save);
+        FormationService.EnsureFormation(gm.Save);
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
-        UiTheme.StyleButton(GetNode<Button>("SaveButton"), true);
-        _selected.AddRange(gm.SelectedTeamIds.Where(id => gm.Save.OwnedHeroIds.Contains(id)));
-        if (_selected.Count == 0 && gm.Save.OwnedHeroIds.Count > 0) _selected.Add(gm.Save.OwnedHeroIds[0]);
-        _infoLabel = GetNode<Label>("InfoLabel");
-        var box = GetNode<VBoxContainer>("HeroBox");
-        foreach (var hero in HeroDatabase.Heroes)
+        UiTheme.StyleBody(GetNode<Label>("ListHeaderLabel"), 17);
+        UiTheme.StyleBody(GetNode<Label>("CountLabel"), 17);
+        foreach (var label in GetNode<HBoxContainer>("ColumnLabels").GetChildren().OfType<Label>())
+            UiTheme.StyleBody(label, 16);
+        _countLabel = GetNode<Label>("CountLabel");
+        _noteLabel = GetNode<Label>("NoteLabel");
+        UiTheme.StyleBody(_noteLabel, 15);
+        _grid = GetNode<GridContainer>("SlotGrid");
+
+        _listBox = new FormationListBox
         {
-            var eff = ProgressionService.GetEffectiveHero(gm.Save, hero.Id);
-            bool owned = gm.Save.OwnedHeroIds.Contains(hero.Id);
-            var btn = new Button { Text = $"{hero.Name} — Cấp {gm.Save.Heroes[hero.Id].Level} — Sao {gm.Save.Heroes[hero.Id].Stars} — Lực chiến ~{eff.Hp + eff.Atk * 5}{(owned ? "" : " (KHÓA — cần 10 mảnh)")}", ToggleMode = true, ButtonPressed = _selected.Contains(hero.Id), Disabled = !owned };
-            UiTheme.StyleButton(btn);
-            var id = hero.Id;
-            btn.Pressed += () =>
+            Name = "ListBox",
+            CustomMinimumSize = new Vector2(220, 400),
+            SizeFlagsHorizontal = SizeFlags.Fill,
+        };
+        _listBox.OnListDrop = heroId => TryRemoveHero(heroId);
+        GetNode<ScrollContainer>("ListScroll").AddChild(_listBox);
+
+        foreach (var cell in FormationService.GridOrder)
+        {
+            if (cell == null)
             {
-                if (btn.ButtonPressed)
-                {
-                    if (_selected.Count >= 3) { btn.ButtonPressed = false; Refresh("Chỉ chọn tối đa 3 tướng!"); return; }
-                    _selected.Add(id);
-                }
-                else _selected.Remove(id);
-                Refresh();
+                _grid.AddChild(new Control { CustomMinimumSize = new Vector2(96, 96) });
+                continue;
+            }
+            var slotId = cell;
+            var btn = new FormationSlotButton
+            {
+                SlotId = slotId,
+                CustomMinimumSize = new Vector2(96, 96),
+                SizeFlagsHorizontal = SizeFlags.Fill,
+                SizeFlagsVertical = SizeFlags.Fill,
             };
-            box.AddChild(btn);
+            btn.OnSlotDrop = (heroId, fromSlot) => TryPlaceHero(heroId, slotId, fromSlot);
+            btn.Pressed += () => OnSlotClicked(slotId);
+            _slots[slotId] = btn;
+            _grid.AddChild(btn);
         }
         Refresh();
+        SetNote("Kéo tướng từ danh sách vào ô. Main luôn ở cột Trung.");
     }
 
-    private void Refresh(string? note = null)
+    private void SetNote(string text)
     {
-        var gm = GetNode<GameManager>("/root/GameManager");
-        int power = _selected.Sum(id => { var e = ProgressionService.GetEffectiveHero(gm.Save, id); return e.Hp + e.Atk * 5; });
-        var names = _selected.Select(id => HeroDatabase.Get(id).Name).ToList();
-        if (_infoLabel != null)
-            _infoLabel.Text = $"Đội hình ({_selected.Count}/3 tướng, tối thiểu 1): {string.Join(", ", names)} — Tổng lực chiến ~{power}{(note != null ? $" | {note}" : "")}";
+        if (_noteLabel != null) _noteLabel.Text = text;
     }
 
-    private void OnSavePressed()
+    private void Refresh()
     {
-        if (_selected.Count < 1 || _selected.Count > 3) { Refresh("Chọn từ 1 đến 3 tướng!"); return; }
         var gm = GetNode<GameManager>("/root/GameManager");
-        gm.SelectedTeamIds = new List<string>(_selected);
-        gm.Save.TeamIds = new List<string>(_selected);
+        var form = gm.Save.Formation ?? new Dictionary<string, string>();
+        if (_countLabel != null)
+            _countLabel.Text = $"Số tướng ra trận {form.Count}/5";
+        if (_listBox != null)
+        {
+            foreach (var child in _listBox.GetChildren()) child.QueueFree();
+            foreach (var heroId in gm.Save.OwnedHeroIds)
+            {
+                if (form.ContainsValue(heroId)) continue; // deployed: not in list
+                var hero = HeroDatabase.Get(heroId);
+                var p = gm.Save.Heroes[heroId];
+                var btn = new FormationDragButton
+                {
+                    HeroId = heroId,
+                    Text = $"{hero.Name} — Cấp {p.Level}",
+                    SizeFlagsHorizontal = SizeFlags.Fill,
+                };
+                UiTheme.StyleButton(btn);
+                _listBox.AddChild(btn);
+            }
+        }
+        foreach (var (slotId, btn) in _slots)
+        {
+            form.TryGetValue(slotId, out var heroId);
+            btn.HeroId = heroId ?? "";
+            btn.Text = string.IsNullOrEmpty(heroId) ? "" : HeroDatabase.Get(heroId).Name;
+            btn.AddThemeFontSizeOverride("font_size", 13);
+            var box = new StyleBoxFlat
+            {
+                CornerRadiusTopLeft = 48, CornerRadiusTopRight = 48,
+                CornerRadiusBottomLeft = 48, CornerRadiusBottomRight = 48,
+            };
+            if (string.IsNullOrEmpty(heroId))
+            {
+                box.BgColor = new Color(0.12f, 0.12f, 0.16f);
+                box.BorderColor = UiTheme.Muted;
+                box.BorderWidthLeft = box.BorderWidthRight = box.BorderWidthTop = box.BorderWidthBottom = 1;
+                btn.AddThemeColorOverride("font_color", UiTheme.Muted);
+            }
+            else if (FormationService.IsMain(heroId))
+            {
+                box.BgColor = UiTheme.Gold;
+                btn.AddThemeColorOverride("font_color", new Color(0.10f, 0.08f, 0.02f));
+            }
+            else
+            {
+                box.BgColor = UiTheme.Panel;
+                box.BorderColor = UiTheme.Gold;
+                box.BorderWidthLeft = box.BorderWidthRight = box.BorderWidthTop = box.BorderWidthBottom = 2;
+                btn.AddThemeColorOverride("font_color", UiTheme.Text);
+            }
+            btn.AddThemeStyleboxOverride("normal", box);
+            btn.AddThemeStyleboxOverride("hover", box);
+            btn.AddThemeStyleboxOverride("pressed", box);
+        }
+    }
+
+    // Shared by drag drops and by tests (which drive the same logic directly).
+    public bool TryPlaceHero(string heroId, string slotId, string? fromSlot)
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        if (!FormationService.TryPlace(gm.Save, heroId, slotId, fromSlot, out var error))
+        {
+            SetNote(error);
+            return false;
+        }
+        gm.SelectedTeamIds = new List<string>(gm.Save.TeamIds);
         gm.SaveGame();
-        Refresh("Đã lưu đội hình!");
+        Refresh();
+        SetNote("Đã lưu đội hình.");
+        return true;
     }
 
+    public bool TryRemoveHero(string heroId)
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        if (!FormationService.TryRemove(gm.Save, heroId, out var error))
+        {
+            SetNote(error);
+            return false;
+        }
+        gm.SelectedTeamIds = new List<string>(gm.Save.TeamIds);
+        gm.SaveGame();
+        Refresh();
+        SetNote("Đã lưu đội hình.");
+        return true;
+    }
+
+    private void OnSlotClicked(string slotId)
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        var form = gm.Save.Formation ?? new Dictionary<string, string>();
+        if (!form.TryGetValue(slotId, out var heroId) || string.IsNullOrEmpty(heroId)) return;
+        TryRemoveHero(heroId);
+    }
 }
