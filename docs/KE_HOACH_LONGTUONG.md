@@ -25,6 +25,12 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Cập nhật 2026-10-26: **Phase 2.2 — ĐÃ HOÀN THÀNH** — UI/UX thống nhất cho
 > toàn bộ widget + Hub dạng thẻ, và seed data tài khoản mới: 1 tướng khởi đầu
 > suy ra từ tên đăng nhập + rất nhiều Vàng để test chức năng (xem §6.2 dưới đây).
+>
+> Cập nhật 2026-10-28: **Phase 2.23 — ĐÃ HOÀN THÀNH** — Tửu quán
+> (đối tửu + chiêu mộ theo cơ chế gốc, xem docs/KE_HOACH_DOITUU_CHIEUMO.md):
+> Thường 100 / Cao cấp 300 Vàng, rút 3 tướng theo tỉ lệ phẩm, oẳn tù tì
+> thắng nhận 1–5 hồn, đủ 100/500/1500 hồn thì chiêu mộ; cấp tối đa 180,
+> cấp người chơi = cấp tướng tự tạo, sao tướng loại bỏ khỏi game.
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc

@@ -57,7 +57,7 @@ public static class HeroDatabase
         // Phase 2.10: custom hero for new accounts. Its Name is NOT fixed here:
         // it is set to the account username on seed/login via SetCustomHeroName.
         // Basic stats, no real skills yet (placeholder ult = plain 1.0x hit).
-        // It is intentionally NOT in the recruit pool (see RecruitService.Rates).
+        // It is intentionally NOT in the tavern pool (see TavernData.TierOfHero).
         new HeroDef { Id = "custom_hero", Name = "Tướng Tự Tạo", Role = HeroRole.Vanguard, Hp = 500, Atk = 60, Def = 30, Speed = 60, Crit = 0.10, Dodge = 0.05, NormalName = "Đánh thường", UltName = "Chưa có tuyệt kỹ", UltPower = 1.0, UltKind = UltKind.SingleDamage, PassiveName = "Chưa có bị động", PassiveDesc = "Tướng tự tạo theo tên đăng nhập — kỹ năng sẽ được cập nhật sau." },
         // Phase 2.9: former default starter, still a normal recruitable hero.
         new HeroDef { Id = "luu_bi", Name = "Lưu Bị", Role = HeroRole.Vanguard, Hp = 620, Atk = 72, Def = 42, Speed = 68, Crit = 0.12, Dodge = 0.08, NormalName = "Song Kiếm", UltName = "Song Cổ Kiếm", UltPower = 1.8, UltKind = UltKind.SingleDamage, PassiveName = "Nhân Nghĩa", PassiveDesc = "Được lòng người: tướng cân bằng, không bị khắc hệ (Tiên phong)." },

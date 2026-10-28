@@ -24,7 +24,7 @@ public partial class HeroScreen : Control
         UiTheme.StyleButton(GetNode<Button>("UnlockStarButton"));
         var recruitBtn = GetNode<Button>("RecruitButton");
         UiTheme.StyleButton(recruitBtn);
-        recruitBtn.Disabled = true; // Phase 2.22: recruit pending rework.
+        // Phase 2.23: the button opens the tavern popup (see OnRecruitPressed).
         UiTheme.StyleButton(GetNode<Button>("UnequipAllButton"));
         if (!gm.Save.OwnedHeroIds.Contains(_selected) && gm.Save.OwnedHeroIds.Count > 0) _selected = gm.Save.OwnedHeroIds[0];
         ProgressionService.EnsureDefaults(gm.Save);
@@ -123,7 +123,7 @@ public partial class HeroScreen : Control
         var eff = ProgressionService.GetEffectiveHero(save, _selected);
         var next = p.Level >= ProgressionService.MaxLevel ? "MAX" : $"{p.Exp}/{ProgressionService.ExpToNext(p.Level)}";
         if (_detailLabel != null)
-            _detailLabel.Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — Cấp {p.Level} (EXP {next}) — Sao {p.Stars}/5\n" +
+            _detailLabel.Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — Cấp {p.Level} (EXP {next})\n" +
                 $"Hiệu lực: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}\n" +
                 $"Đánh thường: {hero.NormalName} | Tuyệt kỹ: {hero.UltName} | Bị động: {hero.PassiveName} — {hero.PassiveDesc}\n" +
                 $"Vàng: {save.Gold} | Kim Nguyên Bảo: {save.Gems} | Trận thắng: {save.Wins}\n{_status}";
@@ -150,7 +150,7 @@ public partial class HeroScreen : Control
             _starLabel.Text = $"Tướng Tinh: đã mở {save.StarNodesUnlocked}/12 ô (+3% HP/ATK toàn đội mỗi ô) — Điểm sao ải: {points} — Ô tiếp theo cần {nextCost} điểm.";
         }
         if (_recruitLabel != null)
-            _recruitLabel.Text = "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau.";
+            _recruitLabel.Text = "Mở Tửu quán để đối tửu và chiêu mộ tướng.";
     }
 
     private void OnUnlockStarPressed()
@@ -161,15 +161,24 @@ public partial class HeroScreen : Control
         Refresh();
     }
 
+    // Phase 2.23: open the tavern popup. The hero screen itself lives inside
+    // the hub's popup host, so walk up to the HubScene and reuse OpenPopup
+    // (it closes this popup first, then opens the tavern — QueueFree is
+    // deferred, so returning right after is safe). Standalone (tests) there
+    // is no hub ancestor, so just note where the tavern lives.
     private void OnRecruitPressed()
     {
-        var gm = GetNode<GameManager>("/root/GameManager");
-        if (RecruitService.TryRecruit(gm.Save, new System.Random(), out var heroId))
+        var n = GetParent();
+        while (n != null)
         {
-            _status = $"Chiêu mộ được {HeroDatabase.Get(heroId).Name}!";
-            gm.SaveGame();
+            if (n is HubScene hub)
+            {
+                hub.OpenPopup("res://features/recruit/scenes/RecruitScene.tscn", HubScene.RecruitPopupSize);
+                return;
+            }
+            n = n.GetParent();
         }
-        else _status = "Chiêu mộ đang được làm lại, sẽ ra mắt ở bản sau.";
+        _status = "Mở Tửu quán từ nút Chiêu mộ ở Hub.";
         Refresh();
     }
 

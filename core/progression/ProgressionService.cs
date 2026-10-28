@@ -8,7 +8,8 @@ public class HeroProgress
 {
     public int Level { get; set; } = 1;
     public int Exp { get; set; } = 0;
-    public int Stars { get; set; } = 1;
+    // Phase 2.23: hero stars were removed from the game entirely
+    // (no Stars field, no star scaling, no "Sao X/5" display).
 }
 
 public class EquipmentState
@@ -37,22 +38,25 @@ public class EquipmentSlotDef
 /// <summary>
 /// Phase 2 progression. All formulas are public and data-driven here so balance
 /// can be tuned without touching combat code.
-/// - EXP to next level: 100 + 50*(level-1). Max level 60.
-/// - Stars: 1..5. Star-up cost in shards: 10 * current stars.
-/// - Stat scale: base * (1 + 0.04*(level-1)) * (1 + 0.25*(stars-1)).
+/// - EXP to next level: 100 + 50*(level-1). Max level 180 (raised from 60
+///   in 2.23 so the tavern's Cam gate at custom-hero level 70 is reachable).
+/// - Quality (2.23, TavernData): higher tier => higher base stats and faster
+///   per-level growth. Stat scale: base * qualityStat * (1 + 0.04 * qualityGrowth
+///   * (level-1)). Only HP/ATK/DEF scale (Speed/Crit/Dodge stay at base, as
+///   with the old level/star scaling). Heroes without a tier (custom hero)
+///   use factors 1.0/1.0.
 /// - Equipment: 4 slots, enhance max 10, cost 100*(level+1) Gold.
 /// - Refine: 1 bonus line per item, cycles through 5 options, cost 100 Gold.
 /// - Star chart: 12 nodes, next node unlocks when total stage stars >= (unlocked+1)*2.
-///   Each node: +3% HP and +3% ATK for the whole team.
+///   Each node: +3% HP and +3% ATK for the whole team. (The star chart is
+///   NOT hero stars: hero stars were removed in 2.23, the chart stays.)
 /// Order in GetEffectiveHero: scaled base -> + equipment flat -> refine -> star-chart %.
 /// </summary>
 public static class ProgressionService
 {
-    public const int MaxLevel = 60;
-    public const int MaxStars = 5;
+    public const int MaxLevel = 180;
     public const int MaxEnhanceLevel = 10;
     public const int StarChartNodes = 12;
-    public const int RecruitCostGold = 100;
     public const int RefineCostGold = 100;
 
     public static readonly List<EquipmentSlotDef> Slots = new()
@@ -80,6 +84,10 @@ public static class ProgressionService
         save.StageStars ??= new Dictionary<string, int>();
         save.OwnedHeroIds ??= new List<string>();
         save.BagEquipment ??= new List<BagEquipmentItem>();
+        // Phase 2.23: souls per general, 0 by default (old saves load fine).
+        save.GeneralSouls ??= new Dictionary<string, int>();
+        foreach (var hero in HeroDatabase.Heroes)
+            if (!save.GeneralSouls.ContainsKey(hero.Id)) save.GeneralSouls[hero.Id] = 0;
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
         if (save.OwnedHeroIds.Count == 0)
             save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();
@@ -149,8 +157,8 @@ public static class ProgressionService
     public static int StarChartPoints(SaveData save) => save.StageStars.Values.Sum();
 
     /// <summary>Phase 2.18: dismiss a hero = remove it from the owned roster
-    /// only. Equipped items return to the bag (never lost); level/stars are
-    /// kept, so re-recruiting the hero later restores them. Blocked for the
+    /// only. Equipped items return to the bag (never lost); level is kept,
+    /// so re-recruiting the hero later restores it. Blocked for the
     /// only permanent hero (custom: EnsureDefaults would restore it on the
     /// next load, so dismiss would be a no-op), for heroes not owned, and
     /// for the last owned hero (an empty roster cannot battle). Phase 2.22:
@@ -193,17 +201,19 @@ public static class ProgressionService
         return true;
     }
 
-    public static HeroDef GetScaledBase(string heroId, int level, int stars)
+    public static HeroDef GetScaledBase(string heroId, int level)
     {
         var baseDef = HeroDatabase.Get(heroId);
-        double levelFactor = 1 + 0.04 * (level - 1);
-        double starFactor = 1 + 0.25 * (stars - 1);
+        var tier = TavernData.TierOf(heroId);
+        double statFactor = tier == null ? 1.0 : TavernData.StatFactor(tier.Value);
+        double growthFactor = tier == null ? 1.0 : TavernData.GrowthFactor(tier.Value);
+        double levelFactor = 1 + 0.04 * growthFactor * (level - 1);
         return new HeroDef
         {
             Id = baseDef.Id, Name = baseDef.Name, Role = baseDef.Role,
-            Hp = (int)Math.Round(baseDef.Hp * levelFactor * starFactor),
-            Atk = (int)Math.Round(baseDef.Atk * levelFactor * starFactor),
-            Def = (int)Math.Round(baseDef.Def * levelFactor * starFactor),
+            Hp = (int)Math.Round(baseDef.Hp * statFactor * levelFactor),
+            Atk = (int)Math.Round(baseDef.Atk * statFactor * levelFactor),
+            Def = (int)Math.Round(baseDef.Def * statFactor * levelFactor),
             Speed = baseDef.Speed, Crit = baseDef.Crit, Dodge = baseDef.Dodge,
             DamageReduction = baseDef.DamageReduction,
             NormalName = baseDef.NormalName, UltName = baseDef.UltName,
@@ -215,7 +225,7 @@ public static class ProgressionService
     public static HeroDef GetEffectiveHero(SaveData save, string heroId)
     {
         var p = ProgressOf(save, heroId);
-        var def = GetScaledBase(heroId, p.Level, p.Stars);
+        var def = GetScaledBase(heroId, p.Level);
         double atkMul = 1.0, hpMul = 1.0;
         foreach (var slot in Slots)
         {

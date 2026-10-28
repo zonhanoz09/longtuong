@@ -10,7 +10,8 @@ namespace LongTuong;
 /// Phase 2.22 tests: hero shards removed completely from the game.
 /// - New accounts own ONLY the custom hero (Luu Bi is recruit-only now).
 /// - No shard state, no shard unlock, no star-up button, no shard rewards.
-/// - Recruit is disabled pending its rework (never charges gold).
+/// - Phase 2.23: recruit moved into the tavern (this test's old
+///   "recruit disabled" checks were replaced by tavern basics).
 /// - Old saves carrying a "Shards" JSON field still load fine (field ignored).
 /// - Luu Bi can be dismissed (normal hero now); custom hero cannot.
 /// - Battle win rewards are Gold/Gems/EXP only (no shards).
@@ -41,13 +42,14 @@ public partial class TestPhase222 : Node
         Check(old.OwnedHeroIds.Contains("custom_hero"), "old account gains the custom hero on load");
         Check(!old.OwnedHeroIds.Contains("luu_bi"), "old account does NOT gain Luu Bi on load");
 
-        // --- Recruit disabled: never charges gold ---
+        // --- Phase 2.23: recruit lives in the tavern now ---
         var s = SeedService.CreateSeededSave("tester222");
-        s.Gold = 100000;
-        Check(!RecruitService.TryRecruit(s, new Random(7), out _) && s.Gold == 100000,
-            "recruit disabled: no gold charged, no grant");
-        Check(RecruitService.Rates.Sum(r => r.Weight) == 100 && RecruitService.Rates.Count == 7,
-            "recruit rates still sum to 100 over 7 heroes (for the future rework)");
+        s.Gold = 50;
+        Check(!TavernService.StartDrink(s, TavernGrade.Normal, new Random(7), out _) && s.Gold == 50,
+            "tavern drink fails without charging when gold is short");
+        ProgressionService.EnsureDefaults(s);
+        Check(s.GeneralSouls.Count == 8 && s.GeneralSouls.Values.All(v => v == 0),
+            "GeneralSouls initialized to 0 for all 8 heroes");
 
         // --- Dismiss: Luu Bi yes, custom no ---
         var s2 = SeedService.CreateSeededSave("tester222");
@@ -95,8 +97,8 @@ public partial class TestPhase222 : Node
             var hero = heroScene.Instantiate<HeroScreen>();
             AddChild(hero);
             Check(hero.GetNodeOrNull<Button>("StarUpButton") == null, "star-up button is gone from the hero screen");
-            Check(hero.GetNode<Button>("RecruitButton").Disabled, "hero screen recruit button is disabled pending rework");
-            Check(hero.GetNode<Label>("RecruitLabel").Text.Contains("làm lại"), "hero screen recruit label notes the rework");
+            Check(!hero.GetNode<Button>("RecruitButton").Disabled, "hero screen recruit button is enabled (opens the tavern)");
+            Check(hero.GetNode<Label>("RecruitLabel").Text.Contains("Tửu quán"), "hero screen recruit label points to the tavern");
             hero.QueueFree();
         }
         var recruitScene = ResourceLoader.Load<PackedScene>("res://features/recruit/scenes/RecruitScene.tscn");
@@ -105,8 +107,10 @@ public partial class TestPhase222 : Node
         {
             var rec = recruitScene.Instantiate<RecruitScene>();
             AddChild(rec);
-            Check(rec.GetNode<Button>("DrawButton").Disabled, "recruit draw button is disabled pending rework");
-            Check(rec.GetNode<Label>("StatusLabel").Text.Contains("làm lại"), "recruit status notes the rework");
+            Check(rec.GetNodeOrNull<Button>("DrawButton") == null, "old draw button is gone from the tavern");
+            Check(rec.GetNode<Button>("NormalButton") != null && rec.GetNode<Button>("HighButton") != null, "tavern has Normal/High drink buttons");
+            Check(rec.GetNode<Button>("RockButton").Disabled && rec.GetNode<Button>("ScissorsButton").Disabled && rec.GetNode<Button>("PaperButton").Disabled, "RPS buttons disabled before any drink");
+            Check(!rec.GetNode<Label>("StatusLabel").Text.Contains("làm lại"), "tavern status no longer notes a rework");
             rec.QueueFree();
         }
 

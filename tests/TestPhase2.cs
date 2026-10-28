@@ -17,7 +17,8 @@ public partial class TestPhase2 : Node
         CheckScaling();
         CheckEquipment();
         CheckStarChart();
-        CheckRecruit();
+        // Phase 2.23: recruit lives in the tavern (TestPhase223); the old
+        // gacha CheckRecruit was deleted with RecruitService.
         CheckEffectiveBattle();
         CheckSaveProgression();
         GD.Print(_failures == 0 ? "TEST PHASE2: ALL PASS" : $"TEST PHASE2: {_failures} FAILURES");
@@ -44,23 +45,23 @@ public partial class TestPhase2 : Node
         ProgressionService.AddExp(s, "quan_vu", 250);
         Check(s.Heroes["quan_vu"].Level == 3 && s.Heroes["quan_vu"].Exp == 0, "250 exp: level 1 -> 3, exp 0");
         var s2 = Fresh();
-        s2.Heroes["quan_vu"].Level = 60;
+        s2.Heroes["quan_vu"].Level = 180;
         ProgressionService.AddExp(s2, "quan_vu", 99999);
-        Check(s2.Heroes["quan_vu"].Level == 60, "level capped at 60");
+        Check(s2.Heroes["quan_vu"].Level == 180, "level capped at 180 (2.23: was 60)");
     }
 
     private void CheckScaling()
     {
         var baseDef = HeroDatabase.Get("quan_vu");
-        var scaled = ProgressionService.GetScaledBase("quan_vu", 11, 3);
-        // level factor 1+0.04*10=1.4, star factor 1+0.25*2=1.5 => 2.1x
-        Check(scaled.Hp == (int)Math.Round(baseDef.Hp * 2.1) && scaled.Atk == (int)Math.Round(baseDef.Atk * 2.1), "scaled base = base * 1.4 * 1.5");
+        var scaled = ProgressionService.GetScaledBase("quan_vu", 11);
+        // Phase 2.23: no stars; Quan Vu is Tim (stat 1.15, growth 1.15):
+        // level factor 1+0.04*1.15*10 = 1.46, total 1.15*1.46 = 1.679x.
+        Check(scaled.Hp == (int)Math.Round(baseDef.Hp * 1.679) && scaled.Atk == (int)Math.Round(baseDef.Atk * 1.679), "scaled base = base * 1.15 * 1.46 (Tim quality)");
         var s = Fresh();
         var effLow = ProgressionService.GetEffectiveHero(s, "quan_vu");
         s.Heroes["quan_vu"].Level = 20;
-        s.Heroes["quan_vu"].Stars = 3;
         var effHigh = ProgressionService.GetEffectiveHero(s, "quan_vu");
-        Check(effHigh.Hp > effLow.Hp && effHigh.Atk > effLow.Atk, "higher level/star => higher effective stats");
+        Check(effHigh.Hp > effLow.Hp && effHigh.Atk > effLow.Atk, "higher level => higher effective stats");
     }
 
     private void CheckEquipment()
@@ -102,24 +103,10 @@ public partial class TestPhase2 : Node
         Check(ProgressionService.StarChartPoints(s) == 2, "star chart points = sum of stage stars");
     }
 
-    private void CheckRecruit()
-    {
-        Check(RecruitService.Rates.Sum(r => r.Weight) == 100, "recruit rates sum to 100");
-        // Phase 2.22: recruit is disabled pending its rework — TryRecruit
-        // never charges gold, whatever the balance.
-        var s = Fresh(); s.Gold = 50;
-        Check(!RecruitService.TryRecruit(s, new Random(1), out _) && s.Gold == 50, "disabled recruit charges nothing (low gold)");
-        var s2 = Fresh();
-        Check(!RecruitService.TryRecruit(s2, new Random(42), out _) && s2.Gold == 100000, "disabled recruit charges nothing (full gold)");
-        // The draw core stays deterministic for the future rework.
-        Check(RecruitService.DrawHero(new Random(42)) == RecruitService.DrawHero(new Random(42)), "same draw seed => same hero");
-    }
-
     private void CheckEffectiveBattle()
     {
         var s = Fresh();
         s.Heroes["quan_vu"].Level = 20;
-        s.Heroes["quan_vu"].Stars = 3;
         var eff = ProgressionService.GetEffectiveHero(s, "quan_vu");
         var engine = new BattleEngine(new List<HeroDef> { eff, ProgressionService.GetEffectiveHero(s, "truong_phi"), ProgressionService.GetEffectiveHero(s, "gia_cat_luong") }, HeroDatabase.GetStage(1), 99);
         var fighter = engine.PlayerFighters.First(f => f.Def.Id == "quan_vu");
@@ -133,13 +120,13 @@ public partial class TestPhase2 : Node
         try
         {
             var s = Fresh();
-            s.Heroes["lu_bo"].Level = 12; s.Heroes["lu_bo"].Stars = 4;
+            s.Heroes["lu_bo"].Level = 12;
             s.HeroEquipment["lu_bo"]["weapon"].IsEmpty = false; s.HeroEquipment["lu_bo"]["weapon"].Level = 5; s.HeroEquipment["lu_bo"]["weapon"].RefineIndex = 2;
             s.StarNodesUnlocked = 3; s.Gems = 77;
             SaveManager.Save(path, s);
             var loaded = SaveManager.Load(path);
             ProgressionService.EnsureDefaults(loaded);
-            Check(loaded.Heroes["lu_bo"].Level == 12 && loaded.Heroes["lu_bo"].Stars == 4, "save/load preserves hero level/stars");
+            Check(loaded.Heroes["lu_bo"].Level == 12, "save/load preserves hero level (2.23: no stars)");
             Check(loaded.Gems == 77 && loaded.StarNodesUnlocked == 3, "save/load preserves gems/star nodes");
             Check(loaded.HeroEquipment["lu_bo"]["weapon"].Level == 5 && loaded.HeroEquipment["lu_bo"]["weapon"].RefineIndex == 2, "save/load preserves equipment");
             var empty = new SaveData();

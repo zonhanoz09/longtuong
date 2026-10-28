@@ -19,7 +19,7 @@ public partial class BagScene : Control
         Add($"Tướng Tinh: {gm.Save.StarNodesUnlocked}/12 ô | Tổng sao ải: {ProgressionService.StarChartPoints(gm.Save)}");
         Add("— Tướng —");
         foreach (var hero in HeroDatabase.Heroes)
-            Add($"{hero.Name}: Cấp {gm.Save.Heroes[hero.Id].Level} — Sao {gm.Save.Heroes[hero.Id].Stars}/5");
+            Add($"{hero.Name}: Cấp {gm.Save.Heroes[hero.Id].Level}");
         Add("— Trang bị (cấp cường hóa) —");
         foreach (var hero in HeroDatabase.Heroes)
         {

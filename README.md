@@ -15,6 +15,24 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.23 — đã làm (Tửu quán: đối tửu + chiêu mộ, bỏ sao tướng, cấp tối đa 180)
+
+- Tửu quán thay nút Chiêu mộ: chọn mức Thường (100 Vàng) hoặc Cao cấp
+  (300 Vàng), mỗi lần đối tửu rút ngẫu nhiên 3 tướng theo tỉ lệ phẩm
+  của mức (Thường Lam 70/Tím 25/Cam 5, Cao cấp Lam 60/Tím 30/Cam 10;
+  dưới cấp tướng tự tạo 70 thì tỉ lệ Cam = 0). Không còn nút chọn phẩm.
+- Oẳn tù tì lần lượt với cả 3 tướng: thắng nhận 1–5 Võ Hồn của tướng
+  đó, hòa cộng 1 lượt miễn phí với tướng đó, thua thì thôi. Đủ hồn
+  (Lam 100, Tím 500, Cam 1500; Đỏ chỉ từ event) thì chiêu mộ tướng
+  về đội. Võ Hồn chỉ để chiêu mộ.
+- Cấp người chơi = cấp tướng tự tạo; cấp tối đa nâng từ 60 lên 180
+  để mốc Cam 70 tới được. Phẩm càng cao chỉ số càng cao và trưởng
+  thành càng nhanh (Lam ×1.0, Tím ×1.15, Cam ×1.35, Đỏ ×1.6 — tạm).
+- Sao tướng loại bỏ khỏi game: xóa field Stars, hệ số sao và hiển
+  thị "Sao X/5". Sao ải và Tướng Tinh giữ nguyên.
+- Test: `tests/TestPhase223.tscn` (43 check, gồm tỉ lệ rút khớp replica
+  Random và tỉ lệ Cam Cao cấp ~10% ở cấp 70).
+
 ## Phase 2.22 — đã làm (loại bỏ hoàn toàn mảnh tướng)
 
 - Xóa sạch mảnh tướng: không còn mảnh trong save, chiêu mộ, tăng

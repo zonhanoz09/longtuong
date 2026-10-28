@@ -40,7 +40,7 @@ public partial class TestPhase25 : Node
     {
         var s = Fresh();
         Check(s.HeroEquipment["quan_vu"].Values.All(eq => eq.IsEmpty), "fresh heroes start with all equipment slots empty");
-        var scaled = ProgressionService.GetScaledBase("quan_vu", 1, 1);
+        var scaled = ProgressionService.GetScaledBase("quan_vu", 1);
         var eff = ProgressionService.GetEffectiveHero(s, "quan_vu");
         Check(eff.Hp == scaled.Hp && eff.Atk == scaled.Atk, "empty slots add no equipment bonus (effective == scaled base)");
         Check(!ProgressionService.TryEnhance(s, "quan_vu", "weapon"), "enhance fails on empty slot");
@@ -79,7 +79,7 @@ public partial class TestPhase25 : Node
         var legacy = Fresh();
         legacy.HeroEquipment["quan_vu"]["weapon"].IsEmpty = false;
         legacy.HeroEquipment["quan_vu"]["weapon"].Level = 5;
-        var scaled = ProgressionService.GetScaledBase("quan_vu", 1, 1);
+        var scaled = ProgressionService.GetScaledBase("quan_vu", 1);
         var eff = ProgressionService.GetEffectiveHero(legacy, "quan_vu");
         Check(eff.Atk > scaled.Atk, "legacy equipped item still gives bonus");
     }

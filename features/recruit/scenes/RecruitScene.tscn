@@ -17,40 +17,92 @@ offset_left = 20.0
 offset_top = 10.0
 offset_right = 600.0
 offset_bottom = 40.0
-text = "CHIEU MO"
-
-[node name="RatesLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 60.0
-offset_right = 680.0
-offset_bottom = 100.0
-autowrap_mode = 3
-text = "Ti le..."
+text = "TỬU QUÁN"
 
 [node name="GoldLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 110.0
-offset_right = 600.0
-offset_bottom = 140.0
+offset_top = 50.0
+offset_right = 960.0
+offset_bottom = 80.0
 text = "Vang..."
 
-[node name="DrawButton" type="Button" parent="."]
+[node name="NormalButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 160.0
-offset_right = 320.0
-offset_bottom = 200.0
-text = "Chieu mo (100 Vang)"
+offset_top = 90.0
+offset_right = 330.0
+offset_bottom = 130.0
+text = "Đối tửu Thường (100 Vàng)"
+
+[node name="HighButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 350.0
+offset_top = 90.0
+offset_right = 660.0
+offset_bottom = 130.0
+text = "Đối tửu Cao cấp (300 Vàng)"
+
+[node name="GeneralsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 140.0
+offset_right = 960.0
+offset_bottom = 210.0
+autowrap_mode = 3
+text = "Chua doi tuu."
+
+[node name="RockButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 220.0
+offset_right = 170.0
+offset_bottom = 260.0
+text = "Búa"
+
+[node name="ScissorsButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 190.0
+offset_top = 220.0
+offset_right = 340.0
+offset_bottom = 260.0
+text = "Kéo"
+
+[node name="PaperButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 360.0
+offset_top = 220.0
+offset_right = 510.0
+offset_bottom = 260.0
+text = "Bao"
 
 [node name="StatusLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 220.0
-offset_right = 680.0
-offset_bottom = 260.0
+offset_top = 270.0
+offset_right = 960.0
+offset_bottom = 330.0
 autowrap_mode = 3
 text = ""
 
-[connection signal="pressed" from="DrawButton" to="." method="OnDrawPressed"]
+[node name="SoulsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 340.0
+offset_right = 960.0
+offset_bottom = 400.0
+autowrap_mode = 3
+text = "Vo Hon..."
+
+[node name="RecruitBox" type="Control" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 410.0
+offset_right = 960.0
+offset_bottom = 590.0
+
+[connection signal="pressed" from="NormalButton" to="." method="OnNormalPressed"]
+[connection signal="pressed" from="HighButton" to="." method="OnHighPressed"]
+[connection signal="pressed" from="RockButton" to="." method="OnRockPressed"]
+[connection signal="pressed" from="ScissorsButton" to="." method="OnScissorsPressed"]
+[connection signal="pressed" from="PaperButton" to="." method="OnPaperPressed"]

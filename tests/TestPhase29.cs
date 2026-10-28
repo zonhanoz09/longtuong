@@ -30,9 +30,12 @@ public partial class TestPhase29 : Node
         var legacy = new SaveData { OwnedHeroIds = new List<string>() };
         ProgressionService.EnsureDefaults(legacy);
         Check(legacy.OwnedHeroIds.Count == 8 && legacy.OwnedHeroIds.Contains("luu_bi"), "legacy save keeps all 8 heroes");
-        // Recruit rates cover all 7 heroes and sum to 100.
-        Check(RecruitService.Rates.Sum(r => r.Weight) == 100, "recruit rates sum to 100");
-        Check(RecruitService.Rates.Count == 7 && RecruitService.Rates.Any(r => r.HeroId == "luu_bi") && !RecruitService.Rates.Any(r => r.HeroId == "custom_hero"), "recruit rates include Luu Bi, exclude the custom hero");
+        // Tavern pool covers all 7 heroes, weights sum to 100 per grade.
+        Check(TavernData.PoolHeroIds.Count == 7 && TavernData.PoolHeroIds.Contains("luu_bi") && !TavernData.PoolHeroIds.Contains("custom_hero"), "tavern pool includes Luu Bi, excludes the custom hero");
+        var (ln, tn, cn) = TavernData.DrawWeights(TavernGrade.Normal);
+        var (lh, th, ch) = TavernData.DrawWeights(TavernGrade.High);
+        Check(ln + tn + cn == 100 && lh + th + ch == 100, "tavern draw weights sum to 100 per grade");
+        Check(cn == 5 && ch == 10, "Cam draw weight 5% normal / 10% high");
         // Luu Bi can fight: 1-hero team vs stage 1 finishes via the generic engine.
         var eff = ProgressionService.GetEffectiveHero(save, "luu_bi"); // Luu Bi progress exists for all heroes even when not owned
         var engine = new BattleEngine(new List<HeroDef> { eff }, HeroDatabase.GetStage(1), 123);

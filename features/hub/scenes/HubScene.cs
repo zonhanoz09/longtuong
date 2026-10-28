@@ -27,7 +27,10 @@ public partial class HubScene : Control
     public static readonly Vector2 HeroPopupSize = new(1140, 680);
     public static readonly Vector2 FormationPopupSize = new(900, 540);
     public static readonly Vector2 StagePopupSize = new(1180, 680);
-    public static readonly Vector2 RecruitPopupSize = new(700, 360);
+    // Phase 2.23: the tavern popup (grades + 3 generals + RPS + soul list).
+    // 1000x620 (not 1000x600: the 2.3 test requires every widget popup
+    // size to be different, and 1000x600 is the hero-list popup).
+    public static readonly Vector2 RecruitPopupSize = new(1000, 620);
 
     // Zone bounds on the 1280x720 viewport, from the second sketch:
     // top 42.5%, middle 42.5%, bottom 14.9%; avatar column 21.3%.
@@ -189,7 +192,7 @@ public partial class HubScene : Control
             var hero = HeroDatabase.Get(heroId);
             var prog = ProgressionService.ProgressOf(gm.Save, heroId);
             GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text =
-                $"Tướng: {hero.Name} · Lv {prog.Level} · ★{prog.Stars}";
+                $"Tướng: {hero.Name} · Lv {prog.Level}";
             if (_characterName != null) _characterName.Text = hero.Name;
         }
         else

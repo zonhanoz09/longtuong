@@ -28,9 +28,9 @@ public partial class TestPhase210 : Node
         Check(SeedService.StarterHeroId("bat_ky_ai") == "custom_hero", "starter is the custom hero for any username");
         Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == "custom_hero", "new account owns ONLY the custom hero (2.22: Luu Bi is recruit-only now)");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == "custom_hero", "new account team is just the custom hero");
-        // Not in the recruit pool.
-        Check(!RecruitService.Rates.Any(r => r.HeroId == "custom_hero"), "custom hero is not in the recruit pool");
-        Check(RecruitService.Rates.Sum(r => r.Weight) == 100 && RecruitService.Rates.Count == 7, "recruit rates still sum to 100 over 7 heroes");
+        // Not in the tavern pool.
+        Check(!TavernData.PoolHeroIds.Contains("custom_hero"), "custom hero is not in the tavern pool");
+        Check(TavernData.PoolHeroIds.Count == 7, "tavern pool still covers 7 heroes");
         // GameManager path: seed then reload keeps the username as the hero name.
         var gm = GetNode<GameManager>("/root/GameManager");
         gm.CreateSeededSave("ten_moi");
