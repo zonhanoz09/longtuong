@@ -5,6 +5,11 @@ namespace LongTuong;
 public class SaveData
 {
     public int Gold { get; set; } = 1000;
+    // Phase 2.25: Bạc (silver) — the common ingame currency. Drinks cost
+    // Bạc (150.000/300.000); Vàng stays premium (all-win drinks, etc.).
+    public int Silver { get; set; }
+    // One-time starter-silver grant for saves created before 2.25.
+    public bool SilverSeeded { get; set; }
     public int Gems { get; set; } = 0;
     public int PlayerLevel { get; set; } = 1;
     public int LastStage { get; set; } = 0;

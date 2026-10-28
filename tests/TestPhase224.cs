@@ -47,19 +47,26 @@ public partial class TestPhase224 : Node
         gm.CreateSeededSave("tester224");
         var tav = tavernScene.Instantiate<RecruitScene>();
         AddChild(tav);
-        Check(tav.GetNode<Label>("TitleLabel").Text == "CHIÊU MỘ", "initial title is CHIÊU MỘ");
-        Check(tav.GetNode<Label>("BalanceLabel").Visible && tav.GetNode<Label>("BalanceLabel").Text.Contains("Hồn Lam")
-            && tav.GetNode<Label>("BalanceLabel").Text.Contains("Hồn Tím") && tav.GetNode<Label>("BalanceLabel").Text.Contains("Hồn Cam"),
-            "balance line shows all 3 tier pools");
-        Check(tav.GetNode<Button>("NormalButton").Visible && tav.GetNode<Button>("HighButton").Visible, "drink buttons visible in recruit view");
+        Check(tav.GetNode<Label>("TitleLabel").Text == "Chiêu mộ", "initial title is Chiêu mộ (2.25 title case)");
+        var balBox = tav.GetNodeOrNull<HBoxContainer>("BalanceBox");
+        Check(balBox != null && balBox.GetChildren().OfType<TextureRect>().Count() == 3
+            && tav.GetNode<Label>("BalanceBox/LamSoulsLabel").Text == "0"
+            && tav.GetNode<Label>("BalanceBox/TimSoulsLabel").Text == "0"
+            && tav.GetNode<Label>("BalanceBox/CamSoulsLabel").Text == "0",
+            "balance line shows 3 tier dots + pool numbers (2.25)");
+        Check(tav.GetNode<Button>("NormalButton").Visible && tav.GetNode<Button>("HighButton").Visible && tav.GetNode<Button>("AllWinButton").Visible, "drink buttons visible in recruit view");
         Check(!tav.GetNode<Control>("DrinkBox").Visible && !tav.GetNode<Button>("RockButton").Visible && !tav.GetNode<Button>("ToRecruitButton").Visible,
             "drink view hidden initially");
         var cards = tav.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
         Check(cards.Count == 7, "recruit grid has 7 cards (2 Lam, 2 Tim, 3 Cam)");
-        Check(cards.Any(b => b.Text.Contains("Lưu Bị") && b.Text.Contains("100 hồn"))
-            && cards.Any(b => b.Text.Contains("Quan Vũ") && b.Text.Contains("500 hồn"))
-            && cards.Any(b => b.Text.Contains("Lữ Bố") && b.Text.Contains("1500 hồn")),
-            "cards show tier recruit costs 100/500/1500");
+        string CardName(Button b) => b.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "NameLabel")?.Text ?? "";
+        string CardPrice(Button b) => b.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "PriceLabel")?.Text ?? "";
+        Check(cards.Any(b => CardName(b).Contains("Lưu Bị") && CardPrice(b) == "100")
+            && cards.Any(b => CardName(b).Contains("Quan Vũ") && CardPrice(b) == "500")
+            && cards.Any(b => CardName(b).Contains("Lữ Bố") && CardPrice(b) == "1.500"),
+            "cards show tier recruit costs 100/500/1500 as dot + number");
+        Check(cards.All(b => b.GetChildren().OfType<Label>().All(l => !l.Text.Contains("(Lam)") && !l.Text.Contains("(Tím)") && !l.Text.Contains("(Cam)"))),
+            "no tier-name text on cards (dots only, 2.25)");
         tav.QueueFree();
 
         // --- Owned general's card shows "đã chiêu mộ" and is disabled ---
@@ -68,8 +75,9 @@ public partial class TestPhase224 : Node
         var tavOwned = tavernScene.Instantiate<RecruitScene>();
         AddChild(tavOwned);
         var ownedCards = tavOwned.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
-        var luuBtn = ownedCards.FirstOrDefault(b => b.Text.Contains("Lưu Bị"));
-        Check(luuBtn != null && luuBtn.Text.Contains("đã chiêu mộ") && luuBtn.Disabled, "owned card shows 'đã chiêu mộ' and is disabled");
+        var luuBtn = ownedCards.FirstOrDefault(b => CardName(b).Contains("Lưu Bị"));
+        var luuOwned = luuBtn?.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "OwnedLabel");
+        Check(luuBtn != null && luuOwned != null && luuOwned.Visible && luuOwned.Text.Contains("đã chiêu mộ") && luuBtn.Disabled, "owned card shows 'đã chiêu mộ' and is disabled");
         tavOwned.QueueFree();
 
         // --- Drink flow via real button signals ---
@@ -77,7 +85,7 @@ public partial class TestPhase224 : Node
         var tavFlow = tavernScene.Instantiate<RecruitScene>();
         AddChild(tavFlow);
         tavFlow.GetNode<Button>("NormalButton").EmitSignal(Button.SignalName.Pressed);
-        Check(tavFlow.GetNode<Label>("TitleLabel").Text == "ĐỐI TỬU", "after drink, title is ĐỐI TỬU");
+        Check(tavFlow.GetNode<Label>("TitleLabel").Text == "Đối tửu", "after drink, title is Đối tửu");
         Check(tavFlow.GetNode<Control>("DrinkBox").Visible && tavFlow.GetNode<Button>("ToRecruitButton").Visible, "drink view visible after drink");
         Check(!tavFlow.GetNode<Button>("RockButton").Disabled && !tavFlow.GetNode<Button>("ScissorsButton").Disabled && !tavFlow.GetNode<Button>("PaperButton").Disabled,
             "RPS buttons enabled during drink");
@@ -88,7 +96,7 @@ public partial class TestPhase224 : Node
         tavFlow.GetNode<Button>("RockButton").EmitSignal(Button.SignalName.Pressed);
         Check(tavFlow.GetNode<Label>("DrinkStatusLabel").Text.Contains("Bạn ra"), "RPS round updates the drink status");
         tavFlow.GetNode<Button>("ToRecruitButton").EmitSignal(Button.SignalName.Pressed);
-        Check(tavFlow.GetNode<Label>("TitleLabel").Text == "CHIÊU MỘ" && !tavFlow.GetNode<Control>("DrinkBox").Visible,
+        Check(tavFlow.GetNode<Label>("TitleLabel").Text == "Chiêu mộ" && !tavFlow.GetNode<Control>("DrinkBox").Visible,
             "back returns to recruit view");
         int soulsAfterBack = TavernService.TierSoulsOf(gm.Save, TavernTier.Lam)
             + TavernService.TierSoulsOf(gm.Save, TavernTier.Tim) + TavernService.TierSoulsOf(gm.Save, TavernTier.Cam);
@@ -110,7 +118,7 @@ public partial class TestPhase224 : Node
         var tavClick = tavernScene.Instantiate<RecruitScene>();
         AddChild(tavClick);
         var clickCards = tavClick.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
-        var clickBtn = clickCards.FirstOrDefault(b => b.Text.Contains("Lưu Bị"));
+        var clickBtn = clickCards.FirstOrDefault(b => CardName(b).Contains("Lưu Bị"));
         Check(clickBtn != null && !clickBtn.Disabled, "affordable card is enabled");
         clickBtn!.EmitSignal(Button.SignalName.Pressed);
         Check(gm.Save.OwnedHeroIds.Contains("luu_bi") && gm.Save.TierSouls["Lam"] == 0,

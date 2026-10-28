@@ -13,6 +13,11 @@ public static class SeedService
 {
     public const int SeededGold = 100000;
     public const int SeededGems = 10000;
+    // Phase 2.25: starter Bạc (Pax setup — Huynh adjusts freely).
+    // Enough for ~6 Normal drinks (150.000 each) so a new account can
+    // use the tavern right away; Bạc income sources (money tree, tax,
+    // bosses, dungeons) arrive with later phases.
+    public const int SeededSilver = 1000000;
 
     public const string DefaultStarterHeroId = "custom_hero";
 

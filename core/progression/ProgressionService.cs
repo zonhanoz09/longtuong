@@ -84,6 +84,10 @@ public static class ProgressionService
         save.StageStars ??= new Dictionary<string, int>();
         save.OwnedHeroIds ??= new List<string>();
         save.BagEquipment ??= new List<BagEquipmentItem>();
+        // Phase 2.25: one-time starter Bạc for saves created before 2.25
+        // (new saves already get it via SeedService; the flag prevents
+        // re-granting when a player legitimately spends down to 0).
+        if (!save.SilverSeeded) { save.Silver += SeedService.SeededSilver; save.SilverSeeded = true; }
         // Phase 2.24: souls pooled per tier, 0 by default (old saves load
         // fine; per-general souls from 2.23 are discarded, not migrated).
         save.TierSouls ??= new Dictionary<string, int>();

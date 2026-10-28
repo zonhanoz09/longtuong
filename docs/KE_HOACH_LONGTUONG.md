@@ -38,6 +38,28 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > số dư hồn 3 phẩm trên đầu) và màn Đối tửu (3 tướng + số hồn thắng
 > từng tướng + nút Kéo/Búa/Bao + "Quay lại"). Hồn dùng chung theo
 > pool phẩm (hồn cũ theo tướng bỏ luôn), roll thắng còn 1–3 hồn.
+>
+> Cập nhật 2026-10-28: **Phase 2.25 — ĐÃ HOÀN THÀNH** — Tiền tệ tách
+> đôi (Vàng premium / Bạc phổ thông): đối tửu tốn Bạc 150.000 /
+> 300.000, tất thắng (x10) tốn 200 Vàng; layout Tửu quán đúng ảnh
+> phác mới (title giữa, lưới 6 cột, chấm màu phẩm thay chữ phẩm,
+> 3 nút dưới phải). Tài khoản mới nhận 1.000.000 Bạc khởi đầu.
+>
+> ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
+>
+> - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
+>   trì, đua top. Dùng mua vật phẩm giá trị cao trong Thương Thành,
+>   kích hoạt VIP, mua thêm lượt phụ bản/hoạt động, đổi sang Bạc,
+>   quay rượu danh tướng (rượu cao cấp), tẩy luyện trang bị cao cấp,
+>   xóa thời gian chờ (cooldown). Đã dùng: tất thắng x10 (200 Vàng).
+> - **Bạc** (tiền ingame phổ biến nhất): nhận từ vượt ải phụ bản,
+>   nhiệm vụ ngày, Boss Quân Đoàn / Boss Thế Giới (Ma Thần), Đấu
+>   Trường, Cây Rung Tiền, Thu Thuế thành trì, cướp mỏ bạc. Dùng
+>   Cường Hóa trang bị, nâng cấp Khoa Kỹ (Viện Nghiên Cứu), bồi
+>   dưỡng nhân vật, mua vật phẩm cơ bản. Đã dùng: đối tửu
+>   150.000/300.000 Bạc. Các nguồn Bạc (Cây Rung Tiền, Thu Thuế,
+>   Boss...) thuộc Phase 3/hoạt động ngày, chưa triển khai; thưởng
+>   thắng ải hiện vẫn là Vàng — chờ Huynh chốt có đổi/thêm Bạc không.
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc

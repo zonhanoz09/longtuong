@@ -15,57 +15,58 @@ script = ExtResource("1_rec")
 layout_mode = 0
 offset_left = 20.0
 offset_top = 10.0
-offset_right = 600.0
+offset_right = 980.0
 offset_bottom = 40.0
-text = "CHIÊU MỘ"
+horizontal_alignment = 1
+text = "Chiêu mộ"
 
-[node name="GoldLabel" type="Label" parent="."]
+[node name="CurrencyLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 50.0
-offset_right = 960.0
-offset_bottom = 80.0
-text = "Vang..."
-
-[node name="BalanceLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 85.0
-offset_right = 960.0
-offset_bottom = 115.0
-text = "Hon..."
+offset_top = 45.0
+offset_right = 980.0
+offset_bottom = 70.0
+text = "Tien..."
 
 [node name="RecruitBox" type="Control" parent="."]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 125.0
-offset_right = 960.0
-offset_bottom = 470.0
+offset_top = 115.0
+offset_right = 980.0
+offset_bottom = 471.0
 
 [node name="RecruitStatusLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 540.0
-offset_right = 330.0
-offset_bottom = 580.0
+offset_top = 480.0
+offset_right = 980.0
+offset_bottom = 510.0
 autowrap_mode = 3
 text = ""
 
+[node name="AllWinButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 180.0
+offset_top = 545.0
+offset_right = 400.0
+offset_bottom = 585.0
+text = "Tất thắng (x10) (200 Vàng)"
+
 [node name="NormalButton" type="Button" parent="."]
 layout_mode = 0
-offset_left = 340.0
-offset_top = 540.0
-offset_right = 650.0
-offset_bottom = 580.0
-text = "Đối tửu Thường (100 Vàng)"
+offset_left = 410.0
+offset_top = 545.0
+offset_right = 680.0
+offset_bottom = 585.0
+text = "Đối tửu Thường (150.000 Bạc)"
 
 [node name="HighButton" type="Button" parent="."]
 layout_mode = 0
-offset_left = 660.0
-offset_top = 540.0
-offset_right = 970.0
-offset_bottom = 580.0
-text = "Đối tửu Cao cấp (300 Vàng)"
+offset_left = 690.0
+offset_top = 545.0
+offset_right = 980.0
+offset_bottom = 585.0
+text = "Đối tửu Cao cấp (300.000 Bạc)"
 
 [node name="DrinkBox" type="Control" parent="."]
 layout_mode = 0
@@ -115,6 +116,7 @@ offset_right = 980.0
 offset_bottom = 580.0
 text = "Quay lại"
 
+[connection signal="pressed" from="AllWinButton" to="." method="OnAllWinPressed"]
 [connection signal="pressed" from="NormalButton" to="." method="OnNormalPressed"]
 [connection signal="pressed" from="HighButton" to="." method="OnHighPressed"]
 [connection signal="pressed" from="ScissorsButton" to="." method="OnScissorsPressed"]

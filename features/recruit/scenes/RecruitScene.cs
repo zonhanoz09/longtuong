@@ -4,34 +4,44 @@ using System.Collections.Generic;
 namespace LongTuong;
 
 /// <summary>
-/// Phase 2.24: the tavern popup with TWO views (from Huynh's sketch).
-/// - Chiêu mộ view (default): a grid of generals grouped by tier rows
-///   (Lam / Tím / Cam), each card showing the tier recruit cost.
-///   Clicking a card recruits at once if the shared tier soul pool
-///   covers the cost, else reports the shortage. Owned generals show
-///   a "đã chiêu mộ" label. A balance line on top shows the three
-///   tier soul pools. Two drink buttons sit bottom-right.
-/// - Đối tửu view: the 3 drawn generals, each with the souls won from
-///   that general this drink (the 2/3/1 numbers in the sketch), RPS
-///   buttons in sketch order (Kéo / Búa / Bao), and a "Quay lại"
-///   button back to the Chiêu mộ view. Going back mid-drink keeps
-///   the souls already won and forfeits the remaining rounds.
-/// Phase 2.24: souls are pooled per tier (not per general); the win
-/// roll is 1-3 (was 1-5). RPS rules unchanged: sequential rounds,
-/// draw = free rematch against the same general.
+/// Phase 2.25: the tavern popup, layout fixed to Huynh's sketch.
+/// - Chiêu mộ view (default): centered title; a currency line
+///   (Vàng | Bạc | KNB | custom-hero level); a tier soul balance
+///   line as COLORED DOTS + numbers (no tier-name text); a grid of
+///   general cards in 6 even columns (pitch 152) grouped by tier
+///   rows (Lam 2, Tím 2, Cam 3 — roster unchanged, fewer cells than
+///   the sketch's schematic 6/5/2). Each card: name on top, a tier
+///   colored dot + recruit cost at the bottom; owned cards show
+///   "đã chiêu mộ" instead. Clicking a card recruits at once.
+///   Three buttons bottom-right: Tất thắng (x10) (200 Vàng),
+///   Đối tửu Thường (150.000 Bạc), Đối tửu Cao cấp (300.000 Bạc).
+///   The status line sits under the grid, full width.
+/// - Đối tửu view: unchanged from 2.24 (3 generals + souls won each,
+///   Kéo / Búa / Bao, "Quay lại" to the recruit view).
+/// - Phase 2.25 currencies: drinks cost BẠC; all-win costs VÀNG.
+///   All-win: 10 drinks, all 30 wins, HIGH-grade weights + Cam gate.
 /// </summary>
 [GlobalClass]
 public partial class RecruitScene : Control
 {
+    private class CardWidgets
+    {
+        public Button Btn = null!;
+        public Label Name = null!;
+        public TextureRect Dot = null!;
+        public Label Price = null!;
+        public Label Owned = null!;
+    }
+
     private Label? _titleLabel;
-    private Label? _goldLabel;
-    private Label? _balanceLabel;
+    private Label? _currencyLabel;
     private Label? _recruitStatusLabel;
     private Label? _drinkStatusLabel;
     private Button? _rockBtn;
     private Button? _scissorsBtn;
     private Button? _paperBtn;
-    private readonly Dictionary<string, Button> _recruitCardBtns = new();
+    private readonly Dictionary<string, CardWidgets> _recruitCards = new();
+    private readonly Dictionary<TavernTier, Label> _balanceNums = new();
     private readonly List<Label> _drinkLabels = new();
 
     private List<string> _drinkHeroes = new();
@@ -41,6 +51,28 @@ public partial class RecruitScene : Control
     private string _recruitStatus = "";
     private string _drinkStatus = "";
 
+    public static Color TierDotColor(TavernTier tier) => tier switch
+    {
+        TavernTier.Lam => new Color(0.15f, 0.55f, 1f),
+        TavernTier.Tim => new Color(0.85f, 0.25f, 0.95f),
+        _ => new Color(1f, 0.6f, 0.1f),
+    };
+
+    public static string Fmt(long n) =>
+        n.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+
+    public static Texture2D MakeDotTexture(Color color)
+    {
+        var img = Image.CreateEmpty(20, 20, false, Image.Format.Rgba8);
+        for (int y = 0; y < 20; y++)
+            for (int x = 0; x < 20; x++)
+            {
+                float dx = x - 9.5f, dy = y - 9.5f;
+                if (dx * dx + dy * dy <= 81) img.SetPixel(x, y, color);
+            }
+        return ImageTexture.CreateFromImage(img);
+    }
+
     public override void _Ready()
     {
         UiTheme.ApplyBackground(this);
@@ -48,7 +80,8 @@ public partial class RecruitScene : Control
         _titleLabel = GetNode<Label>("TitleLabel");
         UiTheme.StyleTitle(_titleLabel);
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm0);
-        UiTheme.StyleButton(GetNode<Button>("NormalButton"), true);
+        UiTheme.StyleButton(GetNode<Button>("AllWinButton"), true);
+        UiTheme.StyleButton(GetNode<Button>("NormalButton"));
         UiTheme.StyleButton(GetNode<Button>("HighButton"));
         UiTheme.StyleButton(GetNode<Button>("ToRecruitButton"));
         _scissorsBtn = GetNode<Button>("ScissorsButton");
@@ -57,33 +90,69 @@ public partial class RecruitScene : Control
         UiTheme.StyleButton(_scissorsBtn);
         UiTheme.StyleButton(_rockBtn);
         UiTheme.StyleButton(_paperBtn);
-        _goldLabel = GetNode<Label>("GoldLabel");
-        _balanceLabel = GetNode<Label>("BalanceLabel");
+        _currencyLabel = GetNode<Label>("CurrencyLabel");
         _recruitStatusLabel = GetNode<Label>("RecruitStatusLabel");
         _drinkStatusLabel = GetNode<Label>("DrinkStatusLabel");
         _recruitStatus = "Bấm vào tướng để chiêu mộ (trừ hồn theo phẩm).";
+        BuildBalanceLine();
         BuildRecruitCards();
         BuildDrinkLabels();
         ShowRecruitView();
         Refresh();
     }
 
+    private void BuildBalanceLine()
+    {
+        var box = new HBoxContainer { Name = "BalanceBox" };
+        box.SetPosition(new Vector2(20, 78));
+        box.SetSize(new Vector2(960, 30));
+        box.AddThemeConstantOverride("separation", 10);
+        var tiers = new[] { TavernTier.Lam, TavernTier.Tim, TavernTier.Cam };
+        for (int i = 0; i < tiers.Length; i++)
+        {
+            var dot = new TextureRect { Texture = MakeDotTexture(TierDotColor(tiers[i])), CustomMinimumSize = new Vector2(20, 20) };
+            var num = new Label { Name = tiers[i].ToString() + "SoulsLabel", Text = "0" };
+            box.AddChild(dot);
+            box.AddChild(num);
+            _balanceNums[tiers[i]] = num;
+            if (i < tiers.Length - 1) box.AddChild(new Label { Text = "|" });
+        }
+        AddChild(box);
+    }
+
     private void BuildRecruitCards()
     {
         var box = GetNode<Control>("RecruitBox");
-        var rowY = new Dictionary<TavernTier, float> { [TavernTier.Lam] = 0, [TavernTier.Tim] = 100, [TavernTier.Cam] = 200 };
+        var rowY = new Dictionary<TavernTier, float> { [TavernTier.Lam] = 0, [TavernTier.Tim] = 122, [TavernTier.Cam] = 244 };
         var col = new Dictionary<TavernTier, int> { [TavernTier.Lam] = 0, [TavernTier.Tim] = 0, [TavernTier.Cam] = 0 };
         foreach (var heroId in TavernData.PoolHeroIds)
         {
             var tier = TavernData.TierOf(heroId)!.Value;
             var btn = new Button();
-            btn.SetPosition(new Vector2(col[tier] * 170, rowY[tier]));
-            btn.SetSize(new Vector2(150, 90));
+            btn.SetPosition(new Vector2(40 + col[tier] * 152, rowY[tier]));
+            btn.SetSize(new Vector2(130, 112));
             UiTheme.StyleButton(btn);
+            var name = new Label { Name = "NameLabel", Text = HeroDatabase.Get(heroId).Name };
+            name.SetPosition(new Vector2(8, 6));
+            name.SetSize(new Vector2(114, 26));
+            var dot = new TextureRect { Name = "DotRect", Texture = MakeDotTexture(TierDotColor(tier)), CustomMinimumSize = new Vector2(20, 20) };
+            dot.SetPosition(new Vector2(8, 84));
+            dot.SetSize(new Vector2(20, 20));
+            var price = new Label { Name = "PriceLabel", Text = Fmt(TavernService.RecruitCostOf(heroId)) };
+            price.SetPosition(new Vector2(32, 84));
+            price.SetSize(new Vector2(90, 24));
+            var owned = new Label { Name = "OwnedLabel", Text = "đã chiêu mộ", Visible = false };
+            owned.SetPosition(new Vector2(8, 84));
+            owned.SetSize(new Vector2(114, 24));
+            foreach (var child in new Control[] { name, dot, price, owned })
+            {
+                child.MouseFilter = MouseFilterEnum.Ignore;
+                btn.AddChild(child);
+            }
             var id = heroId;
             btn.Pressed += () => OnRecruitCardPressed(id);
             box.AddChild(btn);
-            _recruitCardBtns[heroId] = btn;
+            _recruitCards[heroId] = new CardWidgets { Btn = btn, Name = name, Dot = dot, Price = price, Owned = owned };
             col[tier]++;
         }
     }
@@ -104,12 +173,13 @@ public partial class RecruitScene : Control
 
     private void ShowRecruitView()
     {
-        if (_titleLabel != null) _titleLabel.Text = "CHIÊU MỘ";
-        SetVisible("BalanceLabel", true);
+        if (_titleLabel != null) _titleLabel.Text = "Chiêu mộ";
+        SetVisible("BalanceBox", true);
         SetVisible("RecruitBox", true);
         SetVisible("RecruitStatusLabel", true);
         SetVisible("NormalButton", true);
         SetVisible("HighButton", true);
+        SetVisible("AllWinButton", true);
         SetVisible("DrinkBox", false);
         SetVisible("ScissorsButton", false);
         SetVisible("RockButton", false);
@@ -120,12 +190,13 @@ public partial class RecruitScene : Control
 
     private void ShowDrinkView()
     {
-        if (_titleLabel != null) _titleLabel.Text = "ĐỐI TỬU";
-        SetVisible("BalanceLabel", false);
+        if (_titleLabel != null) _titleLabel.Text = "Đối tửu";
+        SetVisible("BalanceBox", false);
         SetVisible("RecruitBox", false);
         SetVisible("RecruitStatusLabel", false);
         SetVisible("NormalButton", false);
         SetVisible("HighButton", false);
+        SetVisible("AllWinButton", false);
         SetVisible("DrinkBox", true);
         SetVisible("ScissorsButton", true);
         SetVisible("RockButton", true);
@@ -145,18 +216,17 @@ public partial class RecruitScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         var save = gm.Save;
         ProgressionService.EnsureDefaults(save);
-        if (_goldLabel != null)
-            _goldLabel.Text = $"Vàng: {save.Gold} | Kim Nguyên Bảo: {save.Gems} | Cấp tướng tự tạo: {TavernService.PlayerLevel(save)} (tướng Cam vào pool từ cấp 70)";
-        if (_balanceLabel != null)
-            _balanceLabel.Text = $"Hồn Lam: {TavernService.TierSoulsOf(save, TavernTier.Lam)} | Hồn Tím: {TavernService.TierSoulsOf(save, TavernTier.Tim)} | Hồn Cam: {TavernService.TierSoulsOf(save, TavernTier.Cam)}";
-        foreach (var (id, btn) in _recruitCardBtns)
+        if (_currencyLabel != null)
+            _currencyLabel.Text = $"Vàng: {Fmt(save.Gold)} | Bạc: {Fmt(save.Silver)} | Kim Nguyên Bảo: {Fmt(save.Gems)} | Cấp tướng tự tạo: {TavernService.PlayerLevel(save)} (tướng Cam vào pool từ cấp 70)";
+        foreach (var (tier, label) in _balanceNums)
+            label.Text = Fmt(TavernService.TierSoulsOf(save, tier));
+        foreach (var (id, card) in _recruitCards)
         {
-            var hero = HeroDatabase.Get(id);
-            var tier = TavernData.TierOf(id);
-            string tierName = tier == null ? "?" : TavernData.TierName(tier.Value);
             bool owned = save.OwnedHeroIds.Contains(id);
-            btn.Text = owned ? $"{hero.Name} ({tierName})\nđã chiêu mộ" : $"{hero.Name} ({tierName})\n{TavernService.RecruitCostOf(id)} hồn";
-            btn.Disabled = owned || !TavernService.CanRecruit(save, id);
+            card.Owned.Visible = owned;
+            card.Dot.Visible = !owned;
+            card.Price.Visible = !owned;
+            card.Btn.Disabled = owned || !TavernService.CanRecruit(save, id);
         }
         for (int i = 0; i < _drinkLabels.Count; i++)
         {
@@ -186,7 +256,7 @@ public partial class RecruitScene : Control
             gm.SaveGame();
         }
         else if (tier != null)
-            _recruitStatus = $"Không đủ hồn {TavernData.TierName(tier.Value)} (cần {TavernData.RecruitCost(tier.Value)}, đang có {TavernService.TierSoulsOf(gm.Save, tier.Value)}).";
+            _recruitStatus = $"Không đủ hồn {TavernData.TierName(tier.Value)} (cần {Fmt(TavernData.RecruitCost(tier.Value))}, đang có {Fmt(TavernService.TierSoulsOf(gm.Save, tier.Value))}).";
         else _recruitStatus = "Không chiêu mộ được tướng này.";
         Refresh();
     }
@@ -196,7 +266,7 @@ public partial class RecruitScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         if (!TavernService.StartDrink(gm.Save, grade, new System.Random(), out var heroes))
         {
-            _recruitStatus = "Không đủ Vàng để đối tửu!";
+            _recruitStatus = "Không đủ Bạc để đối tửu!";
             Refresh();
             return;
         }
@@ -207,6 +277,20 @@ public partial class RecruitScene : Control
         _drinkStatus = $"Đã rót rượu ({TavernData.GradeName(grade)})! Lần lượt oẳn tù tì với 3 tướng.";
         gm.SaveGame();
         ShowDrinkView();
+        Refresh();
+    }
+
+    private void OnAllWinPressed()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        if (!TavernService.StartAllWin(gm.Save, new System.Random(), out var totals))
+        {
+            _recruitStatus = $"Không đủ Vàng để tất thắng (cần {TavernData.AllWinPrice} Vàng)!";
+            Refresh();
+            return;
+        }
+        _recruitStatus = $"Tất thắng x10: +{totals[TavernTier.Lam]} hồn Lam, +{totals[TavernTier.Tim]} hồn Tím, +{totals[TavernTier.Cam]} hồn Cam.";
+        gm.SaveGame();
         Refresh();
     }
 

@@ -15,6 +15,21 @@
 > chừng thì hồn đã thắng giữ nguyên, lượt chưa đánh coi như bỏ).
 > Các mục §1.4/§2.1/§2.2 dưới đây bị thay thế ở những điểm mâu
 > thuẫn với cập nhật này (hồn riêng từng tướng, roll 1–5, 1 màn).
+>
+> Cập nhật Phase 2.25 (2026-10-28, theo ảnh phác mới + chốt của Huynh):
+> **tiền tệ tách đôi** — đối tửu Thường/Cao tốn **Bạc** (150.000 /
+> 300.000, đúng giá gốc), **tất thắng (x10)** tốn phẳng **200 Vàng**:
+> trừ 1 lần upfront, auto 10 lần rót rượu = 30 tướng, thắng cả 30,
+> rút theo tỉ lệ mức Cao + khóa Cam cấp 70, mỗi thắng 1–3 hồn vào
+> pool phẩm, xong hiện tổng kết "+X hồn Lam, +Y hồn Tím, +Z hồn Cam"
+> ở dòng trạng thái dưới lưới. **Layout đúng ảnh**: title căn giữa,
+> lưới 6 cột đều (pitch 152, hàng Lam 2 / Tím 2 / Cam 3 theo roster
+> hiện tại), ô tướng chỉ có tên + **chấm màu phẩm + số giá** (không
+> chữ phẩm), dòng số dư hồn cũng dạng chấm màu + số, 3 nút thẳng
+> hàng dưới phải (Tất thắng / Thường / Cao, đều ghi giá), dòng
+> tiền tệ Vàng | Bạc | KNB trên đầu. Tài khoản mới nhận 1.000.000
+> Bạc khởi đầu (số Pax tự setup); save cũ được cấp 1 lần duy nhất
+> qua cờ SilverSeeded.
 > (viết lại 2026-10-28 theo lệnh mới: "plan copy 100% từ cơ chế
 > game gốc"; Huynh chốt nốt điểm cuối 2026-10-28: bỏ nút chọn
 > phẩm, tỉ lệ ra ngẫu nhiên theo setup).

@@ -42,7 +42,7 @@ public partial class TestPhase223 : Node
         Check(TavernData.TierOf("dieu_thuyen") == TavernTier.Cam && TavernData.TierOf("gia_cat_luong") == TavernTier.Cam && TavernData.TierOf("lu_bo") == TavernTier.Cam, "Cam tier: Dieu Thuyen, Gia Cat Luong, Lu Bo");
         Check(TavernData.TierOf("custom_hero") == null, "custom hero has no tier");
         Check(TavernData.RecruitCost(TavernTier.Lam) == 100 && TavernData.RecruitCost(TavernTier.Tim) == 500 && TavernData.RecruitCost(TavernTier.Cam) == 1500, "recruit costs 100/500/1500");
-        Check(TavernData.DrinkPrice(TavernGrade.Normal) == 100 && TavernData.DrinkPrice(TavernGrade.High) == 300, "drink prices 100/300");
+        Check(TavernData.DrinkPrice(TavernGrade.Normal) == 150000 && TavernData.DrinkPrice(TavernGrade.High) == 300000, "drink prices 150000/300000 silver (2.25)");
         Check(TavernData.StatFactor(TavernTier.Lam) < TavernData.StatFactor(TavernTier.Tim) && TavernData.StatFactor(TavernTier.Tim) < TavernData.StatFactor(TavernTier.Cam) && TavernData.StatFactor(TavernTier.Cam) < TavernData.StatFactor(TavernTier.Do), "quality factors increase with tier");
         Check(TavernData.PoolHeroIds.Count == 7 && !TavernData.PoolHeroIds.Contains("custom_hero"), "tavern pool is 7 heroes, no custom hero");
 
@@ -59,14 +59,15 @@ public partial class TestPhase223 : Node
 
         // --- StartDrink: prices, insufficient gold, exactly 3 heroes ---
         var s2 = SeedService.CreateSeededSave("tester223");
-        s2.Gold = 50;
-        Check(!TavernService.StartDrink(s2, TavernGrade.Normal, new Random(1), out _) && s2.Gold == 50, "normal drink fails at 50 gold, no charge");
-        s2.Gold = 250;
-        Check(!TavernService.StartDrink(s2, TavernGrade.High, new Random(1), out _) && s2.Gold == 250, "high drink fails at 250 gold, no charge");
-        s2.Gold = 1000;
-        Check(TavernService.StartDrink(s2, TavernGrade.Normal, new Random(2), out var heroes) && s2.Gold == 900 && heroes.Count == 3, "normal drink charges 100 and draws 3 heroes");
+        s2.Silver = 100000;
+        Check(!TavernService.StartDrink(s2, TavernGrade.Normal, new Random(1), out _) && s2.Silver == 100000, "normal drink fails at 100000 silver, no charge");
+        s2.Silver = 200000;
+        Check(!TavernService.StartDrink(s2, TavernGrade.High, new Random(1), out _) && s2.Silver == 200000, "high drink fails at 200000 silver, no charge");
+        s2.Silver = 1000000;
+        Check(TavernService.StartDrink(s2, TavernGrade.Normal, new Random(2), out var heroes) && s2.Silver == 850000 && heroes.Count == 3, "normal drink charges 150000 silver and draws 3 heroes");
         Check(heroes.All(h => TavernData.PoolHeroIds.Contains(h)), "drawn heroes are all from the pool");
-        Check(TavernService.StartDrink(s2, TavernGrade.High, new Random(3), out var heroes2) && s2.Gold == 600 && heroes2.Count == 3, "high drink charges 300 and draws 3 heroes");
+        Check(TavernService.StartDrink(s2, TavernGrade.High, new Random(3), out var heroes2) && s2.Silver == 550000 && heroes2.Count == 3, "high drink charges 300000 silver and draws 3 heroes");
+        Check(s2.Gold == SeedService.SeededGold, "drinks do not touch gold (2.25: drinks cost silver)");
 
         // --- DrawTier mapping is exact for fixed seeds (replica Random) ---
         var sLow = SeedService.CreateSeededSave("tester223"); // custom level 1 < 70
@@ -185,11 +186,11 @@ public partial class TestPhase223 : Node
             gm.Save.TierSouls["Lam"] = 100;
             var tav = tavernScene.Instantiate<RecruitScene>();
             AddChild(tav);
-            Check(tav.GetNode<Button>("NormalButton").Text.Contains("100"), "tavern normal button shows 100 gold");
-            Check(tav.GetNode<Button>("HighButton").Text.Contains("300"), "tavern high button shows 300 gold");
+            Check(tav.GetNode<Button>("NormalButton").Text.Contains("150.000"), "tavern normal button shows 150.000 silver (2.25)");
+            Check(tav.GetNode<Button>("HighButton").Text.Contains("300.000"), "tavern high button shows 300.000 silver (2.25)");
             Check(tav.GetNode<Button>("RockButton").Disabled, "RPS disabled before any drink");
             var recruitBtns = tav.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
-            var luuBtn = recruitBtns.FirstOrDefault(b => b.Text.Contains("Lưu Bị"));
+            var luuBtn = recruitBtns.FirstOrDefault(b => b.GetChildren().OfType<Label>().Any(l => l.Name == "NameLabel" && l.Text.Contains("Lưu Bị")));
             Check(luuBtn != null && !luuBtn.Disabled, "recruit button enabled for Luu Bi at 100 souls");
             tav.QueueFree();
         }

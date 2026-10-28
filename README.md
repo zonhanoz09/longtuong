@@ -15,6 +15,23 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.25 — đã làm (tiền tệ Vàng/Bạc + tất thắng x10 + layout đúng ảnh)
+
+- Tiền tệ tách đôi: đối tửu Thường/Cao tốn **Bạc** (150.000 /
+  300.000, đúng giá gốc); nút mới **Tất thắng (x10)** tốn phẳng
+  **200 Vàng**, trừ 1 lần upfront, auto 10 lần rót rượu = 30 tướng
+  thắng cả 30 theo tỉ lệ mức Cao + khóa Cam cấp 70, xong hiện tổng
+  kết "+X hồn Lam, +Y hồn Tím, +Z hồn Cam" ở dòng trạng thái dưới
+  lưới. Tài khoản mới nhận 1.000.000 Bạc khởi đầu (số Pax tự setup);
+  save cũ được cấp 1 lần qua cờ SilverSeeded.
+- Layout đúng ảnh phác mới: title căn giữa, lưới 6 cột đều pitch
+  152 (hàng Lam 2 / Tím 2 / Cam 3 theo roster hiện tại), ô tướng
+  chỉ có tên + chấm màu phẩm + số giá (không chữ phẩm), dòng số
+  dư hồn cũng dạng chấm màu + số, 3 nút thẳng hàng dưới phải đều
+  ghi giá, dòng tiền tệ Vàng | Bạc | KNB trên đầu.
+- Test: `tests/TestPhase225.tscn` (ALL PASS, gồm replica Random
+  chính xác cho tất thắng và luồng bấm nút thật qua signal).
+
 ## Phase 2.24 — đã làm (layout Tửu quán 2 màn + hồn chung theo phẩm)
 
 - Tửu quán có 2 màn theo ảnh phác: màn Chiêu mộ (lưới tướng xếp

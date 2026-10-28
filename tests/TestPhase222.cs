@@ -44,9 +44,9 @@ public partial class TestPhase222 : Node
 
         // --- Phase 2.23: recruit lives in the tavern now ---
         var s = SeedService.CreateSeededSave("tester222");
-        s.Gold = 50;
-        Check(!TavernService.StartDrink(s, TavernGrade.Normal, new Random(7), out _) && s.Gold == 50,
-            "tavern drink fails without charging when gold is short");
+        s.Silver = 50000;
+        Check(!TavernService.StartDrink(s, TavernGrade.Normal, new Random(7), out _) && s.Silver == 50000,
+            "tavern drink fails without charging when silver is short (2.25: drinks cost silver)");
         ProgressionService.EnsureDefaults(s);
         Check(s.TierSouls.Count == 3 && s.TierSouls.Values.All(v => v == 0),
             "TierSouls initialized to 0 for all 3 tiers (2.24)");

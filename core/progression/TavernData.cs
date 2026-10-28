@@ -67,7 +67,12 @@ public static class TavernData
 
     public static double GrowthFactor(TavernTier tier) => StatFactor(tier);
 
-    public static int DrinkPrice(TavernGrade grade) => grade == TavernGrade.High ? 300 : 100;
+    // Drink prices in BẠC (Phase 2.25: was 100/300 Vàng in 2.23-2.24;
+    // matches the original game's 150.000/300.000 bạc per Huynh).
+    public static int DrinkPrice(TavernGrade grade) => grade == TavernGrade.High ? 300000 : 150000;
+    // Phase 2.25: all-win drink (tất thắng x10) — flat price in VÀNG.
+    public const int AllWinPrice = 200;
+    public const int AllWinDrinks = 10;
 
     public static string GradeName(TavernGrade grade) => grade == TavernGrade.High ? "Cao cấp" : "Thường";
 

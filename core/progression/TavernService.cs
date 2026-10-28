@@ -16,8 +16,12 @@ public class RpsResult
 /// <summary>
 /// Phase 2.23: tavern (đối tửu + chiêu mộ) service. Replaces the old
 /// RecruitService (gacha), deleted in 2.23.
-/// - StartDrink: charge the grade price, draw 3 generals by the grade's
-///   tier weights (Cam weight 0 while the custom hero is below level 70).
+/// - StartDrink: charge the grade price in BẠC (2.25), draw 3 generals
+///   by the grade's tier weights (Cam weight 0 while the custom hero
+///   is below level 70).
+/// - StartAllWin (2.25): flat 200 Vàng upfront for 10 drinks, ALL won.
+///   Draws use HIGH-grade weights + the Cam gate; each of the 30 wins
+///   grants 1-3 souls to that general's tier pool.
 /// - PlayRps: one rock-paper-scissors round against one general.
 ///   Win => +1-3 souls (2.24: was 1-5) into the SHARED pool of that
 ///   general's tier; Draw => a free rematch against the same general
@@ -41,9 +45,27 @@ public static class TavernService
         heroes = new List<string>();
         ProgressionService.EnsureDefaults(save);
         int price = TavernData.DrinkPrice(grade);
-        if (save.Gold < price) return false;
-        save.Gold -= price;
+        if (save.Silver < price) return false;
+        save.Silver -= price;
         for (int i = 0; i < 3; i++) heroes.Add(DrawHero(save, grade, rng));
+        return true;
+    }
+
+    public static bool StartAllWin(SaveData save, Random rng, out Dictionary<TavernTier, int> totals)
+    {
+        totals = new Dictionary<TavernTier, int> { [TavernTier.Lam] = 0, [TavernTier.Tim] = 0, [TavernTier.Cam] = 0 };
+        ProgressionService.EnsureDefaults(save);
+        if (save.Gold < TavernData.AllWinPrice) return false;
+        save.Gold -= TavernData.AllWinPrice;
+        for (int d = 0; d < TavernData.AllWinDrinks; d++)
+            for (int i = 0; i < 3; i++)
+            {
+                var hero = DrawHero(save, TavernGrade.High, rng);
+                var tier = TavernData.TierOf(hero)!.Value;
+                int souls = rng.Next(TavernData.SoulRollMin, TavernData.SoulRollMax + 1);
+                save.TierSouls[tier.ToString()] += souls;
+                totals[tier] += souls;
+            }
         return true;
     }
 
