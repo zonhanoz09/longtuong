@@ -14,7 +14,7 @@ namespace LongTuong;
 ///   "recruit disabled" checks were replaced by tavern basics).
 /// - Old saves carrying a "Shards" JSON field still load fine (field ignored).
 /// - Luu Bi can be dismissed (normal hero now); custom hero cannot.
-/// - Battle win rewards are Gold/Gems/EXP only (no shards).
+/// - Battle win rewards are Gold/EXP only (no shards, no gems since 2.26).
 /// </summary>
 public partial class TestPhase222 : Node
 {
@@ -67,11 +67,10 @@ public partial class TestPhase222 : Node
         gm.Save.OwnedHeroIds.Add("quan_vu");
         gm.SelectedTeamIds = new List<string> { "custom_hero", "quan_vu" };
         gm.CurrentStageId = 1;
-        int goldBefore = gm.Save.Gold, gemsBefore = gm.Save.Gems;
+        int goldBefore = gm.Save.Gold;
         int expBefore = gm.Save.Heroes["custom_hero"].Exp;
         gm.ApplyBattleResult(true, 3, 150);
         Check(gm.Save.Gold == goldBefore + 150, "battle win still grants gold");
-        Check(gm.Save.Gems == gemsBefore + 25, "battle win still grants gems (5 + 20 first clear)");
         Check(gm.Save.Heroes["custom_hero"].Exp > expBefore || gm.Save.Heroes["custom_hero"].Level > 1,
             "battle win still grants EXP");
         Check(!gm.Save.OwnedHeroIds.Contains("luu_bi"), "battle win does NOT auto-unlock any locked hero");
@@ -83,7 +82,7 @@ public partial class TestPhase222 : Node
             File.WriteAllText(path, "{\"Gold\": 1234, \"Gems\": 56, \"Shards\": {\"quan_vu\": 99, \"luu_bi\": 10}, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");
             var loaded = SaveManager.Load(path);
             ProgressionService.EnsureDefaults(loaded);
-            Check(loaded.Gold == 1234 && loaded.Gems == 56, "legacy save with Shards field loads its other fields");
+            Check(loaded.Gold == 1234, "legacy save with Shards/Gems fields loads its other fields (old fields ignored)");
             Check(loaded.OwnedHeroIds.Count == 1 && loaded.OwnedHeroIds[0] == "custom_hero",
                 "legacy save keeps its owned list (no shard unlock, no Luu Bi grant)");
         }

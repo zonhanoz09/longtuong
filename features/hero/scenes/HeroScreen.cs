@@ -126,7 +126,7 @@ public partial class HeroScreen : Control
             _detailLabel.Text = $"{hero.Name} ({HeroDatabase.RoleName(hero.Role)}) — Cấp {p.Level} (EXP {next})\n" +
                 $"Hiệu lực: HP {eff.Hp} / ATK {eff.Atk} / DEF {eff.Def} / Tốc {eff.Speed} / Bạo {eff.Crit:P0} / Né {eff.Dodge:P0}\n" +
                 $"Đánh thường: {hero.NormalName} | Tuyệt kỹ: {hero.UltName} | Bị động: {hero.PassiveName} — {hero.PassiveDesc}\n" +
-                $"Vàng: {save.Gold} | Kim Nguyên Bảo: {save.Gems} | Trận thắng: {save.Wins}\n{_status}";
+                $"Vàng: {save.Gold} | Bạc: {save.Silver} | Trận thắng: {save.Wins}\n{_status}";
         foreach (var slot in ProgressionService.Slots)
         {
             var eq = save.HeroEquipment[_selected][slot.Id];

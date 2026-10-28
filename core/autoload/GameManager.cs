@@ -103,7 +103,6 @@ public partial class GameManager : Node
         var key = CurrentStageId.ToString();
         if (!Save.StageStars.TryGetValue(key, out var old) || stars > old) Save.StageStars[key] = stars;
         Save.Gold += rewardGold;
-        Save.Gems += 5 + (firstClear ? 20 : 0);
         foreach (var heroId in SelectedTeamIds)
             ProgressionService.AddExp(Save, heroId, 40 + CurrentStageId * 10);
         SaveGame();

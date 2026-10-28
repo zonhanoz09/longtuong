@@ -15,6 +15,15 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.26 — đã làm (bỏ Kim Nguyên Bảo, chỉ còn Vàng + Bạc)
+
+- Xóa hẳn KNB: field `Gems`, seed 10.000 KNB, thưởng trận +5/+25
+  KNB, mọi hiển thị Vàng/KNB (Hub, Túi đồ, Cường hóa, Tửu quán,
+  thanh tiền tệ) chuyển sang Vàng/Bạc. Thưởng thắng ải giờ chỉ còn
+  Vàng/EXP. Save cũ có field Gems vẫn load được.
+- Test: `tests/TestPhase226.tscn` (ALL PASS — Hub/Tửu quán/Túi đồ
+  đều hiện Bạc, không còn KNB).
+
 ## Phase 2.25 — đã làm (tiền tệ Vàng/Bạc + tất thắng x10 + layout đúng ảnh)
 
 - Tiền tệ tách đôi: đối tửu Thường/Cao tốn **Bạc** (150.000 /
@@ -28,7 +37,7 @@ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài
   152 (hàng Lam 2 / Tím 2 / Cam 3 theo roster hiện tại), ô tướng
   chỉ có tên + chấm màu phẩm + số giá (không chữ phẩm), dòng số
   dư hồn cũng dạng chấm màu + số, 3 nút thẳng hàng dưới phải đều
-  ghi giá, dòng tiền tệ Vàng | Bạc | KNB trên đầu.
+  ghi giá, dòng tiền tệ Vàng | Bạc trên đầu.
 - Test: `tests/TestPhase225.tscn` (ALL PASS, gồm replica Random
   chính xác cho tất thắng và luồng bấm nút thật qua signal).
 

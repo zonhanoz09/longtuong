@@ -15,7 +15,7 @@ public partial class BagScene : Control
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         var box = GetNode<VBoxContainer>("ItemBox");
         void Add(string text) { var l = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart }; UiTheme.StyleBody(l, 15); box.AddChild(l); }
-        Add($"Vàng: {gm.Save.Gold} | Kim Nguyên Bảo: {gm.Save.Gems} | Trận thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage}");
+        Add($"Vàng: {gm.Save.Gold} | Bạc: {gm.Save.Silver} | Trận thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage}");
         Add($"Tướng Tinh: {gm.Save.StarNodesUnlocked}/12 ô | Tổng sao ải: {ProgressionService.StarChartPoints(gm.Save)}");
         Add("— Tướng —");
         foreach (var hero in HeroDatabase.Heroes)

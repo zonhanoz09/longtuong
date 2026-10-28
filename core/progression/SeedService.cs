@@ -12,7 +12,6 @@ namespace LongTuong;
 public static class SeedService
 {
     public const int SeededGold = 100000;
-    public const int SeededGems = 10000;
     // Phase 2.25: starter Bạc (Pax setup — Huynh adjusts freely).
     // Enough for ~6 Normal drinks (150.000 each) so a new account can
     // use the tavern right away; Bạc income sources (money tree, tax,
@@ -40,7 +39,6 @@ public static class SeedService
             .Select(s => new BagEquipmentItem { SlotId = s.Id, Level = 0, RefineIndex = 0 })
             .ToList();
         save.Gold = SeededGold;
-        save.Gems = SeededGems;
         return save;
     }
 }

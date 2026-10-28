@@ -10,7 +10,6 @@ public class SaveData
     public int Silver { get; set; }
     // One-time starter-silver grant for saves created before 2.25.
     public bool SilverSeeded { get; set; }
-    public int Gems { get; set; } = 0;
     public int PlayerLevel { get; set; } = 1;
     public int LastStage { get; set; } = 0;
     public int Wins { get; set; } = 0;

@@ -6,7 +6,7 @@ namespace LongTuong;
 /// <summary>
 /// Phase 2.25: the tavern popup, layout fixed to Huynh's sketch.
 /// - Chiêu mộ view (default): centered title; a currency line
-///   (Vàng | Bạc | KNB | custom-hero level); a tier soul balance
+///   (Vàng | Bạc | custom-hero level); a tier soul balance
 ///   line as COLORED DOTS + numbers (no tier-name text); a grid of
 ///   general cards in 6 even columns (pitch 152) grouped by tier
 ///   rows (Lam 2, Tím 2, Cam 3 — roster unchanged, fewer cells than
@@ -217,7 +217,7 @@ public partial class RecruitScene : Control
         var save = gm.Save;
         ProgressionService.EnsureDefaults(save);
         if (_currencyLabel != null)
-            _currencyLabel.Text = $"Vàng: {Fmt(save.Gold)} | Bạc: {Fmt(save.Silver)} | Kim Nguyên Bảo: {Fmt(save.Gems)} | Cấp tướng tự tạo: {TavernService.PlayerLevel(save)} (tướng Cam vào pool từ cấp 70)";
+            _currencyLabel.Text = $"Vàng: {Fmt(save.Gold)} | Bạc: {Fmt(save.Silver)} | Cấp tướng tự tạo: {TavernService.PlayerLevel(save)} (tướng Cam vào pool từ cấp 70)";
         foreach (var (tier, label) in _balanceNums)
             label.Text = Fmt(TavernService.TierSoulsOf(save, tier));
         foreach (var (id, card) in _recruitCards)

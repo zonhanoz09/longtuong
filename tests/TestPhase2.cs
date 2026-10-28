@@ -122,12 +122,12 @@ public partial class TestPhase2 : Node
             var s = Fresh();
             s.Heroes["lu_bo"].Level = 12;
             s.HeroEquipment["lu_bo"]["weapon"].IsEmpty = false; s.HeroEquipment["lu_bo"]["weapon"].Level = 5; s.HeroEquipment["lu_bo"]["weapon"].RefineIndex = 2;
-            s.StarNodesUnlocked = 3; s.Gems = 77;
+            s.StarNodesUnlocked = 3; s.Silver = 77;
             SaveManager.Save(path, s);
             var loaded = SaveManager.Load(path);
             ProgressionService.EnsureDefaults(loaded);
             Check(loaded.Heroes["lu_bo"].Level == 12, "save/load preserves hero level (2.23: no stars)");
-            Check(loaded.Gems == 77 && loaded.StarNodesUnlocked == 3, "save/load preserves gems/star nodes");
+            Check(loaded.Silver == 77 && loaded.StarNodesUnlocked == 3, "save/load preserves silver/star nodes");
             Check(loaded.HeroEquipment["lu_bo"]["weapon"].Level == 5 && loaded.HeroEquipment["lu_bo"]["weapon"].RefineIndex == 2, "save/load preserves equipment");
             var empty = new SaveData();
             ProgressionService.EnsureDefaults(empty);

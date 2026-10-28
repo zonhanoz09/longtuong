@@ -33,9 +33,9 @@ public partial class TestPhase22 : Node
         var b = SeedService.StarterHeroId("nguoi_khac");
         Check(a == "custom_hero" && b == "custom_hero", "every new account starts with the custom hero");
         Check(HeroDatabase.Heroes.Any(h => h.Id == a), "starter hero is a valid hero");
-        Check(SeedService.SeededGold == 100000 && SeedService.SeededGems == 10000, "seed gold 100000 / gems 10000");
+        Check(SeedService.SeededGold == 100000 && SeedService.SeededSilver == 1000000, "seed gold 100000 / silver 1000000 (2.26: no gems)");
         var save = SeedService.CreateSeededSave("huynh");
-        Check(save.Gold == 100000 && save.Gems == 10000, "seeded save has test gold/gems");
+        Check(save.Gold == 100000 && save.Silver == 1000000, "seeded save has test gold/silver");
         Check(save.OwnedHeroIds.Count == 1 && save.OwnedHeroIds[0] == a, "seeded save owns ONLY the starter (2.22: Luu Bi is recruit-only now)");
         Check(HeroDatabase.Get("custom_hero").Name == "huynh", "custom hero is named after the username");
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == a, "seeded save team is just the starter");

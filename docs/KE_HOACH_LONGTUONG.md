@@ -45,6 +45,13 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > phác mới (title giữa, lưới 6 cột, chấm màu phẩm thay chữ phẩm,
 > 3 nút dưới phải). Tài khoản mới nhận 1.000.000 Bạc khởi đầu.
 >
+> Cập nhật 2026-10-28: **Phase 2.26 — ĐÃ HOÀN THÀNH** — Bỏ hẳn Kim
+> Nguyên Bảo: chỉ còn Vàng + Bạc. Xóa field `Gems`, seed KNB,
+> thưởng trận +5/+25 KNB, mọi hiển thị Vàng/KNB (Hub, Túi đồ,
+> Cường hóa, Tửu quán, thanh tiền tệ) chuyển sang Vàng/Bạc; thưởng
+> thắng ải giờ chỉ còn Vàng/EXP. Save cũ có field Gems vẫn load
+> được (field lạ bị bỏ qua).
+>
 > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
 >
 > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
@@ -242,14 +249,14 @@ khởi đầu → chiêu mộ → mở khóa tướng.
 
 **2.2.1. Hệ thống UI/UX chung (`core/ui/UiTheme.cs`)**
 - Khung 1280×720, nền tối, chữ sáng, điểm nhấn Vàng đồng (Tam Quốc) + Đỏ cho địch.
-- Quy tắc mọi màn hình: header (tiêu đề + thanh tiền tệ Vàng/KNB ở góc phải),
+- Quy tắc mọi màn hình: header (tiêu đề + thanh tiền tệ Vàng/Bạc ở góc phải),
   nội dung chính, nút Quay lại Hub ở cuối. Nút chính cao tối thiểu 56px, nút bị
   khóa hiển thị xám + lý do (chưa mở ải, chưa sở hữu tướng, chưa đủ tiền).
 - Không dùng sprite final ở phase này: tướng vẫn là khối màu + tên, nhưng có
   nhãn cấp/sao/HP/ATK thống nhất, để Phase art sau chỉ thay khối màu bằng sprite.
 
 **2.2.2. Hub redesign (màn hình trung tâm)**
-- Header: tên tài khoản + tướng đại diện (tướng khởi đầu) + Vàng/KNB + thắng/ải.
+- Header: tên tài khoản + tướng đại diện (tướng khởi đầu) + Vàng/Bạc + thắng/ải.
 - 7 widget thành thẻ 2 cột (mỗi thẻ: tên + mô tả 1 dòng + trạng thái, ví dụ
   "Túi đồ — 12.340 Vàng, 3 tướng sở hữu"), cộng thẻ Đăng xuất. Bấm thẻ → đúng màn.
 - Hub là điểm quay về duy nhất: mọi màn con đều có nút về Hub (trừ trận → về chọn ải).
@@ -258,8 +265,8 @@ khởi đầu → chiêu mộ → mở khóa tướng.
 - Tướng khởi đầu suy ra **xác định** từ tên đăng nhập: `index = (tổng mã ký tự
   của tên + 31 × độ dài tên) % 6` theo thứ tự 6 tướng trong data. Cùng tên luôn
   ra cùng tướng, tên khác có thể trùng tướng (chỉ có 6 tướng).
-- Tài khoản mới: Vàng **100.000**, Kim Nguyên Bảo **10.000**, chỉ sở hữu 1 tướng
-  khởi đầu đó, đội hình ban đầu = [tướng khởi đầu]. Số Vàng/KNB này là **seed
+- Tài khoản mới: Vàng **100.000**, Bạc **1.000.000**, chỉ sở hữu 1 tướng
+  khởi đầu đó, đội hình ban đầu = [tướng khởi đầu]. Số Vàng/Bạc này là **seed
   test, không phải cân bằng kinh tế thật** — Phase 5 mới cân bằng lại.
 - Tài khoản cũ (đã có save trước 2.2): giữ nguyên sở hữu cả 6 tướng, không bị
   thu hồi, không nhận seed 100.000 (tránh lạm phát save cũ).
@@ -279,7 +286,7 @@ khởi đầu → chiêu mộ → mở khóa tướng.
 
 - Hub ở lại phía sau: bấm thẻ widget mở popup trên nền mờ (dim) + khung viền
   Vàng + nút X góc phải. Nút Quay lại trong widget cũng đóng popup (không
-  chuyển scene), Hub tự refresh trạng thái (Vàng/KNB, đội hình) khi đóng popup.
+  chuyển scene), Hub tự refresh trạng thái (Vàng/Bạc, đội hình) khi đóng popup.
 - Kích thước popup theo nội dung, không đồng đều:
   Chiêu mộ 700×360 (nhỏ nhất) | Bày trận 900×540 | Túi đồ 1020×640 |
   Danh sách tướng 1100×620 | Trang bị/Cường hóa 1140×680 |
@@ -636,7 +643,7 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   dưới y 643–720, avatar x 0–273.
 - `HubScene.tscn` viết lại theo đúng 3 vùng, kiểu scene-first như 2.12:
   vùng trên = `AvatarPanel` trái (tên tài khoản, tướng đại diện + Lv/sao,
-  Vàng/KNB, sở hữu/thắng/ải/đội hình) + `FeatureIcons` phải (5 icon:
+  Vàng/Bạc, sở hữu/thắng/ải/đội hình) + `FeatureIcons` phải (5 icon:
   Danh sách tướng, Túi đồ, Trang bị, Cường hóa, Chiêu mộ);
   vùng giữa = `Courtyard` (sân, nhân vật tướng mặc định di chuyển);
   vùng dưới = `FunctionBar` (3 icon: Bày trận, Vào ải, Đăng xuất).
@@ -648,7 +655,7 @@ khởi đầu → chiêu mộ → mở khóa tướng.
   thân 32×48), để yên 2–5s → tự đi dạo tới điểm ngẫu nhiên trong vùng,
   lúc đi có nhún nhẹ (chỉ nhún thân, không làm lệch vị trí đã track).
   Thanh tiền tệ góc phải cũ của `UiTheme.AddCurrencyBar` bị bỏ (trùng
-  vùng icon tính năng) — Vàng/KNB chuyển vào trong thẻ avatar.
+  vùng icon tính năng) — Vàng/Bạc chuyển vào trong thẻ avatar.
   `TitleLabel`/`StatusLabel`/`WidgetBox` cũ bị xóa; popup các widget
   và kích thước popup từng widget giữ nguyên như 2.3.
 - Test: `tests/TestPhase213.tscn` (22 check, ALL PASS: 3 vùng đúng tọa

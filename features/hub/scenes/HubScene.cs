@@ -201,7 +201,7 @@ public partial class HubScene : Control
             if (_characterName != null) _characterName.Text = "—";
         }
         GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel").Text =
-            $"Vàng: {gm.Save.Gold}  |  KNB: {gm.Save.Gems}";
+            $"Vàng: {gm.Save.Gold}  |  Bạc: {gm.Save.Silver}";
         GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarStatusLabel").Text =
             $"Sở hữu: {gm.Save.OwnedHeroIds.Count}/{HeroDatabase.Heroes.Count} tướng | Thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage} | Đội hình: {teamNames}";
     }

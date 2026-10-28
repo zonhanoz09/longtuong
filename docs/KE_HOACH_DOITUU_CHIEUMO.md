@@ -27,7 +27,7 @@
 > hiện tại), ô tướng chỉ có tên + **chấm màu phẩm + số giá** (không
 > chữ phẩm), dòng số dư hồn cũng dạng chấm màu + số, 3 nút thẳng
 > hàng dưới phải (Tất thắng / Thường / Cao, đều ghi giá), dòng
-> tiền tệ Vàng | Bạc | KNB trên đầu. Tài khoản mới nhận 1.000.000
+> tiền tệ Vàng | Bạc trên đầu. Tài khoản mới nhận 1.000.000
 > Bạc khởi đầu (số Pax tự setup); save cũ được cấp 1 lần duy nhất
 > qua cờ SilverSeeded.
 > (viết lại 2026-10-28 theo lệnh mới: "plan copy 100% từ cơ chế

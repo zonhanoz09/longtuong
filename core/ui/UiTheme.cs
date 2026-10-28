@@ -78,7 +78,7 @@ public static class UiTheme
     {
         var label = new Label
         {
-            Text = $"Vàng: {gm.Save.Gold}  |  KNB: {gm.Save.Gems}",
+            Text = $"Vàng: {gm.Save.Gold}  |  Bạc: {gm.Save.Silver}",
             HorizontalAlignment = HorizontalAlignment.Right,
         };
         label.SetPosition(new Vector2(880, 10));
