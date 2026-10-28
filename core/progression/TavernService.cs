@@ -15,15 +15,18 @@ public class RpsResult
 
 /// <summary>
 /// Phase 2.23: tavern (đối tửu + chiêu mộ) service. Replaces the old
-/// RecruitService (gacha), deleted in this phase.
+/// RecruitService (gacha), deleted in 2.23.
 /// - StartDrink: charge the grade price, draw 3 generals by the grade's
 ///   tier weights (Cam weight 0 while the custom hero is below level 70).
 /// - PlayRps: one rock-paper-scissors round against one general.
-///   Win => +1-5 souls of that general (full roll, no shortfall);
-///   Draw => a free rematch against the same general (the caller replays
-///   without advancing); Lose => nothing, the general's turn ends.
-/// - Recruit: spend souls to unlock a general into the owned roster.
+///   Win => +1-3 souls (2.24: was 1-5) into the SHARED pool of that
+///   general's tier; Draw => a free rematch against the same general
+///   (the caller replays without advancing); Lose => nothing, the
+///   general's turn ends.
+/// - Recruit: spend souls from the tier pool to unlock a general.
 /// Player level is the custom hero's level (no separate player EXP).
+/// Phase 2.24: souls are pooled per tier, NOT per general. Per-general
+/// souls from 2.23 (GeneralSouls) are discarded, not migrated.
 /// </summary>
 public static class TavernService
 {
@@ -72,15 +75,16 @@ public static class TavernService
         if (outcome == RpsOutcome.Win)
         {
             souls = rng.Next(TavernData.SoulRollMin, TavernData.SoulRollMax + 1);
-            save.GeneralSouls[heroId] += souls;
+            var tier = TavernData.TierOf(heroId);
+            if (tier != null) save.TierSouls[tier.Value.ToString()] += souls;
         }
         return new RpsResult { PlayerMove = playerMove, GeneralMove = generalMove, Outcome = outcome, SoulsGained = souls };
     }
 
-    public static int SoulsOf(SaveData save, string heroId)
+    public static int TierSoulsOf(SaveData save, TavernTier tier)
     {
         ProgressionService.EnsureDefaults(save);
-        return save.GeneralSouls.TryGetValue(heroId, out var v) ? v : 0;
+        return save.TierSouls.TryGetValue(tier.ToString(), out var v) ? v : 0;
     }
 
     public static int RecruitCostOf(string heroId)
@@ -93,14 +97,16 @@ public static class TavernService
     {
         ProgressionService.EnsureDefaults(save);
         if (save.OwnedHeroIds.Contains(heroId)) return false;
-        int cost = RecruitCostOf(heroId);
-        return cost > 0 && SoulsOf(save, heroId) >= cost;
+        var tier = TavernData.TierOf(heroId);
+        if (tier == null || tier == TavernTier.Do) return false;
+        return TierSoulsOf(save, tier.Value) >= TavernData.RecruitCost(tier.Value);
     }
 
     public static bool Recruit(SaveData save, string heroId)
     {
         if (!CanRecruit(save, heroId)) return false;
-        save.GeneralSouls[heroId] -= RecruitCostOf(heroId);
+        var tier = TavernData.TierOf(heroId)!.Value;
+        save.TierSouls[tier.ToString()] -= TavernData.RecruitCost(tier);
         save.OwnedHeroIds.Add(heroId);
         return true;
     }

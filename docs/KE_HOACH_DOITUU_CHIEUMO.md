@@ -2,6 +2,19 @@
 
 > Trạng thái: **ĐÃ CHỐT TOÀN BỘ — ĐÃ TRIỂN KHAI XONG PHASE 2.23**
 > (2026-10-28, xem TestPhase223).
+>
+> Cập nhật Phase 2.24 (2026-10-28, theo ảnh phác + chốt của Huynh):
+> **hồn dùng chung theo pool phẩm** (không còn hồn riêng từng tướng;
+> hồn cũ 2.23 bỏ luôn, không quy đổi); **roll thắng còn 1–3 hồn**
+> (trước 1–5); popup Tửu quán có **2 màn**: Chiêu mộ (lưới tướng
+> theo hàng phẩm, bấm ô là chiêu mộ luôn nếu đủ hồn phẩm đó, tướng
+> đã sở hữu ghi "đã chiêu mộ", dòng "Hồn Lam: X | Hồn Tím: Y |
+> Hồn Cam: Z" trên đầu, 2 nút đối tửu góc dưới phải) và Đối tửu
+> (3 tướng rút được, mỗi tướng ghi số hồn thắng được từ tướng đó,
+> nút Kéo / Búa / Bao, nút "Quay lại" về Chiêu mộ; quay lại giữa
+> chừng thì hồn đã thắng giữ nguyên, lượt chưa đánh coi như bỏ).
+> Các mục §1.4/§2.1/§2.2 dưới đây bị thay thế ở những điểm mâu
+> thuẫn với cập nhật này (hồn riêng từng tướng, roll 1–5, 1 màn).
 > (viết lại 2026-10-28 theo lệnh mới: "plan copy 100% từ cơ chế
 > game gốc"; Huynh chốt nốt điểm cuối 2026-10-28: bỏ nút chọn
 > phẩm, tỉ lệ ra ngẫu nhiên theo setup).

@@ -84,10 +84,11 @@ public static class ProgressionService
         save.StageStars ??= new Dictionary<string, int>();
         save.OwnedHeroIds ??= new List<string>();
         save.BagEquipment ??= new List<BagEquipmentItem>();
-        // Phase 2.23: souls per general, 0 by default (old saves load fine).
-        save.GeneralSouls ??= new Dictionary<string, int>();
-        foreach (var hero in HeroDatabase.Heroes)
-            if (!save.GeneralSouls.ContainsKey(hero.Id)) save.GeneralSouls[hero.Id] = 0;
+        // Phase 2.24: souls pooled per tier, 0 by default (old saves load
+        // fine; per-general souls from 2.23 are discarded, not migrated).
+        save.TierSouls ??= new Dictionary<string, int>();
+        foreach (var tier in new[] { TavernTier.Lam, TavernTier.Tim, TavernTier.Cam })
+            if (!save.TierSouls.ContainsKey(tier.ToString())) save.TierSouls[tier.ToString()] = 0;
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
         if (save.OwnedHeroIds.Count == 0)
             save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();

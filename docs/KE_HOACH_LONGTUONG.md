@@ -31,6 +31,13 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Thường 100 / Cao cấp 300 Vàng, rút 3 tướng theo tỉ lệ phẩm, oẳn tù tì
 > thắng nhận 1–5 hồn, đủ 100/500/1500 hồn thì chiêu mộ; cấp tối đa 180,
 > cấp người chơi = cấp tướng tự tạo, sao tướng loại bỏ khỏi game.
+>
+> Cập nhật 2026-10-28: **Phase 2.24 — ĐÃ HOÀN THÀNH** — Layout Tửu quán
+> 2 màn theo ảnh phác của Huynh: màn Chiêu mộ (lưới tướng theo hàng
+> phẩm, bấm ô chiêu mộ luôn, tướng đã sở hữu ghi "đã chiêu mộ", dòng
+> số dư hồn 3 phẩm trên đầu) và màn Đối tửu (3 tướng + số hồn thắng
+> từng tướng + nút Kéo/Búa/Bao + "Quay lại"). Hồn dùng chung theo
+> pool phẩm (hồn cũ theo tướng bỏ luôn), roll thắng còn 1–3 hồn.
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc

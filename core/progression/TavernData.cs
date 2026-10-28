@@ -75,6 +75,7 @@ public static class TavernData
         grade == TavernGrade.High ? (60, 30, 10) : (70, 25, 5);
 
     public const int CamGateLevel = 70;
+    // Phase 2.24: win soul roll is 1-3 (was 1-5 in 2.23).
     public const int SoulRollMin = 1;
-    public const int SoulRollMax = 5;
+    public const int SoulRollMax = 3;
 }

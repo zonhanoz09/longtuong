@@ -14,10 +14,12 @@ namespace LongTuong;
 /// - StartDrink: grade prices, insufficient gold charges nothing, 3 heroes.
 /// - DrawTier matches the weight tables exactly (replica Random).
 /// - PlayRps matches a replica exactly over 100 seeds (moves, outcomes,
-///   souls); win/draw/lose all occur; win souls always 1-5.
+///   souls); win/draw/lose all occur; win souls always 1-3 (2.24).
+/// - Phase 2.24: souls pooled per tier (TierSouls); per-general souls
+///   from 2.23 are discarded, not migrated.
 /// - Recruit: thresholds, exact deduction, owned/custom blocks.
 /// - Quality scaling: exact Cam/Lam scaled values at level 11.
-/// - Old saves without GeneralSouls load with all souls at 0.
+/// - Old saves with per-general souls load with tier pools at 0 (discarded).
 /// - Tavern popup nodes + recruit button enablement; hero screen has
 ///   no hero-star display.
 /// </summary>
@@ -114,11 +116,11 @@ public partial class TestPhase223 : Node
             int playerMove = seed % 3;
             var expectedOutcome = playerMove == genMove ? RpsOutcome.Draw
                 : (playerMove, genMove) is (0, 1) or (1, 2) or (2, 0) ? RpsOutcome.Win : RpsOutcome.Lose;
-            int expectedSouls = expectedOutcome == RpsOutcome.Win ? rep.Next(1, 6) : 0;
-            int before = TavernService.SoulsOf(sR, "luu_bi");
+            int expectedSouls = expectedOutcome == RpsOutcome.Win ? rep.Next(1, 4) : 0;
+            int before = TavernService.TierSoulsOf(sR, TavernTier.Lam);
             var result = TavernService.PlayRps(sR, "luu_bi", playerMove, r);
             if (result.GeneralMove != genMove || result.Outcome != expectedOutcome || result.SoulsGained != expectedSouls
-                || TavernService.SoulsOf(sR, "luu_bi") != before + expectedSouls) { rpsOk = false; break; }
+                || TavernService.TierSoulsOf(sR, TavernTier.Lam) != before + expectedSouls) { rpsOk = false; break; }
         }
         Check(rpsOk, "PlayRps matches replica exactly over 100 seeds (moves, outcomes, souls)");
         var outcomes = new HashSet<RpsOutcome>();
@@ -133,24 +135,24 @@ public partial class TestPhase223 : Node
         {
             var sR = SeedService.CreateSeededSave("tester223");
             var res = TavernService.PlayRps(sR, "luu_bi", seed % 3, new Random(seed));
-            if (res.Outcome == RpsOutcome.Win && (res.SoulsGained < 1 || res.SoulsGained > 5)) { rangeOk = false; break; }
+            if (res.Outcome == RpsOutcome.Win && (res.SoulsGained < 1 || res.SoulsGained > 3)) { rangeOk = false; break; }
         }
-        Check(rangeOk, "win soul roll always within 1-5");
+        Check(rangeOk, "win soul roll always within 1-3 (2.24: was 1-5)");
 
         // --- Recruit: thresholds, exact deduction, blocks ---
         var s3 = SeedService.CreateSeededSave("tester223");
         Check(!TavernService.CanRecruit(s3, "luu_bi"), "cannot recruit Luu Bi with 0 souls");
-        s3.GeneralSouls["luu_bi"] = 99;
-        Check(!TavernService.Recruit(s3, "luu_bi") && !s3.OwnedHeroIds.Contains("luu_bi"), "99 souls cannot recruit Lam (needs 100)");
-        s3.GeneralSouls["luu_bi"] = 100;
-        Check(TavernService.CanRecruit(s3, "luu_bi"), "100 souls can recruit Lam");
-        Check(TavernService.Recruit(s3, "luu_bi") && s3.OwnedHeroIds.Contains("luu_bi") && s3.GeneralSouls["luu_bi"] == 0, "recruit deducts exactly 100 souls and unlocks");
+        s3.TierSouls["Lam"] = 99;
+        Check(!TavernService.Recruit(s3, "luu_bi") && !s3.OwnedHeroIds.Contains("luu_bi"), "99 Lam souls cannot recruit Lam (needs 100)");
+        s3.TierSouls["Lam"] = 100;
+        Check(TavernService.CanRecruit(s3, "luu_bi"), "100 Lam souls can recruit Lam");
+        Check(TavernService.Recruit(s3, "luu_bi") && s3.OwnedHeroIds.Contains("luu_bi") && s3.TierSouls["Lam"] == 0, "recruit deducts exactly 100 Lam souls and unlocks");
         Check(!TavernService.CanRecruit(s3, "luu_bi"), "owned hero cannot be recruited again");
         var s4 = SeedService.CreateSeededSave("tester223");
-        s4.GeneralSouls["lu_bo"] = 1499;
-        Check(!TavernService.Recruit(s4, "lu_bo"), "1499 souls cannot recruit Cam (needs 1500)");
-        s4.GeneralSouls["lu_bo"] = 1500;
-        Check(TavernService.Recruit(s4, "lu_bo") && s4.OwnedHeroIds.Contains("lu_bo"), "1500 souls recruit Cam");
+        s4.TierSouls["Cam"] = 1499;
+        Check(!TavernService.Recruit(s4, "lu_bo"), "1499 Cam souls cannot recruit Cam (needs 1500)");
+        s4.TierSouls["Cam"] = 1500;
+        Check(TavernService.Recruit(s4, "lu_bo") && s4.OwnedHeroIds.Contains("lu_bo"), "1500 Cam souls recruit Cam");
         Check(!TavernService.CanRecruit(s4, "custom_hero"), "custom hero is never recruitable");
 
         // --- Quality scaling (exact) ---
@@ -161,15 +163,15 @@ public partial class TestPhase223 : Node
         Check(scaledLam.Hp == (int)Math.Round(620 * 1.4), "Lam scaled base uses 1.0 factors (1.4 at level 11)");
         Check(scaledCam.Atk > scaledLam.Atk, "Cam out-damages Lam at the same level");
 
-        // --- Old save without GeneralSouls still loads ---
+        // --- Old save with per-general souls (2.23 format) loads, souls discarded ---
         var path = Path.Combine(OS.GetUserDataDir(), "test_phase223_legacy.json");
         try
         {
-            File.WriteAllText(path, "{\"Gold\": 4321, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");
+            File.WriteAllText(path, "{\"Gold\": 4321, \"GeneralSouls\": {\"luu_bi\": 999}, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");
             var loaded = SaveManager.Load(path);
             ProgressionService.EnsureDefaults(loaded);
-            Check(loaded.Gold == 4321 && loaded.GeneralSouls.Count == 8 && loaded.GeneralSouls.Values.All(v => v == 0),
-                "legacy save without GeneralSouls loads with all souls at 0");
+            Check(loaded.Gold == 4321 && loaded.TierSouls["Lam"] == 0 && loaded.TierSouls["Tim"] == 0 && loaded.TierSouls["Cam"] == 0,
+                "legacy save with GeneralSouls loads with tier pools at 0 (old souls discarded)");
         }
         finally { if (File.Exists(path)) File.Delete(path); }
 
@@ -180,7 +182,7 @@ public partial class TestPhase223 : Node
         {
             var gm = GetNode<GameManager>("/root/GameManager");
             gm.CreateSeededSave("tester223");
-            gm.Save.GeneralSouls["luu_bi"] = 100;
+            gm.Save.TierSouls["Lam"] = 100;
             var tav = tavernScene.Instantiate<RecruitScene>();
             AddChild(tav);
             Check(tav.GetNode<Button>("NormalButton").Text.Contains("100"), "tavern normal button shows 100 gold");

@@ -48,8 +48,8 @@ public partial class TestPhase222 : Node
         Check(!TavernService.StartDrink(s, TavernGrade.Normal, new Random(7), out _) && s.Gold == 50,
             "tavern drink fails without charging when gold is short");
         ProgressionService.EnsureDefaults(s);
-        Check(s.GeneralSouls.Count == 8 && s.GeneralSouls.Values.All(v => v == 0),
-            "GeneralSouls initialized to 0 for all 8 heroes");
+        Check(s.TierSouls.Count == 3 && s.TierSouls.Values.All(v => v == 0),
+            "TierSouls initialized to 0 for all 3 tiers (2.24)");
 
         // --- Dismiss: Luu Bi yes, custom no ---
         var s2 = SeedService.CreateSeededSave("tester222");
@@ -110,7 +110,7 @@ public partial class TestPhase222 : Node
             Check(rec.GetNodeOrNull<Button>("DrawButton") == null, "old draw button is gone from the tavern");
             Check(rec.GetNode<Button>("NormalButton") != null && rec.GetNode<Button>("HighButton") != null, "tavern has Normal/High drink buttons");
             Check(rec.GetNode<Button>("RockButton").Disabled && rec.GetNode<Button>("ScissorsButton").Disabled && rec.GetNode<Button>("PaperButton").Disabled, "RPS buttons disabled before any drink");
-            Check(!rec.GetNode<Label>("StatusLabel").Text.Contains("làm lại"), "tavern status no longer notes a rework");
+            Check(!rec.GetNode<Label>("RecruitStatusLabel").Text.Contains("làm lại"), "tavern status no longer notes a rework");
             rec.QueueFree();
         }
 

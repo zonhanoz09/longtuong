@@ -15,6 +15,23 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.24 — đã làm (layout Tửu quán 2 màn + hồn chung theo phẩm)
+
+- Tửu quán có 2 màn theo ảnh phác: màn Chiêu mộ (lưới tướng xếp
+  theo hàng phẩm Lam/Tím/Cam, bấm ô là chiêu mộ luôn nếu đủ hồn
+  phẩm đó, không đủ thì báo thiếu; tướng đã sở hữu ghi "đã chiêu
+  mộ"; dòng "Hồn Lam: X | Hồn Tím: Y | Hồn Cam: Z" trên đầu; 2 nút
+  đối tửu góc dưới phải) và màn Đối tửu (3 tướng rút được, mỗi
+  tướng ghi số hồn thắng được từ tướng đó, nút Kéo/Búa/Bao, nút
+  "Quay lại" về Chiêu mộ; quay lại giữa chừng thì hồn đã thắng
+  giữ nguyên, lượt chưa đánh coi như bỏ).
+- Hồn dùng chung theo pool phẩm (không còn hồn riêng từng tướng;
+  hồn cũ 2.23 bỏ luôn không quy đổi). Thắng oẳn tù tì nhận ngẫu
+  nhiên 1–3 hồn (trước 1–5); hòa oẳn tù tì lại với tướng đó.
+- Test: `tests/TestPhase224.tscn` (ALL PASS, gồm luồng bấm nút thật
+  qua signal: đối tửu → oẳn tù tì → quay lại, và pool chung Lam
+  dùng được cho cả 2 tướng Lam).
+
 ## Phase 2.23 — đã làm (Tửu quán: đối tửu + chiêu mộ, bỏ sao tướng, cấp tối đa 180)
 
 - Tửu quán thay nút Chiêu mộ: chọn mức Thường (100 Vàng) hoặc Cao cấp
