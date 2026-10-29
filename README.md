@@ -36,6 +36,10 @@ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài
   quặng chuyển vào inline trong mục Đúc Lại), tab Cường hóa cuộn
   được (ScrollContainer) hết tràn panel, thêm header TÀI NGUYÊN còn
   thiếu, sửa format delta (+N35 → +35). Cập nhật test 234/237.
+- Fix 2.37c theo yêu cầu của Huynh: tab Cường hóa gọn vừa popup,
+  KHÔNG scroll (bỏ ScrollContainer); nút hành động nhỏ dạng icon
+  (36px); text 11–15px; projection gộp 1 dòng tóm tắt; test đo chiều
+  cao thực tế ≤ 560px.
 
 ## Fix theo feedback (2026-10-29 khuya, tiếp)
 
