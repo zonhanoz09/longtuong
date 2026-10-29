@@ -13,7 +13,7 @@ public partial class TestPhase237 : Node
 {
     private int _fails;
 
-    public override void _Ready()
+    public override async void _Ready()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
         gm.CreateSeededSave("tester237");
@@ -72,7 +72,12 @@ public partial class TestPhase237 : Node
         var screenScene = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroScreen.tscn");
         var screen = screenScene.Instantiate<HeroScreen>();
         AddChild(screen);
+        await ToSignal(GetTree(), "process_frame");
+        await ToSignal(GetTree(), "process_frame");
         var content = screen.GetNode<Control>("RightPanel/TabContent");
+        // No-scroll: content height must fit the 560px panel.
+        var inner = (Control)content.GetChild(0);
+        Check(inner.GetRect().Size.Y <= 560, $"content fits panel ({inner.GetRect().Size.Y:0}px <= 560)");
         // Default selection: custom_hero + weapon (equipped from the seed flow above? re-equip).
         var equipBox = screen.GetNode<VBoxContainer>("EquipListBox");
         var armorRow = equipBox.GetChildren().OfType<Button>().First(b => b.Name == "EquipRow_armor");
@@ -82,8 +87,8 @@ public partial class TestPhase237 : Node
         Check(content.FindChild("ActionRecast", true, false) != null, "equipped slot shows Đúc Lại");
         Check(content.FindChild("ActionCraft", true, false) == null, "equipped slot has no Chế Tạo");
         var labels = content.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
-        Check(labels.Any(t => t.Contains("DỰ KIẾN SAU CƯỜNG HÓA")), "enhance projection shown");
-        Check(labels.Any(t => t.Contains("DỰ KIẾN SAU ĐÚC LẠI")), "recast projection shown");
+        Check(labels.Any(t => t.Contains("CƯỜNG HÓA:")), "enhance section shown");
+        Check(labels.Any(t => t.Contains("ĐÚC LẠI:")), "recast section shown");
         Check(labels.Any(t => t.Contains("Cooldown cường hóa: Sẵn sàng")), "cooldown line shown");
 
         // Empty slot (boots is empty in the seeded save after craft? use helmet).
@@ -91,7 +96,7 @@ public partial class TestPhase237 : Node
         helmetRow.EmitSignal(BaseButton.SignalName.Pressed);
         content = screen.GetNode<Control>("RightPanel/TabContent");
         var craftBtn = content.FindChild("ActionCraft", true, false) as Button;
-        Check(craftBtn != null && craftBtn.Text == "Chế Tạo", "empty slot shows Chế Tạo");
+        Check(craftBtn != null && craftBtn.Text == "Chế tạo", "empty slot shows Chế tạo");
         Check(content.FindChild("ActionEnhance", true, false) == null, "empty slot has no Cường Hóa");
         craftBtn.EmitSignal(BaseButton.SignalName.Pressed);
         var eqH = gm.Save.HeroEquipment["custom_hero"]["helmet"];
@@ -105,8 +110,10 @@ public partial class TestPhase237 : Node
 
         // 2.37b fixes: no Lò rèn button; projection deltas formatted "+35" (not "+N35").
         Check(screen.FindChild("ForgeOpenButton", true, false) == null, "Lo ren button removed");
+        Check(screen.FindChild("EnhanceScroll", true, false) == null, "no scroll container (fits popup)");
         var allLabels = screen.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
-        Check(allLabels.Any(t => t.Contains("(+") && !t.Contains("+N")), "delta format is (+N), not (+NN)");
+        Check(allLabels.Any(t => t.StartsWith("▸") && t.Contains("+") && !t.Contains("+N")),
+            "delta format is +35, not +N35");
         // Inline blueprint purchase (helmet is now Tan Thu -> Chu Tuoc, no blueprint learned).
         content = screen.GetNode<Control>("RightPanel/TabContent"); // re-fetch after rebuild
         var bpBuy = content.FindChildren("*", "Button", true, false).OfType<Button>()

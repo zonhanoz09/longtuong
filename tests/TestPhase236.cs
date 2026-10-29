@@ -105,13 +105,13 @@ public partial class TestPhase236 : Node
         Check(tabNames.Count == 5 && !tabNames.Contains("Nâng cấp"), "5 tabs, Nâng cấp removed");
         var content = screen.GetNode<Control>("RightPanel/TabContent");
         var recastBtn = content.FindChild("ActionRecast", true, false) as Button;
-        Check(recastBtn != null && recastBtn.Text == "Đúc Lại" && !recastBtn.Disabled, "recast button enabled");
+        Check(recastBtn != null && recastBtn.Text == "Đúc lại" && !recastBtn.Disabled, "recast button enabled");
         recastBtn.EmitSignal(BaseButton.SignalName.Pressed);
         Check(gm.Save.HeroEquipment["custom_hero"]["weapon"].SetId == "chu_tuoc", "UI recast works");
         var status = content.FindChild("ActionStatus", true, false) as Label;
         Check(status != null && status.Text.Contains("thành công"), "UI recast reports success");
         var projLabels = content.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
-        Check(projLabels.Any(t => t.Contains("DỰ KIẾN SAU ĐÚC LẠI")), "recast projection shown");
+        Check(projLabels.Any(t => t.StartsWith("▸")), "recast projection summary shown");
         Check(projLabels.Any(t => t.Contains("Khoáng thạch")), "ore requirement shown");
 
         if (_fails == 0) GD.Print("TEST PHASE 2.36: ALL PASS");

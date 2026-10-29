@@ -290,3 +290,7 @@ Set khởi đầu Lv30 (phẩm Lam) xử lý thế nào khi remap?
   nút bấm luôn với tới); thêm header TÀI NGUYÊN TIÊU TỐN còn thiếu ở
   mục cường hóa/đúc lại; sửa bug format delta (+N35 -> +35).
   Test 234/237 cập nhật; suite 0-2.37 xanh.
+- **Fix 2.37c theo yêu cầu Huynh (2026-10-30)**: tab Cường hóa gọn
+  vừa popup, không scroll (bỏ ScrollContainer); nút nhỏ dạng icon
+  (36px); text 11-15px; projection gộp thành 1 dòng tóm tắt
+  ("HP +35 · Vật phòng +2"). Test đo chiều cao thực tế <= 560px.
