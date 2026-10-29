@@ -55,7 +55,7 @@ public partial class TestPhase226 : Node
         {
             var bag = bagScene.Instantiate<Control>();
             AddChild(bag);
-            var header = bag.GetNode<VBoxContainer>("ItemBox").GetChildren().OfType<Label>().FirstOrDefault()?.Text ?? "";
+            var header = bag.GetNode<Label>("CurrencyBarLabel").Text;
             Check(header.Contains("Bạc") && !header.Contains("KNB") && !header.Contains("Kim Nguyên Bảo"), "bag header shows silver, never KNB");
             bag.QueueFree();
         }

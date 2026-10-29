@@ -134,6 +134,7 @@ public static class UiTheme
     {
         var label = new Label
         {
+            Name = "CurrencyBarLabel",
             Text = $"Vàng: {gm.Save.Gold}  |  Bạc: {gm.Save.Silver}",
             HorizontalAlignment = HorizontalAlignment.Right,
         };

@@ -15,6 +15,20 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.28 — đã làm (Túi đồ theo layout ảnh Huynh gửi)
+
+- Viết lại `BagScene` (popup 1020×640): title "Túi" căn giữa; cột
+  tab trái 8 tab (Đạo cụ/Trang bị/Nguyên liệu/Thiên Phú/Bảo Vật/
+  Trang sức/Cánh Giới Đơn/Kho tạm) + nhãn "Mở rộng túi" (trang
+  trí, túi không giới hạn); lưới phải 5 cột × 4 hàng = 20 ô,
+  scroll khi quá 20; ô trang bị có ký tự slot + badge "+N" cường
+  hóa; dòng "Chứa: X"; tooltip kiểu ảnh (tên màu slot +
+  "Cường hóa: +N" + chỉ số); tab trống hiện lưới trống + "Chưa có
+  vật phẩm.". Chỉ tab Trang bị có đồ thật; xem-only (mang/tháo
+  vẫn ở màn Võ tướng). Style giữ theme tối + gold của game.
+- Test: `tests/TestPhase228.tscn` ALL PASS; toàn suite 0–2.28
+  pass; build 0 error; CI thêm 2.28.
+
 ## Phase 2.27 — đã làm (chuẩn hoá asset bằng code, không file ảnh)
 
 Huynh chốt plan chuẩn hoá asset (`docs/KE_HOACH_CHUANHOA_ASSET.md`):

@@ -65,6 +65,16 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > áp dụng vào icon trang bị, chân dung Võ tướng, viền ô Bày trận,
 > tên tướng trong trận, avatar Hub, coin icon Tửu quán.
 >
+> Cập nhật 2026-10-29: **Phase 2.28 — ĐÃ HOÀN THÀNH** — Túi đồ
+> thiết kế lại theo layout ảnh Huynh gửi: popup 1020×640, title
+> "Túi" căn giữa, cột tab trái 8 tab + nhãn "Mở rộng túi", lưới
+> 5 cột × 4 hàng = 20 ô (scroll khi quá 20), ô trang bị có ký tự
+> slot + badge "+N", dòng "Chứa: X", tooltip kiểu ảnh (tên màu
+> slot + "Cường hóa: +N" + chỉ số). Chốt của Huynh: tab trống
+> hiện lưới trống (không disable), dung lượng chỉ đếm không giới
+> hạn, badge hiện +N, lưới 5×4 scroll. Chỉ tab Trang bị có đồ
+> thật; túi xem-only, mang/tháo đồ vẫn ở màn Võ tướng.
+>
 > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
 >
 > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
