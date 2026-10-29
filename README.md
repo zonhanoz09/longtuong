@@ -15,6 +15,16 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.35 — đã làm (kế thừa, mở tab Kế thừa)
+
+- `EquipmentService.TryInherit`: chuyển cấp cường hóa + dòng tẩy
+  luyện + ngọc khảm từ món trong túi (cùng ô) sang món đang mang;
+  món cũ bị hủy; ngọc của món mới về túi trước; ngọc thừa vào túi;
+  phí 5.000 Bạc. (Nâng phẩm = rèn món bậc cao hơn rồi kế thừa.)
+- UI: tab Kế thừa trong popup Trang bị (chọn món cũ, nút Kế thừa).
+- Test: `tests/TestPhase235.tscn` ALL PASS; toàn suite 0–2.35
+  pass; build 0 error; CI thêm 2.35.
+
 ## Phase 2.34 — đã làm (rèn: bản vẽ + nguyên liệu)
 
 - `ForgeService`: bản vẽ theo bộ (mua vĩnh viễn bằng Vàng:

@@ -111,6 +111,45 @@ public static class EquipmentService
         return $"{name} {val}{(line.Locked ? " (khóa)" : "")}";
     }
 
+    // Phase 2.35: Kế thừa (inherit) — move enhance level, refine lines and
+    // socketed gems from a bag item (same slot) onto the equipped item;
+    // the old item is destroyed. Target's own gems return to the pouch
+    // first; moved gems fill the target's unlocked sockets, extras go to
+    // the pouch. Socket unlock states stay with the target item.
+    public const int InheritCostSilver = 5000;
+
+    public static bool TryInherit(SaveData save, string heroId, string slotId, int bagIndex)
+    {
+        ProgressionService.EnsureDefaults(save);
+        var eq = save.HeroEquipment[heroId][slotId];
+        if (eq.IsEmpty) return false;
+        if (bagIndex < 0 || bagIndex >= save.BagEquipment.Count) return false;
+        var src = save.BagEquipment[bagIndex];
+        if (src.SlotId != slotId) return false;
+        if (save.Silver < InheritCostSilver) return false;
+        save.Silver -= InheritCostSilver;
+        // Target's current gems go back to the pouch.
+        foreach (var sock in eq.Sockets)
+            if (!string.IsNullOrEmpty(sock.GemId))
+            {
+                GemService.AddGems(save, sock.GemId, 1);
+                sock.GemId = "";
+            }
+        eq.Level = src.Level;
+        eq.RefineIndex = src.RefineIndex;
+        eq.RefineLines = src.RefineLines
+            .Select(l => new RefineLine { StatId = l.StatId, Value = l.Value, Locked = l.Locked }).ToList();
+        foreach (var srcSock in src.Sockets)
+        {
+            if (string.IsNullOrEmpty(srcSock.GemId)) continue;
+            var free = eq.Sockets.FirstOrDefault(s => s.Unlocked && string.IsNullOrEmpty(s.GemId));
+            if (free != null) free.GemId = srcSock.GemId;
+            else GemService.AddGems(save, srcSock.GemId, 1);
+        }
+        save.BagEquipment.RemoveAt(bagIndex);
+        return true;
+    }
+
     public static string DetailText(BagEquipmentItem item, string? status)
     {
         var set = EquipmentSets.Get(item.SetId);

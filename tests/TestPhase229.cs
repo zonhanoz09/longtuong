@@ -73,8 +73,8 @@ public partial class TestPhase229 : Node
         lineBtn.EmitSignal(BaseButton.SignalName.Pressed);
         Check(gm.Save.HeroEquipment["custom_hero"]["weapon"].RefineLines[0].Locked, "line lock toggles via UI");
 
-        // Locked tab.
-        tabRow2.GetChildren().OfType<Button>().First(b => b.Text == "Kế thừa").EmitSignal(BaseButton.SignalName.Pressed);
+        // Locked tab (2.35 opened Kế thừa; Phụ ma stays locked).
+        tabRow2.GetChildren().OfType<Button>().First(b => b.Text == "Phụ ma").EmitSignal(BaseButton.SignalName.Pressed);
         Check(content.GetChildren().OfType<Label>().Any(l => l.Text == "Chưa mở."), "unopened system tab shows Chưa mở.");
 
         // Unequip via the right panel.

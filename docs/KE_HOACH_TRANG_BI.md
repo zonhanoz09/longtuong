@@ -133,3 +133,8 @@ công thức/tỉ lệ cường hóa, nguồn bản vẽ rèn, bonus set đặc 
   Vàng/viên, rèn tốn Tier/2 quặng, gate cấp tướng chính, đồ vào
   túi); UI Lò Rèn từ popup Trang bị. TestPhase234 ALL PASS,
   suite 0–2.34 xanh.
+- **Phase 2.35 — ĐÃ HOÀN THÀNH** (2026-10-30 rạng sáng): kế thừa —
+  TryInherit (chuyển cường hóa/tẩy/ngọc, hủy món cũ, phí 5.000
+  Bạc); UI tab Kế thừa. TestPhase235 ALL PASS, suite 0–2.35 xanh.
+
+**Kế hoạch trang bị 2.30 → 2.35 HOÀN TẤT.**

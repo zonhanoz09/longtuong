@@ -35,6 +35,8 @@ public partial class HeroScreen : Control
     private string _status = "";
     // Phase 2.33: socket index awaiting a gem pick (-1 = none).
     private int _pendingSocket = -1;
+    // Phase 2.35: bag index of the inherit source (-1 = none).
+    private int _inheritSource = -1;
     private VBoxContainer? _heroListBox;
     private VBoxContainer? _equipListBox;
     private HBoxContainer? _tabRow;
@@ -97,7 +99,7 @@ public partial class HeroScreen : Control
                 CustomMinimumSize = new Vector2(190, UiTheme.ButtonHeight),
             };
             UiTheme.StyleButton(btn, false);
-            btn.Pressed += () => { _selectedHero = id; _pendingSocket = -1; RefreshHeroList(); RefreshEquipRows(); RefreshRightPanel(); };
+            btn.Pressed += () => { _selectedHero = id; _pendingSocket = -1; _inheritSource = -1; RefreshHeroList(); RefreshEquipRows(); RefreshRightPanel(); };
             _heroListBox.AddChild(btn);
         }
     }
@@ -136,7 +138,7 @@ public partial class HeroScreen : Control
             badge.AddChild(CenteredLabel("", 16, Colors.White, "RowBadgeLabel"));
             row.AddChild(badge);
             btn.AddChild(row);
-            btn.Pressed += () => { _selectedSlot = slotId; _pendingSocket = -1; RefreshEquipRows(); RefreshRightPanel(); };
+            btn.Pressed += () => { _selectedSlot = slotId; _pendingSocket = -1; _inheritSource = -1; RefreshEquipRows(); RefreshRightPanel(); };
             _equipListBox.AddChild(btn);
             _equipRows[slotId] = btn;
         }
@@ -241,7 +243,7 @@ public partial class HeroScreen : Control
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
             btn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
-            btn.Pressed += () => { _selectedTab = tabId; _pendingSocket = -1; RefreshSysTabs(); RefreshRightPanel(); };
+            btn.Pressed += () => { _selectedTab = tabId; _pendingSocket = -1; _inheritSource = -1; RefreshSysTabs(); RefreshRightPanel(); };
             _tabRow.AddChild(btn);
         }
         RefreshSysTabs();
@@ -278,7 +280,7 @@ public partial class HeroScreen : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         var slot = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
         var eq = gm.Save.HeroEquipment[_selectedHero][_selectedSlot];
-        if (_selectedTab == "ke_thua" || _selectedTab == "phu_ma")
+        if (_selectedTab == "phu_ma")
         {
             var note = CenteredLabel("Chưa mở.", UiTheme.FontButton, UiTheme.Muted, "LockedNote");
             _tabContent.AddChild(note);
@@ -293,6 +295,11 @@ public partial class HeroScreen : Control
         if (_selectedTab == "duc_lo")
         {
             BuildGemTab();
+            return;
+        }
+        if (_selectedTab == "ke_thua")
+        {
+            BuildInheritTab();
             return;
         }
         var slotColor = UiTheme.SlotColors.TryGetValue(_selectedSlot, out var c) ? c : UiTheme.Panel;
@@ -559,6 +566,71 @@ public partial class HeroScreen : Control
             statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
             box.AddChild(statusLabel);
         }
+    }
+
+    // ---------- Phase 2.35: Kế thừa (inherit) tab ----------
+
+    private void BuildInheritTab()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        var save = gm.Save;
+        var eq = save.HeroEquipment[_selectedHero][_selectedSlot];
+        var slot = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
+        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        box.AddThemeConstantOverride("separation", 8);
+        _tabContent!.AddChild(box);
+
+        var set = EquipmentSets.Get(eq.SetId);
+        box.AddChild(InfoLine($"Món đang mang: {slot?.Name} {set.Name} +{eq.Level} ({eq.RefineLines.Count} dòng tẩy)"));
+        box.AddChild(SectionLabel("Chọn món cũ trong túi (cùng ô) — món cũ sẽ mất:"));
+        var sources = save.BagEquipment
+            .Select((item, idx) => (item, idx))
+            .Where(t => t.item.SlotId == _selectedSlot)
+            .ToList();
+        if (sources.Count == 0)
+            box.AddChild(InfoLine("Trong túi không có món nào cùng ô."));
+        foreach (var (item, idx) in sources)
+        {
+            var itemSet = EquipmentSets.Get(item.SetId);
+            var srcBtn = new Button
+            {
+                Name = $"InheritSrc_{idx}",
+                Text = $"{itemSet.Name} +{item.Level} ({item.RefineLines.Count} dòng){(idx == _inheritSource ? " ✓" : "")}",
+                ToggleMode = true,
+                ButtonPressed = idx == _inheritSource,
+                CustomMinimumSize = new Vector2(0, 44),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            };
+            srcBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+            var bi = idx;
+            srcBtn.Pressed += () => { _inheritSource = bi; RefreshRightPanel(); };
+            box.AddChild(srcBtn);
+        }
+        box.AddChild(InfoLine($"Chi phí: {EquipmentService.InheritCostSilver} Bạc"));
+        var inheritBtn = new Button
+        {
+            Name = "InheritButton",
+            Text = "Kế thừa",
+            CustomMinimumSize = new Vector2(0, UiTheme.ButtonHeight),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Disabled = _inheritSource < 0 || save.Silver < EquipmentService.InheritCostSilver,
+        };
+        UiTheme.StyleButton(inheritBtn, true);
+        inheritBtn.Pressed += () =>
+        {
+            var gm2 = GetNode<GameManager>("/root/GameManager");
+            bool ok = EquipmentService.TryInherit(gm2.Save, _selectedHero, _selectedSlot, _inheritSource);
+            _status = ok ? "Kế thừa thành công! Món cũ đã mất." : "Kế thừa thất bại: kiểm tra Bạc và món đã chọn!";
+            _inheritSource = -1;
+            gm2.SaveGame();
+            RefreshEquipRows();
+            RefreshRightPanel();
+        };
+        box.AddChild(inheritBtn);
+        var statusLabel = new Label { Name = "InheritStatus", Text = _status, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        UiTheme.StyleBody(statusLabel, UiTheme.FontSmall);
+        statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
+        box.AddChild(statusLabel);
     }
 
     // Finds the hosting HubScene by walking up (works in game and in tests).
