@@ -51,8 +51,8 @@ public partial class TestPhase28 : Node
         {
             var screen = screenScene.Instantiate<Control>();
             AddChild(screen);
-            var rows = screen.GetNode<VBoxContainer>("EquipScroll/EquipBox").GetChildren().OfType<HBoxContainer>().ToList();
-            Check(rows.Count == 6, "hero screen has 6 equipment rows");
+            var rows = screen.GetNode<VBoxContainer>("EquipListBox").GetChildren().OfType<Button>().ToList();
+            Check(rows.Count == 6, "hero screen has 6 equipment rows (2.29 middle column)");
             screen.QueueFree();
         }
         GD.Print(_failures == 0 ? "TEST PHASE2.8: ALL PASS" : $"TEST PHASE2.8: {_failures} FAILURES");

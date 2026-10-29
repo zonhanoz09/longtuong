@@ -195,14 +195,15 @@ public partial class TestPhase223 : Node
             tav.QueueFree();
         }
 
-        // --- Hero screen shows no hero stars ---
+        // --- Hero screen shows no hero stars (equipment redesign 2.29) ---
         var heroScene = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroScreen.tscn");
         Check(heroScene != null, "hero screen scene loads");
         if (heroScene != null)
         {
             var hero = heroScene.Instantiate<HeroScreen>();
             AddChild(hero);
-            Check(!hero.GetNode<Label>("DetailLabel").Text.Contains("Sao"), "hero detail shows no hero stars");
+            Check(hero.GetNode<Label>("TitleLabel").Text == "Trang bị", "equipment screen titled Trang bị");
+            Check(hero.GetNodeOrNull<Button>("StarUpButton") == null, "no star-up button on the equipment screen");
             hero.QueueFree();
         }
 

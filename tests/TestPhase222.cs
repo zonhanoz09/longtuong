@@ -96,8 +96,10 @@ public partial class TestPhase222 : Node
             var hero = heroScene.Instantiate<HeroScreen>();
             AddChild(hero);
             Check(hero.GetNodeOrNull<Button>("StarUpButton") == null, "star-up button is gone from the hero screen");
-            Check(!hero.GetNode<Button>("RecruitButton").Disabled, "hero screen recruit button is enabled (opens the tavern)");
-            Check(hero.GetNode<Label>("RecruitLabel").Text.Contains("Tửu quán"), "hero screen recruit label points to the tavern");
+            Check(hero.GetNodeOrNull<Button>("RecruitButton") == null, "recruit button moved out of the equipment screen (hub Chiêu mộ button)");
+            Check(hero.GetNodeOrNull<Label>("RecruitLabel") == null, "recruit label moved out of the equipment screen");
+            Check(hero.GetNodeOrNull<Label>("StarLabel") == null && hero.GetNodeOrNull<Button>("UnlockStarButton") == null,
+                "star chart moved out of the equipment screen (own hub button + popup)");
             hero.QueueFree();
         }
         var recruitScene = ResourceLoader.Load<PackedScene>("res://features/recruit/scenes/RecruitScene.tscn");

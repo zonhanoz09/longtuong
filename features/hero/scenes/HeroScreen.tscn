@@ -9,95 +9,43 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(0.633607, 0.993291)
 script = ExtResource("1_hero")
 
 [node name="TitleLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 10.0
-offset_right = 600.0
-offset_bottom = 40.0
-text = "TUONG & TRANG BI — Cap / Sao / Cuong hoa / Tay luyen / Tuong Tinh / Chieu mo"
+offset_right = 1140.0
+offset_bottom = 44.0
+horizontal_alignment = 1
+text = "Trang bị"
 
-[node name="HeroBox" type="VBoxContainer" parent="."]
+[node name="HeroListBox" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 50.0
-offset_right = 400.0
-offset_bottom = 300.0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 206.0
+offset_bottom = 616.0
 
-[node name="DetailLabel" type="Label" parent="."]
+[node name="EquipListBox" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_left = 420.0
-offset_top = 50.0
-offset_right = 1120.0
-offset_bottom = 300.0
-text = "Dang tai..."
-autowrap_mode = 3
+offset_left = 222.0
+offset_top = 56.0
+offset_right = 602.0
+offset_bottom = 616.0
 
-[node name="EquipScroll" type="ScrollContainer" parent="."]
+[node name="RightPanel" type="Control" parent="."]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 320.0
-offset_right = 1120.0
-offset_bottom = 480.0
-horizontal_scroll_mode = 3
+offset_left = 618.0
+offset_top = 56.0
+offset_right = 1124.0
+offset_bottom = 616.0
 
-[node name="EquipBox" type="VBoxContainer" parent="EquipScroll"]
-layout_mode = 2
-
-[node name="StarLabel" type="Label" parent="."]
+[node name="TabRow" type="HBoxContainer" parent="RightPanel"]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 490.0
-offset_right = 1120.0
-offset_bottom = 530.0
-text = "Tuong Tinh..."
-autowrap_mode = 3
+offset_right = 506.0
+offset_bottom = 44.0
 
-[node name="UnlockStarButton" type="Button" parent="."]
+[node name="TabContent" type="Control" parent="RightPanel"]
 layout_mode = 0
-offset_left = 240.0
-offset_top = 540.0
-offset_right = 440.0
-offset_bottom = 580.0
-text = "Mo o Tuong Tinh"
-
-[node name="RecruitButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 460.0
-offset_top = 540.0
-offset_right = 660.0
-offset_bottom = 580.0
-text = "Chieu mo (100 Vang)"
-
-[node name="RecruitLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 590.0
-offset_right = 1120.0
-offset_bottom = 620.0
-text = "Chieu mo..."
-autowrap_mode = 3
-
-[node name="UnequipAllButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 680.0
-offset_top = 540.0
-offset_right = 880.0
-offset_bottom = 580.0
-text = "Thao tat ca"
-
-[node name="EquipDetailLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 630.0
-offset_right = 1120.0
-offset_bottom = 670.0
-text = "Hover vao trang bi de xem chi tiet."
-autowrap_mode = 3
-
-[connection signal="pressed" from="UnlockStarButton" to="." method="OnUnlockStarPressed"]
-[connection signal="pressed" from="RecruitButton" to="." method="OnRecruitPressed"]
-[connection signal="pressed" from="UnequipAllButton" to="." method="OnUnequipAllPressed"]
+offset_top = 52.0
+offset_right = 506.0
+offset_bottom = 560.0

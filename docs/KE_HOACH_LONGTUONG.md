@@ -75,6 +75,18 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > hạn, badge hiện +N, lưới 5×4 scroll. Chỉ tab Trang bị có đồ
 > thật; túi xem-only, mang/tháo đồ vẫn ở màn Võ tướng.
 >
+> Cập nhật 2026-10-29: **Phase 2.29 — ĐÃ HOÀN THÀNH** — màn hình
+> Trang bị (nút Hub "Cường hóa" đổi tên thành "Trang bị") thiết kế
+> lại theo layout ảnh Huynh gửi: trái = danh sách tướng, giữa = 6
+> hàng trang bị (icon + tên + "Cường hóa: +N/10" + "Tẩy luyện:
+> {dòng}" + badge xanh; hàng đang chọn viền vàng), phải = 5 tab
+> (Cường hóa/Tẩy luyện/Kế thừa/Đục lỗ/Phụ ma) + panel thao tác —
+> click hàng giữa thì panel phải hiện Cường hóa/Tẩy luyện/Tháo cho
+> món đó. Chốt của Huynh: đủ 5 tab, 3 tab chưa có hệ thống hiện
+> "Chưa mở."; Tướng Tinh + Chiêu mộ dời ra khỏi popup (Tướng Tinh
+> có nút Hub riêng + popup 520×400, chiêu mộ ở nút Hub Chiêu mộ);
+> click hàng → panel phải thao tác.
+>
 > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
 >
 > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo

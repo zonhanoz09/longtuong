@@ -48,8 +48,8 @@ public partial class TestPhase213 : Node
         var topBtns = hub.GetNode<Control>("TopBar/TopActions").GetChildren().OfType<Button>().ToList();
         Check(topBtns.Count == 2, "top-right holds 2 actions (Vao ai, Dang xuat)");
         var functionBtns = hub.GetNode<Control>("FunctionBar").GetChildren().OfType<Button>().ToList();
-        Check(functionBtns.Count == 5, "bottom bar holds 5 function buttons");
-        Check(topBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 7, "all 7 sketched buttons present (2 + 5)");
+        Check(functionBtns.Count == 6, "bottom bar holds 6 function buttons (2.29 adds Tướng Tinh)");
+        Check(topBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 8, "all 8 sketched buttons present (2 + 6)");
         Check(hub.GetNodeOrNull<Button>("TopBar/FeatureIcons/EquipmentButton") == null
             && hub.GetNodeOrNull<Button>("FunctionBar/EquipmentButton") == null, "duplicate Trang bi button removed");
 

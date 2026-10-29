@@ -15,6 +15,25 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.29 — đã làm (màn hình Trang bị theo layout ảnh Huynh gửi)
+
+- Nút Hub "Cường hóa" đổi tên thành **"Trang bị"**.
+- Viết lại `HeroScreen` (popup 1140×680) theo đúng layout ảnh: trái
+  = danh sách tướng dọc (sở hữu mở, khóa hiện "(KHÓA)"); giữa = 6
+  hàng trang bị (icon ký tự slot + tên màu slot + "Cường hóa: +N/10"
+  + "Tẩy luyện: {dòng}" + badge xanh số tẩy luyện; hàng đang chọn
+  viền vàng); phải = hàng 5 tab (Cường hóa/Tẩy luyện/Kế thừa/Đục
+  lỗ/Phụ ma) + panel thao tác. Click hàng giữa → panel phải hiện
+  Cường hóa/Tẩy luyện/Tháo cho món đó (tốn Vàng, cường hóa 100%
+  thành công, tối đa +10). 3 tab chưa có hệ thống hiện "Chưa mở.".
+- Tướng Tinh + Chiêu mộ **dời ra khỏi** popup này (chốt 2b): Tướng
+  Tinh có nút Hub riêng + popup `StarChartScene` (520×400); chiêu mộ
+  giữ ở nút Hub "Chiêu mộ" (mở Tửu quán).
+- Test: `tests/TestPhase229.tscn` ALL PASS (layout 3 cột, 5 tab,
+  cường hóa/tẩy luyện/tháo qua panel phải, tab khóa "Chưa mở.",
+  popup Tướng Tinh); cập nhật 213 (6 nút chức năng), 222, 223, 28;
+  toàn suite 0–2.29 pass; build 0 error; CI thêm 2.29.
+
 ## Phase 2.28 — đã làm (Túi đồ theo layout ảnh Huynh gửi)
 
 - Viết lại `BagScene` (popup 1020×640): title "Túi" căn giữa; cột

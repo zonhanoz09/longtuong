@@ -31,6 +31,8 @@ public partial class HubScene : Control
     // 1000x620 (not 1000x600: the 2.3 test requires every widget popup
     // size to be different, and 1000x600 is the hero-list popup).
     public static readonly Vector2 RecruitPopupSize = new(1000, 620);
+    // Phase 2.29: Tướng Tinh moved out of the Trang bị popup (Huynh 2b).
+    public static readonly Vector2 StarChartPopupSize = new(520, 400);
 
     // Zone bounds on the 1280x720 viewport, from the second sketch:
     // top 42.5%, middle 42.5%, bottom 14.9%; avatar column 21.3%.
@@ -92,8 +94,9 @@ public partial class HubScene : Control
             ("HeroListButton", "Võ\ntướng", false),
             ("BagButton", "Túi đồ", false),
             ("FormationButton", "Bày trận", true),
-            ("EnhanceButton", "Cường hóa", false),
+            ("EnhanceButton", "Trang bị", false),
             ("RecruitButton", "Chiêu mộ", false),
+            ("StarChartButton", "Tướng\nTinh", false),
         };
         foreach (var (node, text, primary) in functions)
         {
@@ -310,6 +313,7 @@ public partial class HubScene : Control
     private void OnStagePressed() => OpenPopup("res://features/stage/scenes/StageSelect.tscn", StagePopupSize);
     private void OnEnhancePressed() => OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HeroPopupSize);
     private void OnRecruitPressed() => OpenPopup("res://features/recruit/scenes/RecruitScene.tscn", RecruitPopupSize);
+    private void OnStarChartPressed() => OpenPopup("res://features/hero/scenes/StarChartScene.tscn", StarChartPopupSize);
     private void OnLogoutPressed()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
