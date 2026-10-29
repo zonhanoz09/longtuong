@@ -19,7 +19,7 @@ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài
 
 - Nút Hub "Cường hóa" đổi tên thành **"Trang bị"**.
 - Viết lại `HeroScreen` (popup 1140×680) theo đúng layout ảnh: trái
-  = danh sách tướng dọc (sở hữu mở, khóa hiện "(KHÓA)"); giữa = 6
+  = danh sách tướng dọc (chỉ hiện tướng đã sở hữu); giữa = 6
   hàng trang bị (icon ký tự slot + tên màu slot + "Cường hóa: +N/10"
   + "Tẩy luyện: {dòng}" + badge xanh số tẩy luyện; hàng đang chọn
   viền vàng); phải = hàng 5 tab (Cường hóa/Tẩy luyện/Kế thừa/Đục
