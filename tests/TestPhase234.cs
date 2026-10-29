@@ -52,9 +52,9 @@ public partial class TestPhase234 : Node
         Check(ForgeService.TryForge(gm.Save, "chu_tuoc", "weapon", rng) == ForgeService.ForgeResult.Success, "forge succeeds");
         Check(gm.Save.BagEquipment.Count == bagBefore + 1, "forged item lands in bag");
         var item = gm.Save.BagEquipment[^1];
-        Check(item.SetId == "chu_tuoc" && item.Tier == 50 && item.Quality == "Tim" && item.SlotId == "weapon",
+        Check(item.SetId == "chu_tuoc" && item.Tier == 50 && item.Quality == "Luc" && item.SlotId == "weapon",
             "forged item has set fields");
-        Check(item.RefineLines.Count == 4, "forged Tim item has 4 lines");
+        Check(item.RefineLines.Count == 4, "forged Luc item has 4 lines");
         Check(ForgeService.OreCount(gm.Save) == oreBefore - 25, "forge consumes ore");
 
         // UI: Trang bị popup -> Lò rèn -> buy ore + forge.

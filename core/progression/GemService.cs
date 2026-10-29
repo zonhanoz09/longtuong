@@ -59,22 +59,21 @@ public static class GemService
         return $"Ngọc {def.Name} Lv{level} ({val} {def.Name})";
     }
 
-    public static int SocketsForQuality(string quality) => quality switch
-    {
-        "Lam" => 1, "Tim" => 2, "Cam" => 3, "Do" => 4, _ => 1,
-    };
+    // Phase 2.37: sockets are per-set (EquipmentSets.SocketsForSet).
+    // Kept as a thin alias for the old call sites.
+    public static int SocketsForSet(string setId) => EquipmentSets.SocketsForSet(setId);
 
     // Socket opening costs Vàng (Huynh's rule: must punch the hole with
     // Vàng before socketing). Cost doubles per socket: 500/1000/2000/4000
     // (Pax setup — Huynh adjusts freely).
     public static int UnlockCostGold(int socketIndex) => 500 * (1 << socketIndex);
 
-    /// Fills an item's sockets to its quality count (idempotent).
+    /// Fills an item's sockets to its set count (idempotent).
     /// All sockets start locked — open with Vàng before socketing.
     public static void EnsureSockets(EquipmentState eq)
     {
         eq.Sockets ??= new List<EquipmentSocket>();
-        int want = SocketsForQuality(eq.Quality);
+        int want = SocketsForSet(eq.SetId);
         while (eq.Sockets.Count < want)
             eq.Sockets.Add(new EquipmentSocket { Unlocked = false });
     }
@@ -82,7 +81,7 @@ public static class GemService
     public static void EnsureSockets(BagEquipmentItem item)
     {
         item.Sockets ??= new List<EquipmentSocket>();
-        int want = SocketsForQuality(item.Quality);
+        int want = SocketsForSet(item.SetId);
         while (item.Sockets.Count < want)
             item.Sockets.Add(new EquipmentSocket { Unlocked = false });
     }

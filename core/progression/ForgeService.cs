@@ -69,9 +69,10 @@ public static class ForgeService
         return true;
     }
 
-    // Phase 2.36: Nâng phẩm (upgrade tier) — Huynh's decision: during
-    // development the upgrade costs ONLY Bạc (1.000 x target tier),
-    // no blueprint/ore gating.
+    // Phase 2.37: Đúc Lại (recast) — full flow per Huynh: the target
+    // set's blueprint must be learned (not consumed) + ore + Bạc.
+    // Replaces the 2.36 dev-only Bạc cost. The Nâng cấp tab is removed;
+    // this now lives in the Cường hóa tab.
     public static readonly List<string> UpgradeChain = new()
     {
         "tan_thu", "chu_tuoc", "bach_ho", "thanh_long", "huyen_vu", "ky_lan",
@@ -83,35 +84,78 @@ public static class ForgeService
         return i >= 0 && i + 1 < UpgradeChain.Count ? UpgradeChain[i + 1] : null;
     }
 
-    public static int UpgradeSilverCost(string targetSetId) =>
+    public static int RecastOreCost(string targetSetId) =>
+        EquipmentSets.Get(targetSetId).Tier / 2;
+    public static int RecastSilverCost(string targetSetId) =>
         EquipmentSets.Get(targetSetId).Tier * 1000;
 
-    public enum UpgradeResult { Success, NoNext, LowLevel, NoSilver, EmptySlot }
+    public enum RecastResult { Success, NoNext, LowLevel, NoBlueprint, NoOre, NoSilver, EmptySlot }
 
-    public static UpgradeResult TryUpgradeTier(SaveData save, string heroId, string slotId, Random rng)
+    public static RecastResult TryRecast(SaveData save, string heroId, string slotId, Random rng)
     {
         ProgressionService.EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
-        if (eq.IsEmpty) return UpgradeResult.EmptySlot;
+        if (eq.IsEmpty) return RecastResult.EmptySlot;
         string? next = NextSet(eq.SetId);
-        if (next == null) return UpgradeResult.NoNext;
+        if (next == null) return RecastResult.NoNext;
         var target = EquipmentSets.Get(next);
         int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
-        if (mainLevel < target.Tier) return UpgradeResult.LowLevel;
-        int cost = UpgradeSilverCost(next);
-        if (save.Silver < cost) return UpgradeResult.NoSilver;
-        save.Silver -= cost;
+        if (mainLevel < target.Tier) return RecastResult.LowLevel;
+        if (!HasBlueprint(save, next)) return RecastResult.NoBlueprint;
+        int oreNeed = RecastOreCost(next);
+        if (OreCount(save) < oreNeed) return RecastResult.NoOre;
+        int silverNeed = RecastSilverCost(next);
+        if (save.Silver < silverNeed) return RecastResult.NoSilver;
+        save.Materials[OreId] = OreCount(save) - oreNeed;
+        save.Silver -= silverNeed;
         eq.SetId = next;
         eq.Tier = target.Tier;
         eq.Quality = target.Quality;
         // Keep enhance level, unlocks and socketed gems; top up refine
-        // lines to the new quality's count (position pool); grow sockets
+        // lines to the new set's count (position pool); grow sockets
         // (new ones start locked).
         var pos = FormationService.PositionOfHero(save, heroId);
-        while (eq.RefineLines.Count < EquipmentSets.LinesForQuality(eq.Quality))
+        while (eq.RefineLines.Count < EquipmentSets.LinesForSet(next))
             eq.RefineLines.Add(ProgressionService.RollRefineLine(pos, rng));
         GemService.EnsureSockets(eq);
-        return UpgradeResult.Success;
+        return RecastResult.Success;
+    }
+
+    // Phase 2.37: Chế Tạo — craft the starter Tân Thủ set directly into
+    // an empty slot (Huynh 7b: only the lowest tier is craftable here).
+    // No blueprint, no level gate; costs ore + Bạc like Đúc Lại.
+    public const string CraftSetId = "tan_thu";
+    public static int CraftOreCost() => EquipmentSets.Get(CraftSetId).Tier / 2;
+    public static int CraftSilverCost() => EquipmentSets.Get(CraftSetId).Tier * 1000;
+
+    public enum CraftResult { Success, SlotOccupied, NoOre, NoSilver }
+
+    public static CraftResult TryCraftIntoSlot(SaveData save, string heroId, string slotId, Random rng)
+    {
+        ProgressionService.EnsureDefaults(save);
+        var eq = save.HeroEquipment[heroId][slotId];
+        if (!eq.IsEmpty) return CraftResult.SlotOccupied;
+        int oreNeed = CraftOreCost();
+        if (OreCount(save) < oreNeed) return CraftResult.NoOre;
+        int silverNeed = CraftSilverCost();
+        if (save.Silver < silverNeed) return CraftResult.NoSilver;
+        save.Materials[OreId] = OreCount(save) - oreNeed;
+        save.Silver -= silverNeed;
+        var set = EquipmentSets.Get(CraftSetId);
+        var pos = FormationService.PositionOfHero(save, heroId);
+        var fresh = new EquipmentState
+        {
+            IsEmpty = false,
+            Level = 0,
+            SetId = CraftSetId,
+            Tier = set.Tier,
+            Quality = set.Quality,
+        };
+        while (fresh.RefineLines.Count < EquipmentSets.LinesForSet(CraftSetId))
+            fresh.RefineLines.Add(ProgressionService.RollRefineLine(pos, rng));
+        GemService.EnsureSockets(fresh);
+        save.HeroEquipment[heroId][slotId] = fresh;
+        return CraftResult.Success;
     }
 
     public enum ForgeResult { Success, NoBlueprint, LowLevel, NoOre, BadSet }
@@ -137,7 +181,7 @@ public static class ForgeService
             SetId = setId,
         };
         // Fresh lines from the Middle pool (item is not equipped yet).
-        while (item.RefineLines.Count < EquipmentSets.LinesForQuality(set.Quality))
+        while (item.RefineLines.Count < EquipmentSets.LinesForSet(setId))
             item.RefineLines.Add(ProgressionService.RollRefineLine(FormationPosition.Middle, rng));
         save.BagEquipment.Add(item);
         return ForgeResult.Success;

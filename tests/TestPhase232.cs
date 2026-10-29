@@ -76,7 +76,7 @@ public partial class TestPhase232 : Node
         // Unified tooltip BBCode (same for all 3 popups).
         var bb = EquipmentTooltip.ForBagItem(new BagEquipmentItem
         {
-            SlotId = "weapon", SetId = "chu_tuoc", Tier = 50, Quality = "Tim",
+            SlotId = "weapon", SetId = "chu_tuoc", Tier = 50, Quality = "Luc",
             RefineLines = new List<RefineLine> { new() { StatId = "crit", Value = 0.08 } },
             Sockets = new List<EquipmentSocket> { new() { Unlocked = true, GemId = "atk_1" } },
         }, null);

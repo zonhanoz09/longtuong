@@ -15,6 +15,24 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.37 — đã làm (tab Cường hóa: Chế Tạo / Đúc Lại)
+
+- Tab Cường hóa làm lại theo sketch của Huynh: header item, khối
+  `DỰ KIẾN SAU NÂNG` (mô phỏng trên bản copy, hiện delta chỉ số thật),
+  `TÀI NGUYÊN TIÊU TỐN` (Bạc/quặng: cần/có, đỏ khi thiếu), dòng
+  cooldown "Sẵn sàng", nút theo ngữ cảnh: ô trống → **Chế Tạo**
+  (chế Tân Thủ thẳng vào ô: 15 quặng + 30.000 Bạc, không cần bản vẽ);
+  có đồ → **Cường Hóa** + **Đúc Lại** (bản vẽ đã học + quặng Tier/2
+  + Bạc 1.000×Tier, giữ cường hóa/dòng/lỗ/ngọc).
+- Xóa tab "Nâng cấp" (dời vào tab Cường hóa).
+- Remap phẩm set: Chu Tước Lục → Bạch Hổ Lam → Thanh Long Tím →
+  Huyền Vũ Cam → Kỳ Lân Đỏ (Tân Thủ giữ Lam ngoài ladder);
+  tên trang bị = "{Set} {Ô}" (VD: Chu Tước Vũ khí).
+- Tab Tẩy luyện: dòng tô màu theo phẩm roll; chi phí = 1 + số dòng
+  khóa (đá), Vàng = 200×(1+khóa).
+- TestPhase237 mới; cập nhật 2/229/230/232–236; suite 0–2.37 xanh;
+  CI thêm 2.37.
+
 ## Fix theo feedback (2026-10-29 khuya, tiếp)
 
 - Tooltip trang bị ĐỒNG NHẤT ở cả 3 popup (Võ tướng / Túi / Trang bị):

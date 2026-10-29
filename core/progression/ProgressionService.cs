@@ -67,7 +67,6 @@ public static class ProgressionService
     public const int MaxLevel = 180;
     public const int MaxEnhanceLevel = 10;
     public const int StarChartNodes = 12;
-    public const int RefineCostGold = 100;
 
     public static readonly List<EquipmentSlotDef> Slots = new()
     {
@@ -163,6 +162,11 @@ public static class ProgressionService
     private static void MigrateEquipment(EquipmentState eq)
     {
         if (string.IsNullOrEmpty(eq.SetId)) { eq.SetId = "tan_thu"; eq.Tier = 30; eq.Quality = "Lam"; }
+        // Phase 2.37: Quality/Tier are authoritative from the set def
+        // (auto-handles the quality remap: Chu Tước Tím->Lục, ...).
+        var setDef = EquipmentSets.Get(eq.SetId);
+        eq.Tier = setDef.Tier;
+        eq.Quality = setDef.Quality;
         eq.Sockets ??= new List<EquipmentSocket>();
         GemService.EnsureSockets(eq);
         eq.RefineLines ??= new List<RefineLine>();
@@ -171,7 +175,7 @@ public static class ProgressionService
             var (stat, val) = RefineLineForOldIndex(eq.RefineIndex);
             eq.RefineLines.Add(new RefineLine { StatId = stat, Value = val });
             var rng = new Random();
-            while (eq.RefineLines.Count < EquipmentSets.LinesForQuality(eq.Quality))
+            while (eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId))
                 eq.RefineLines.Add(RandomRefineLine(rng));
         }
     }
@@ -179,6 +183,9 @@ public static class ProgressionService
     private static void MigrateBagItem(BagEquipmentItem item)
     {
         if (string.IsNullOrEmpty(item.SetId)) { item.SetId = "tan_thu"; item.Tier = 30; item.Quality = "Lam"; }
+        var setDef = EquipmentSets.Get(item.SetId);
+        item.Tier = setDef.Tier;
+        item.Quality = setDef.Quality;
         item.Sockets ??= new List<EquipmentSocket>();
         GemService.EnsureSockets(item);
         item.RefineLines ??= new List<RefineLine>();
@@ -187,7 +194,7 @@ public static class ProgressionService
             var (stat, val) = RefineLineForOldIndex(item.RefineIndex);
             item.RefineLines.Add(new RefineLine { StatId = stat, Value = val });
             var rng = new Random();
-            while (item.RefineLines.Count < EquipmentSets.LinesForQuality(item.Quality))
+            while (item.RefineLines.Count < EquipmentSets.LinesForSet(item.SetId))
                 item.RefineLines.Add(RandomRefineLine(rng));
         }
     }
@@ -276,8 +283,14 @@ public static class ProgressionService
     // Trung = damage, Hậu = support); not deployed => Trung pool.
     // Only engine-supported stats are rolled; exotic stats (Kháng bạo,
     // Đỡ đòn, Trúng, Sát thương bạo, Khống chế) wait for the engine.
-    public const int RefineStoneCost = 1;
-    public const int RefineGoldFallback = 200;
+    // Phase 2.37 (Huynh Q5a): refine cost grows with locked lines.
+    public static int RefineCostStones(SaveData save, string heroId, string slotId)
+    {
+        EnsureDefaults(save);
+        return 1 + save.HeroEquipment[heroId][slotId].RefineLines.Count(l => l.Locked);
+    }
+    public static int RefineCostGold(SaveData save, string heroId, string slotId) =>
+        200 * RefineCostStones(save, heroId, slotId);
 
     public static List<(string StatId, double Min, double Max)> RefinePoolFor(FormationPosition pos) => pos switch
     {
@@ -332,12 +345,13 @@ public static class ProgressionService
         if (eq.IsEmpty) return false;
         // Top up to the quality's line count (migrated/old items may be short).
         var pos = FormationService.PositionOfHero(save, heroId);
-        while (eq.RefineLines.Count < EquipmentSets.LinesForQuality(eq.Quality))
+        while (eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId))
             eq.RefineLines.Add(RollRefineLine(pos, rng));
-        bool useStone = save.RefineStones >= RefineStoneCost;
-        if (!useStone && save.Gold < RefineGoldFallback) return false;
-        if (useStone) save.RefineStones -= RefineStoneCost;
-        else save.Gold -= RefineGoldFallback;
+        int stoneCost = RefineCostStones(save, heroId, slotId);
+        bool useStone = save.RefineStones >= stoneCost;
+        if (!useStone && save.Gold < RefineCostGold(save, heroId, slotId)) return false;
+        if (useStone) save.RefineStones -= stoneCost;
+        else save.Gold -= RefineCostGold(save, heroId, slotId);
         for (int i = 0; i < eq.RefineLines.Count; i++)
             if (!eq.RefineLines[i].Locked)
                 eq.RefineLines[i] = RollRefineLine(pos, rng);

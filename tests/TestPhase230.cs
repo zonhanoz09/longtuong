@@ -18,11 +18,13 @@ public partial class TestPhase230 : Node
         // 1. Set table.
         Check(EquipmentSets.All.Count == 6, "6 equipment sets");
         var ct = EquipmentSets.Get("chu_tuoc");
-        Check(ct.Tier == 50 && ct.Quality == "Tim" && ct.Name == "Chu Tước", "Chu Tuoc T50 Tim");
+        Check(ct.Tier == 50 && ct.Quality == "Luc" && ct.Name == "Chu Tước", "Chu Tuoc T50 Luc (2.37 remap)");
         Check(ct.Bonuses.Count == 3 && ct.Bonuses[0].Pieces == 2 && ct.Bonuses[2].Pieces == 6, "Chu Tuoc bonuses 2/4/6");
         var kl = EquipmentSets.Get("ky_lan");
         Check(kl.Quality == "Do" && kl.Tier == 100, "Ky Lan Do T100");
-        Check(EquipmentSets.LinesForQuality("Lam") == 3 && EquipmentSets.LinesForQuality("Do") == 6, "lines per quality 3..6");
+        Check(EquipmentSets.LinesForSet("tan_thu") == 3 && EquipmentSets.LinesForSet("ky_lan") == 6, "lines per set 3..6");
+        Check(EquipmentSets.QualityColor("Luc") == new Color(0.25f, 0.75f, 0.25f), "Luc is green");
+        Check(EquipmentSets.DisplayName("chu_tuoc", "weapon") == "Chu Tước Vũ khí", "item name = Set + Slot");
         Check(!SetBonusService.IsEngineSupported("starting_rage") && SetBonusService.IsEngineSupported("dmg_red"),
             "deferred (rage) vs supported (dmg_red) bonus stats");
         Check(EquipmentSets.Get("nope").Id == "tan_thu", "unknown set falls back to Tan Thu");

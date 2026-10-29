@@ -26,7 +26,6 @@ public partial class HeroScreen : Control
         ("tay_luyen", "Tẩy luyện"),
         ("ke_thua", "Kế thừa"),
         ("duc_lo", "Đục lỗ"),
-        ("nang_cap", "Nâng cấp"),
         ("phu_ma", "Phụ ma"),
     };
 
@@ -229,9 +228,9 @@ public partial class HeroScreen : Control
                 CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
             });
             var nameLabel = FindRowPart<Label>(btn, "RowName");
-            nameLabel.Text = eq.IsEmpty ? $"{slot.Name} (Trống)" : slot.Name;
+            nameLabel.Text = eq.IsEmpty ? $"{slot.Name} (Trống)" : $"{EquipmentSets.DisplayName(eq.SetId, slot.Id)} +{eq.Level}";
             UiTheme.StyleBody(nameLabel, UiTheme.FontButton);
-            nameLabel.AddThemeColorOverride("font_color", eq.IsEmpty ? UiTheme.Muted : slotColor);
+            nameLabel.AddThemeColorOverride("font_color", eq.IsEmpty ? UiTheme.Muted : EquipmentSets.QualityColor(eq.Quality));
             var enhLabel = FindRowPart<Label>(btn, "RowEnhance");
             enhLabel.Text = eq.IsEmpty ? "Cường hóa: —" : $"Cường hóa: +{eq.Level}/{ProgressionService.MaxEnhanceForHero(gm.Save)}";
             UiTheme.StyleBody(enhLabel, UiTheme.FontSmall);
@@ -245,9 +244,9 @@ public partial class HeroScreen : Control
             }
             else
             {
-                // Phase 2.30: third line shows the set (quality-colored).
+                // Phase 2.37: third line shows quality + tier (name already has the set).
                 var set = EquipmentSets.Get(eq.SetId);
-                refLabel.Text = $"{set.Name} · Lv{set.Tier}";
+                refLabel.Text = $"{EquipmentSets.QualityName(eq.Quality)} · Lv{set.Tier}";
                 UiTheme.StyleBody(refLabel, UiTheme.FontSmall);
                 refLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(eq.Quality));
             }
@@ -332,6 +331,11 @@ public partial class HeroScreen : Control
             _tabContent.AddChild(note);
             return;
         }
+        if (_selectedTab == "cuong_hoa")
+        {
+            BuildEnhanceTab();
+            return;
+        }
         if (eq.IsEmpty)
         {
             var note = CenteredLabel("Ô trống — chưa mang trang bị.", UiTheme.FontButton, UiTheme.Muted, "EmptyNote");
@@ -346,11 +350,6 @@ public partial class HeroScreen : Control
         if (_selectedTab == "ke_thua")
         {
             BuildInheritTab();
-            return;
-        }
-        if (_selectedTab == "nang_cap")
-        {
-            BuildUpgradeTab();
             return;
         }
         var slotColor = UiTheme.SlotColors.TryGetValue(_selectedSlot, out var c) ? c : UiTheme.Panel;
@@ -370,19 +369,11 @@ public partial class HeroScreen : Control
         top.AddChild(icon);
         var info = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         info.AddThemeConstantOverride("separation", 6);
-        var titleLabel = new Label { Text = $"{slot?.Name} +{eq.Level}" };
+        // Phase 2.37: item name = "{Set} {Slot}" (Huynh), quality-colored.
+        var titleLabel = new Label { Text = $"{EquipmentSets.DisplayName(eq.SetId, _selectedSlot)} +{eq.Level}" };
         UiTheme.StyleBody(titleLabel, 20);
-        titleLabel.AddThemeColorOverride("font_color", slotColor);
+        titleLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(eq.Quality));
         info.AddChild(titleLabel);
-        if (_selectedTab == "cuong_hoa")
-        {
-            // Phase 2.31b: silver cost, hero-level cap, success rate.
-            int maxEnh = ProgressionService.MaxEnhanceForHero(gm.Save);
-            info.AddChild(InfoLine($"Cấp cường hóa: +{eq.Level}/{maxEnh} (tối đa theo cấp tướng chính)"));
-            info.AddChild(InfoLine(eq.Level >= maxEnh ? "Chi phí: MAX" : $"Chi phí: {ProgressionService.EnhanceCostSilver(eq.Level)} Bạc"));
-            info.AddChild(InfoLine($"Tỉ lệ thành công: {ProgressionService.EnhanceSuccessRate(eq.Level + 1):P0}"));
-        }
-        else
         {
             // Phase 2.32: lines with lock toggles.
             info.AddChild(InfoLine($"Tẩy luyện ({eq.RefineLines.Count} dòng) — bấm dòng để khóa/mở:"));
@@ -398,7 +389,10 @@ public partial class HeroScreen : Control
                 };
                 lineBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
                 bool locked = line.Locked;
-                lineBtn.AddThemeColorOverride("font_color", locked ? UiTheme.Gold : UiTheme.Text);
+                // Phase 2.37 (Huynh): line text colored by roll grade;
+                // the gold border still marks locked lines.
+                lineBtn.AddThemeColorOverride("font_color",
+                    EquipmentSets.QualityColor(ProgressionService.RefineLineGrade(line)));
                 var lb = new StyleBoxFlat
                 {
                     BgColor = locked ? UiTheme.PanelHover : UiTheme.Panel,
@@ -421,9 +415,12 @@ public partial class HeroScreen : Control
                 };
                 info.AddChild(lineBtn);
             }
-            string costText = gm.Save.RefineStones >= ProgressionService.RefineStoneCost
-                ? $"Chi phí: {ProgressionService.RefineStoneCost} Đá tẩy luyện (còn {gm.Save.RefineStones})"
-                : $"Chi phí: {ProgressionService.RefineGoldFallback} Vàng (hết đá)";
+            // Phase 2.37 (Huynh Q5a): cost grows with locked lines.
+            int stoneCost = ProgressionService.RefineCostStones(gm.Save, _selectedHero, _selectedSlot);
+            int goldCost = ProgressionService.RefineCostGold(gm.Save, _selectedHero, _selectedSlot);
+            string costText = gm.Save.RefineStones >= stoneCost
+                ? $"Chi phí: {stoneCost} Đá tẩy luyện (còn {gm.Save.RefineStones})"
+                : $"Chi phí: {goldCost} Vàng (hết đá)";
             info.AddChild(InfoLine(costText));
         }
         top.AddChild(info);
@@ -440,23 +437,15 @@ public partial class HeroScreen : Control
         actions.AddThemeConstantOverride("separation", 12);
         var mainBtn = new Button
         {
-            Name = _selectedTab == "cuong_hoa" ? "ActionEnhance" : "ActionRefine",
-            Text = _selectedTab == "cuong_hoa" ? "Cường hóa" : "Tẩy luyện",
+            Name = "ActionRefine",
+            Text = "Tẩy luyện",
             CustomMinimumSize = new Vector2(200, UiTheme.ButtonHeight),
         };
         UiTheme.StyleButton(mainBtn, true);
-        if (_selectedTab == "cuong_hoa")
-        {
-            int maxEnh = ProgressionService.MaxEnhanceForHero(gm.Save);
-            mainBtn.Disabled = eq.Level >= maxEnh || gm.Save.Silver < ProgressionService.EnhanceCostSilver(eq.Level);
-            mainBtn.Pressed += OnEnhancePressed;
-        }
-        else
-        {
-            mainBtn.Disabled = gm.Save.RefineStones < ProgressionService.RefineStoneCost
-                && gm.Save.Gold < ProgressionService.RefineGoldFallback;
-            mainBtn.Pressed += OnRefinePressed;
-        }
+        int stoneNeed = ProgressionService.RefineCostStones(gm.Save, _selectedHero, _selectedSlot);
+        int goldNeed = ProgressionService.RefineCostGold(gm.Save, _selectedHero, _selectedSlot);
+        mainBtn.Disabled = gm.Save.RefineStones < stoneNeed && gm.Save.Gold < goldNeed;
+        mainBtn.Pressed += OnRefinePressed;
         actions.AddChild(mainBtn);
         var unequipBtn = new Button { Name = "ActionUnequip", Text = "Tháo", CustomMinimumSize = new Vector2(140, UiTheme.ButtonHeight) };
         UiTheme.StyleButton(unequipBtn, false);
@@ -686,64 +675,202 @@ public partial class HeroScreen : Control
 
     // ---------- Phase 2.36: Nâng cấp (upgrade tier) tab ----------
 
-    private void BuildUpgradeTab()
+    // Phase 2.37: Cường hóa tab rework per Huynh's sketch — header,
+    // projected stats (HIỆN TẠI → DỰ KIẾN), resources, cooldown line,
+    // contextual actions: Chế Tạo (empty slot), Cường Hóa + Đúc Lại
+    // (equipped), Tháo.
+    private void BuildEnhanceTab()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
         var save = gm.Save;
         var eq = save.HeroEquipment[_selectedHero][_selectedSlot];
+        var slotDef = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
         var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         box.AddThemeConstantOverride("separation", 8);
         _tabContent!.AddChild(box);
-        var cur = EquipmentSets.Get(eq.SetId);
-        string? next = ForgeService.NextSet(eq.SetId);
-        if (next == null)
+
+        var set = EquipmentSets.Get(eq.IsEmpty ? ForgeService.CraftSetId : eq.SetId);
+        var top = new HBoxContainer();
+        top.AddThemeConstantOverride("separation", 16);
+        var icon = new PanelContainer { CustomMinimumSize = new Vector2(96, 96) };
+        icon.AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
-            box.AddChild(CenteredLabel("Đã đạt bậc cao nhất.", UiTheme.FontButton, UiTheme.Gold, "MaxTierNote"));
-            return;
-        }
-        var target = EquipmentSets.Get(next);
+            BgColor = eq.IsEmpty ? UiTheme.SlotEmpty : EquipmentSets.QualityColor(set.Quality),
+            CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+            CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+        });
+        icon.AddChild(CenteredLabel(AssetIcons.SlotSymbol(_selectedSlot), 34, Colors.White, "PanelIcon"));
+        top.AddChild(icon);
+        var info = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        info.AddThemeConstantOverride("separation", 6);
         var titleLabel = new Label
         {
-            Text = $"{cur.Name} (Lv{cur.Tier}) → {target.Name} (Lv{target.Tier})",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            Text = eq.IsEmpty ? $"{set.Name} {slotDef?.Name}"
+                              : $"{EquipmentSets.DisplayName(eq.SetId, _selectedSlot)} +{eq.Level}",
         };
-        UiTheme.StyleBody(titleLabel, UiTheme.FontButton);
-        titleLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(target.Quality));
-        box.AddChild(titleLabel);
-        int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
-        int cost = ForgeService.UpgradeSilverCost(next);
-        box.AddChild(InfoLine($"Yêu cầu cấp tướng chính: {target.Tier} (hiện {mainLevel})"));
-        box.AddChild(InfoLine($"Chi phí: {cost} Bạc"));
-        box.AddChild(InfoLine("Giữ nguyên cường hóa, tẩy luyện, lỗ khảm và ngọc; tự bù dòng/lỗ mới."));
-        var upBtn = new Button
+        UiTheme.StyleBody(titleLabel, 20);
+        titleLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(set.Quality));
+        info.AddChild(titleLabel);
+        info.AddChild(InfoLine(eq.IsEmpty
+            ? $"Ô trống — có thể chế tạo {set.Name} (Lv{set.Tier})."
+            : $"{set.Name} · Lv{set.Tier} · {EquipmentSets.QualityName(set.Quality)}"));
+        top.AddChild(info);
+        box.AddChild(top);
+
+        var actions = new HBoxContainer();
+        actions.AddThemeConstantOverride("separation", 12);
+
+        if (eq.IsEmpty)
         {
-            Name = "UpgradeButton",
-            Text = "Nâng cấp",
-            CustomMinimumSize = new Vector2(0, UiTheme.ButtonHeight),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            Disabled = mainLevel < target.Tier || save.Silver < cost,
-        };
-        UiTheme.StyleButton(upBtn, true);
-        upBtn.Pressed += () =>
-        {
-            var gm2 = GetNode<GameManager>("/root/GameManager");
-            string msg = ForgeService.TryUpgradeTier(gm2.Save, _selectedHero, _selectedSlot, _rng) switch
+            // ---- Chế Tạo (Huynh 7b: only the starter Tân Thủ set) ----
+            var preview = new EquipmentState
             {
-                ForgeService.UpgradeResult.Success => $"Nâng cấp thành công lên {target.Name}!",
-                ForgeService.UpgradeResult.LowLevel => $"Cấp tướng chính chưa đủ (cần Lv{target.Tier})!",
-                ForgeService.UpgradeResult.NoSilver => "Không đủ Bạc!",
-                _ => "Không nâng cấp được!",
+                IsEmpty = false, Level = 0, SetId = ForgeService.CraftSetId,
+                Tier = set.Tier, Quality = set.Quality,
             };
-            _status = msg;
-            gm2.SaveGame();
-            RefreshEquipRows();
-            RefreshRightPanel();
-        };
-        box.AddChild(upBtn);
-        var statusLabel = new Label { Name = "UpgradeStatus", Text = _status, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            AddProjection(box, "DỰ KIẾN SAU CHẾ TẠO:",
+                EquipmentService.ProjectEquipChange(save, _selectedHero, _selectedSlot, preview));
+            box.AddChild(SectionLabel("TÀI NGUYÊN TIÊU TỐN:"));
+            int oreNeed = ForgeService.CraftOreCost(), silverNeed = ForgeService.CraftSilverCost();
+            box.AddChild(ResourceLine("Bạc", save.Silver, silverNeed));
+            box.AddChild(ResourceLine(ForgeService.OreName, ForgeService.OreCount(save), oreNeed));
+            var craftBtn = new Button { Name = "ActionCraft", Text = "Chế Tạo", CustomMinimumSize = new Vector2(200, UiTheme.ButtonHeight) };
+            UiTheme.StyleButton(craftBtn, true);
+            craftBtn.Disabled = save.Silver < silverNeed || ForgeService.OreCount(save) < oreNeed;
+            craftBtn.Pressed += () =>
+            {
+                var gm2 = GetNode<GameManager>("/root/GameManager");
+                string msg = ForgeService.TryCraftIntoSlot(gm2.Save, _selectedHero, _selectedSlot, _rng) switch
+                {
+                    ForgeService.CraftResult.Success => $"Chế tạo thành công {EquipmentSets.DisplayName(ForgeService.CraftSetId, _selectedSlot)}!",
+                    ForgeService.CraftResult.NoOre => "Không đủ Khoáng thạch!",
+                    ForgeService.CraftResult.NoSilver => "Không đủ Bạc!",
+                    _ => "Không chế tạo được!",
+                };
+                _status = msg;
+                gm2.SaveGame();
+                RefreshEquipRows(); RefreshRightPanel();
+            };
+            actions.AddChild(craftBtn);
+        }
+        else
+        {
+            // ---- Cường hóa ----
+            int maxEnh = ProgressionService.MaxEnhanceForHero(save);
+            box.AddChild(SectionLabel("CƯỜNG HÓA:"));
+            box.AddChild(InfoLine($"Cấp: +{eq.Level}/{maxEnh}" + (eq.Level >= maxEnh ? " (MAX)" : "")));
+            box.AddChild(InfoLine($"Tỉ lệ thành công: {ProgressionService.EnhanceSuccessRate(eq.Level + 1):P0}"));
+            var hypEnh = EquipmentService.CopyState(eq);
+            hypEnh.Level = eq.Level + 1;
+            AddProjection(box, "DỰ KIẾN SAU CƯỜNG HÓA:",
+                eq.Level >= maxEnh
+                    ? new List<(string, double, double)>()
+                    : EquipmentService.ProjectEquipChange(save, _selectedHero, _selectedSlot, hypEnh));
+            int enhCost = ProgressionService.EnhanceCostSilver(eq.Level);
+            box.AddChild(ResourceLine("Bạc", save.Silver, eq.Level >= maxEnh ? 0 : enhCost));
+            var enhBtn = new Button { Name = "ActionEnhance", Text = "Cường hóa", CustomMinimumSize = new Vector2(200, UiTheme.ButtonHeight) };
+            UiTheme.StyleButton(enhBtn, true);
+            enhBtn.Disabled = eq.Level >= maxEnh || save.Silver < enhCost;
+            enhBtn.Pressed += OnEnhancePressed;
+            actions.AddChild(enhBtn);
+
+            // ---- Đúc Lại ----
+            string? next = ForgeService.NextSet(eq.SetId);
+            if (next != null)
+            {
+                var target = EquipmentSets.Get(next);
+                box.AddChild(SectionLabel("ĐÚC LẠI:"));
+                var recastTitle = new Label { Text = $"{set.Name} → {target.Name} (Lv{target.Tier})", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+                UiTheme.StyleBody(recastTitle, UiTheme.FontButton);
+                recastTitle.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(target.Quality));
+                box.AddChild(recastTitle);
+                int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
+                bool hasBp = ForgeService.HasBlueprint(save, next);
+                int oreNeed = ForgeService.RecastOreCost(next), silverNeed = ForgeService.RecastSilverCost(next);
+                box.AddChild(ReqLine($"Bản vẽ {target.Name}", hasBp));
+                box.AddChild(ReqLine($"Cấp tướng chính Lv{target.Tier} (hiện Lv{mainLevel})", mainLevel >= target.Tier));
+                box.AddChild(ResourceLine("Bạc", save.Silver, silverNeed));
+                box.AddChild(ResourceLine(ForgeService.OreName, ForgeService.OreCount(save), oreNeed));
+                var hypRecast = EquipmentService.CopyState(eq);
+                hypRecast.SetId = next; hypRecast.Tier = target.Tier; hypRecast.Quality = target.Quality;
+                AddProjection(box, "DỰ KIẾN SAU ĐÚC LẠI:",
+                    EquipmentService.ProjectEquipChange(save, _selectedHero, _selectedSlot, hypRecast));
+                var recastBtn = new Button { Name = "ActionRecast", Text = "Đúc Lại", CustomMinimumSize = new Vector2(200, UiTheme.ButtonHeight) };
+                UiTheme.StyleButton(recastBtn, true);
+                recastBtn.Disabled = !hasBp || mainLevel < target.Tier || save.Silver < silverNeed || ForgeService.OreCount(save) < oreNeed;
+                recastBtn.Pressed += () =>
+                {
+                    var gm2 = GetNode<GameManager>("/root/GameManager");
+                    string msg = ForgeService.TryRecast(gm2.Save, _selectedHero, _selectedSlot, _rng) switch
+                    {
+                        ForgeService.RecastResult.Success => $"Đúc lại thành công lên {target.Name}!",
+                        ForgeService.RecastResult.LowLevel => $"Cấp tướng chính chưa đủ (cần Lv{target.Tier})!",
+                        ForgeService.RecastResult.NoBlueprint => $"Chưa học bản vẽ {target.Name}!",
+                        ForgeService.RecastResult.NoOre => "Không đủ Khoáng thạch!",
+                        ForgeService.RecastResult.NoSilver => "Không đủ Bạc!",
+                        _ => "Không đúc lại được!",
+                    };
+                    _status = msg;
+                    gm2.SaveGame();
+                    RefreshEquipRows(); RefreshRightPanel();
+                };
+                actions.AddChild(recastBtn);
+            }
+
+            var unequipBtn = new Button { Name = "ActionUnequip", Text = "Tháo", CustomMinimumSize = new Vector2(140, UiTheme.ButtonHeight) };
+            UiTheme.StyleButton(unequipBtn, false);
+            unequipBtn.Pressed += OnUnequipPressed;
+            actions.AddChild(unequipBtn);
+        }
+        box.AddChild(actions);
+
+        // Cooldown line (Huynh Q6b: display only).
+        box.AddChild(InfoLine("Cooldown cường hóa: Sẵn sàng"));
+
+        foreach (var line in SetBonusService.DescribeForHero(save, _selectedHero))
+        {
+            var setLabel = new Label { Text = line, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            UiTheme.StyleBody(setLabel, UiTheme.FontSmall);
+            setLabel.AddThemeColorOverride("font_color", UiTheme.Gold);
+            box.AddChild(setLabel);
+        }
+
+        var statusLabel = new Label { Name = "ActionStatus", Text = _status, AutowrapMode = TextServer.AutowrapMode.WordSmart };
         UiTheme.StyleBody(statusLabel, UiTheme.FontSmall);
         statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
         box.AddChild(statusLabel);
+    }
+
+    private static Label ReqLine(string text, bool ok)
+    {
+        var l = InfoLine($"{(ok ? "✓" : "✗")} {text}");
+        if (!ok) l.AddThemeColorOverride("font_color", new Color(1, 0.4f, 0.4f));
+        return l;
+    }
+
+    private static Label ResourceLine(string name, int have, int need)
+    {
+        var l = InfoLine($"{name}: {need:N0} / {have:N0}");
+        if (have < need) l.AddThemeColorOverride("font_color", new Color(1, 0.4f, 0.4f));
+        return l;
+    }
+
+    private static void AddProjection(VBoxContainer box, string header, List<(string Name, double Before, double After)> rows)
+    {
+        box.AddChild(SectionLabel(header));
+        if (rows.Count == 0)
+        {
+            box.AddChild(InfoLine("(không thay đổi)"));
+            return;
+        }
+        foreach (var (name, b, a) in rows)
+        {
+            bool pct = name is "Bạo kích" or "Né tránh";
+            string fb = pct ? $"{b * 100:0.0}%" : $"{b:N0}";
+            string fa = pct ? $"{a * 100:0.0}%" : $"{a:N0}";
+            string fd = pct ? $"{(a - b) * 100:+0.0;-0.0}%" : $"{(a - b):+N0;-N0}";
+            box.AddChild(InfoLine($"{name}: {fb} → {fa} ({fd})"));
+        }
     }
 
     // Finds the hosting HubScene by walking up (works in game and in tests).

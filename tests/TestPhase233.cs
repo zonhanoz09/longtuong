@@ -26,7 +26,7 @@ public partial class TestPhase233 : Node
         Check(GemService.DescribeGem("crit_2").Contains("Lv2"), "describe gem");
 
         // Sockets by quality.
-        Check(GemService.SocketsForQuality("Lam") == 1 && GemService.SocketsForQuality("Do") == 4, "sockets per quality 1..4");
+        Check(GemService.SocketsForSet("tan_thu") == 1 && GemService.SocketsForSet("ky_lan") == 4, "sockets per set 1..4");
         Check(GemService.UnlockCostGold(0) == 500 && GemService.UnlockCostGold(1) == 1000, "unlock costs 500/1000 gold");
 
         // Seed gems.
@@ -54,10 +54,10 @@ public partial class TestPhase233 : Node
 
         // Unlock 2nd socket on a Tím item.
         gm.Save.BagEquipment.Clear();
-        gm.Save.BagEquipment.Add(new BagEquipmentItem { SlotId = "armor", Quality = "Tim", SetId = "chu_tuoc", Tier = 50 });
+        gm.Save.BagEquipment.Add(new BagEquipmentItem { SlotId = "armor", Quality = "Luc", SetId = "chu_tuoc", Tier = 50 });
         EquipmentService.EquipFromBag(gm.Save, "custom_hero", 0);
         var eqA = gm.Save.HeroEquipment["custom_hero"]["armor"];
-        Check(eqA.Sockets.Count == 2 && !eqA.Sockets[0].Unlocked && !eqA.Sockets[1].Unlocked, "Tim item: 2 sockets, both locked");
+        Check(eqA.Sockets.Count == 2 && !eqA.Sockets[0].Unlocked && !eqA.Sockets[1].Unlocked, "Chu Tuoc item: 2 sockets, both locked");
         int goldBeforeUnlock = gm.Save.Gold;
         Check(GemService.TryUnlockSocket(gm.Save, "custom_hero", "armor", 1), "unlock 2nd socket");
         Check(gm.Save.Gold == goldBeforeUnlock - 1000 && eqA.Sockets[1].Unlocked, "unlock costs 1000 gold");

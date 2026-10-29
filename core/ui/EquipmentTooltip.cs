@@ -16,6 +16,9 @@ public static class EquipmentTooltip
     public static string ColorHex(Color c) =>
         $"{(int)(c.R * 255):X2}{(int)(c.G * 255):X2}{(int)(c.B * 255):X2}";
 
+    public static string DisplayName(string setId, string slotId) =>
+        EquipmentSets.DisplayName(setId, slotId);
+
     public static string Bbcode(
         string slotId, int level, string setId, string quality,
         List<RefineLine> lines, List<EquipmentSocket> sockets, string? status)
@@ -24,7 +27,8 @@ public static class EquipmentTooltip
         var slot = ProgressionService.Slots.Find(s => s.Id == slotId);
         string qHex = ColorHex(EquipmentSets.QualityColor(quality));
         var sb = new StringBuilder();
-        sb.AppendLine($"[color=#{qHex}][b]{slot?.Name} +{level} — {set.Name}[/b][/color]");
+        // Phase 2.37 (Huynh): item name = "{Set} {Slot}".
+        sb.AppendLine($"[color=#{qHex}][b]{DisplayName(setId, slotId)} +{level}[/b][/color]");
         sb.AppendLine($"Lv{set.Tier} · {EquipmentSets.QualityName(quality)}");
         if (lines.Count > 0)
         {

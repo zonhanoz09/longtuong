@@ -173,3 +173,114 @@ Giày Bạch Hổ 70), thay vì rèn món mới + kế thừa.
   bị đồng nhất 3 popup (Võ tướng/Túi/Trang bị) qua EquipmentTooltip
   (BBCode, RichTextLabel); dòng tẩy luyện tô màu theo phẩm roll
   (Cam/Tím/Lam/Trắng theo tỉ lệ giá trị trong pool).
+
+---
+
+## §8. Phase 2.37 — Tab Cường hóa: Chế Tạo / Đúc Lại + Tẩy luyện update
+(Plan theo sketch + yêu cầu của Huynh, 2026-10-29 khuya)
+
+### 8.0. Chốt của Huynh (2026-10-30)
+- Q1a: XÓA tab "Nâng cấp", dời logic vào tab Cường hóa (nút Đúc Lại).
+- Q2: Chế Tạo cho ô trống, chỉ chế được ở phẩm thấp nhất (không chọn
+  tay). Tên trang bị = "{Tên set} {Tên ô}" (VD: Chu Tước Vũ khí).
+- Q3a: Chi phí Chế Tạo = quặng + Bạc như Đúc Lại.
+- Q4a: "Tinh Thiết" = Khoáng thạch hiện tại (không thêm nguyên liệu).
+- Q5a: Chi phí tẩy = 1 + số dòng khóa (đá); fallback Vàng
+  200 x (1 + số dòng khóa).
+- Q6b: Cooldown chỉ hiển thị "Sẵn sàng" (không làm logic chờ).
+- Remap phẩm set: Chu Tước=Lục, Bạch Hổ=Lam, Thanh Long=Tím,
+  Huyền Vũ=Cam, Kỳ Lân=Đỏ (thêm màu Lục vào palette).
+- Số dòng/lỗ giữ nguyên theo từng set (Lục=4/2, Lam=5/3, Tím=5/3,
+  Cam=5/3, Đỏ=6/4 — không nerf đồ hiện có).
+- PENDING Q7: Tân Thủ xử lý thế nào (xem cuối §8).
+
+### 8.1. Tab Cường hóa — layout mới (theo sketch)
+Panel phải (theo tướng + ô đang chọn) gồm:
+1. Header: [icon] `{Tên set} {Tên ô} +{cấp}` (Lv.Tier); ô trống thì
+   hiện "Ô trống".
+2. `THUỘC TÍNH HIỆN TẠI → DỰ KIẾN SAU NÂNG`: các dòng chỉ số
+   `Tên: trước → sau (+delta)` — tính bằng cách mô phỏng action trên
+   bản copy rồi so với `GetEffectiveHero` hiện tại:
+   - Cường hóa: copy eq với Level+1.
+   - Đúc Lại: copy eq với SetId/Tier/Quality đích.
+   - Chế Tạo: item sẽ được chế.
+   Chỉ hiện các chỉ số thay đổi (HP/Công/Thủ/Tốc...).
+3. `TÀI NGUYÊN TIÊU TỐN`: `Bạc: có / cần`, `Khoáng thạch: có / cần`
+   (đỏ khi thiếu).
+4. Thanh cooldown cường hóa (theo Q6).
+5. Nút hành động chính theo ngữ cảnh:
+   - Ô trống → **"Chế Tạo"** (vàng, primary).
+   - Có đồ, chưa max tier → **"Cường Hóa"** + **"Đúc Lại"**.
+   - Có đồ, max tier (Kỳ Lân) → chỉ **"Cường Hóa"**.
+   - Giữ nút "Tháo".
+
+### 8.2. Chế Tạo (mới, trong tab)
+- Điều kiện: ô đang chọn trống.
+- Bộ chế: bộ cao nhất mà người chơi đủ điều kiện (đã học bản vẽ +
+  cấp tướng chính ≥ Tier); hiển thị "Chế tạo: {Tên set} {Tên ô}".
+- Chi phí (theo Q2/Q3): Khoáng thạch × (Tier/2) + Bạc 1.000×Tier.
+- Kết quả: item vào THẲNG ô đang chọn (không qua Túi): Level 0,
+  dòng tẩy fresh theo pool vị trí tướng, lỗ khóa hết.
+- Lò rèn popup giữ nguyên (mua bản vẽ/quặng, rèn vào Túi).
+
+### 8.3. Đúc Lại (thăng tier, full flow)
+- Thay chi phí 2.36 (chỉ Bạc) bằng full flow theo yêu cầu:
+  **bản vẽ bộ đích đã học + Khoáng thạch × (Tier_đích/2) +
+  Bạc 1.000 × Tier_đích**.
+- Chuỗi, gate cấp, giữ cường hóa/dòng/lỗ/ngọc: như 2.36.
+- Không roll thất bại (deterministic).
+- Kết quả mang tên + ngoại hình set mới: tên set mới, icon viền
+  màu phẩm mới.
+- Đề xuất XÓA tab "Nâng cấp" (logic dời vào tab Cường hóa) — theo Q1.
+
+### 8.4. Tab Tẩy luyện
+- Dòng tẩy tô màu theo phẩm roll (dùng `RefineLineGrade` đã có):
+  chữ của dòng = màu phẩm; viền vàng vẫn đánh dấu dòng đang khóa.
+- Chi phí theo số dòng khóa (theo Q5): đề xuất
+  `đá = 1 + số dòng khóa`, fallback Vàng `200 × (1 + số dòng khóa)`.
+
+### 8.5. Kỹ thuật
+- `ForgeService.TryRecast(save, heroId, slotId, rng)` →
+  `RecastResult { Success, NoNext, LowLevel, NoSilver, NoOre,
+  NoBlueprint, EmptySlot }`.
+- `ForgeService.TryCraftIntoSlot(save, heroId, slotId, setId, rng)` →
+  `CraftResult { Success, NoBlueprint, LowLevel, NoOre, NoSilver,
+  SlotOccupied }`.
+- `EquipmentService.ProjectEquipChange(...)`: temp-swap equipment
+  trong save, `GetEffectiveHero` 2 lần, trả về delta các chỉ số.
+- Test: TestPhase237 (chế tạo vào ô, đúc lại full chi phí, projection,
+  tẩy luyện màu + chi phí khóa); cập nhật test 229 (tab), 234/236.
+- Save: không thêm field mới.
+- Tên item hiển thị "{SetName} {SlotName}" ở hàng trang bị, panel,
+  tooltip, túi.
+- Bản vẽ: yêu cầu đã học, KHÔNG tiêu hao (như Lò rèn 2.34).
+
+### 8.6. Q7 — Tân Thủ: Huynh chốt (b)
+Giữ Tân Thủ (Lam) làm đồ khởi đầu ngoài ladder; Chế Tạo chỉ chế Tân
+Thủ (15 quặng + 30.000 Bạc, không cần bản vẽ/cấp). Chuỗi Đúc Lại giữ
+nguyên từ Tân Thủ -> Chu Tước.
+
+### 8.7. ĐÃ XONG Phase 2.37 (2026-10-30)
+- EquipmentSets: remap phẩm (Chu Tước Lục, Bạch Hổ Lam, Thanh Long
+  Tím, Huyền Vũ Cam, Kỳ Lân Đỏ; Tân Thủ giữ Lam); thêm màu Lục;
+  Lines/Sockets theo set (không nerf đồ cũ); `DisplayName` =
+  "{Set} {Slot}".
+- Migration: Quality/Tier suy từ SetId (tự remap đồ cũ).
+- ForgeService: `TryCraftIntoSlot` (Chế Tạo Tân Thủ vào ô trống),
+  `TryRecast` (full cost: bản vẽ đã học + quặng + Bạc), bỏ
+  `TryUpgradeTier`.
+- EquipmentService: `ProjectEquipChange` (mô phỏng delta chỉ số).
+- Tẩy luyện: chi phí = 1 + số dòng khóa (đá), Vàng = 200x.
+- HeroScreen: xóa tab Nâng cấp (5 tab); tab Cường hóa theo sketch
+  (header, DỰ KIẾN SAU NÂNG, TÀI NGUYÊN, cooldown "Sẵn sàng",
+  nút Chế Tạo/Cường Hóa/Đúc Lại/Tháo); dòng tẩy tô màu phẩm;
+  tên hàng "{Set} {Slot} +{Level}".
+- EquipmentTooltip: tên mới "{Set} {Slot}".
+- Test: TestPhase237 mới; cập nhật 2/229/230/232/233/234/235/236;
+  suite 0-2.37 xanh; CI thêm 2.37.
+Set khởi đầu Lv30 (phẩm Lam) xử lý thế nào khi remap?
+(a) Bỏ Tân Thủ: ladder còn 5 set (Chu Tước Lục -> Kỳ Lân Đỏ);
+    Chế Tạo chế Chu Tước; đồ Tân Thủ cũ (seed/save) migrate sang
+    Chu Tước; chuỗi nâng bắt đầu từ Chu Tước.
+(b) Giữ Tân Thủ (Lam) làm đồ khởi đầu ngoài ladder;
+    Chế Tạo chỉ chế Tân Thủ; 5 set trên remap phẩm.

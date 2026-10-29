@@ -26,7 +26,9 @@ public class EquipmentSetDef
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public int Tier { get; set; } = 30;       // 30 / 50 / 70 / 80 / 90 / 100
-    public string Quality { get; set; } = "Lam"; // Lam / Tim / Cam / Do
+    public string Quality { get; set; } = "Lam"; // Luc / Lam / Tim / Cam / Do
+    public int Lines { get; set; } = 3;       // refine lines for this set
+    public int Sockets { get; set; } = 1;     // gem sockets for this set
     public List<SetBonus> Bonuses { get; set; } = new();
 }
 
@@ -47,19 +49,23 @@ public class RefineLine
 
 public static class EquipmentSets
 {
+    // Phase 2.37 (Huynh): quality ladder remap — Chu Tước Lục,
+    // Bạch Hổ Lam, Thanh Long Tím, Huyền Vũ Cam, Kỳ Lân Đỏ.
+    // Tân Thủ stays Lam as starter gear outside the ladder.
+    // Lines/sockets are per-set (kept from before: no nerf to old items).
     public static readonly List<EquipmentSetDef> All = new()
     {
-        new EquipmentSetDef { Id = "tan_thu", Name = "Tân Thủ", Tier = 30, Quality = "Lam",
+        new EquipmentSetDef { Id = "tan_thu", Name = "Tân Thủ", Tier = 30, Quality = "Lam", Lines = 3, Sockets = 1,
             Bonuses = new() { new() { Pieces = 2, StatId = "hp", Value = 200 }, new() { Pieces = 4, StatId = "atk", Value = 20 } } },
-        new EquipmentSetDef { Id = "chu_tuoc", Name = "Chu Tước", Tier = 50, Quality = "Tim",
+        new EquipmentSetDef { Id = "chu_tuoc", Name = "Chu Tước", Tier = 50, Quality = "Luc", Lines = 4, Sockets = 2,
             Bonuses = new() { new() { Pieces = 2, StatId = "hp_pct", Value = 0.10 }, new() { Pieces = 4, StatId = "atk_pct", Value = 0.10 }, new() { Pieces = 6, StatId = "speed", Value = 10 } } },
-        new EquipmentSetDef { Id = "bach_ho", Name = "Bạch Hổ", Tier = 70, Quality = "Cam",
+        new EquipmentSetDef { Id = "bach_ho", Name = "Bạch Hổ", Tier = 70, Quality = "Lam", Lines = 5, Sockets = 3,
             Bonuses = new() { new() { Pieces = 2, StatId = "hp_pct", Value = 0.15 }, new() { Pieces = 4, StatId = "crit", Value = 0.08 }, new() { Pieces = 6, StatId = "speed", Value = 10 }, new() { Pieces = 6, StatId = "dmg_red", Value = 0.05 } } },
-        new EquipmentSetDef { Id = "thanh_long", Name = "Thanh Long", Tier = 80, Quality = "Cam",
+        new EquipmentSetDef { Id = "thanh_long", Name = "Thanh Long", Tier = 80, Quality = "Tim", Lines = 5, Sockets = 3,
             Bonuses = new() { new() { Pieces = 2, StatId = "hp_pct", Value = 0.20 }, new() { Pieces = 4, StatId = "atk_pct", Value = 0.15 }, new() { Pieces = 4, StatId = "crit", Value = 0.05 }, new() { Pieces = 6, StatId = "speed", Value = 15 }, new() { Pieces = 6, StatId = "cc_resist", Value = 0.15 } } },
-        new EquipmentSetDef { Id = "huyen_vu", Name = "Huyền Vũ", Tier = 90, Quality = "Cam",
+        new EquipmentSetDef { Id = "huyen_vu", Name = "Huyền Vũ", Tier = 90, Quality = "Cam", Lines = 5, Sockets = 3,
             Bonuses = new() { new() { Pieces = 2, StatId = "hp_pct", Value = 0.25 }, new() { Pieces = 4, StatId = "def_pct", Value = 0.15 }, new() { Pieces = 4, StatId = "block", Value = 0.10 }, new() { Pieces = 6, StatId = "speed", Value = 15 }, new() { Pieces = 6, StatId = "dmg_red", Value = 0.08 } } },
-        new EquipmentSetDef { Id = "ky_lan", Name = "Kỳ Lân", Tier = 100, Quality = "Do",
+        new EquipmentSetDef { Id = "ky_lan", Name = "Kỳ Lân", Tier = 100, Quality = "Do", Lines = 6, Sockets = 4,
             Bonuses = new() { new() { Pieces = 2, StatId = "hp_pct", Value = 0.10 }, new() { Pieces = 2, StatId = "atk_pct", Value = 0.10 }, new() { Pieces = 2, StatId = "def_pct", Value = 0.10 }, new() { Pieces = 4, StatId = "speed", Value = 10 }, new() { Pieces = 4, StatId = "crit", Value = 0.05 }, new() { Pieces = 6, StatId = "starting_rage", Value = 25 } } },
     };
 
@@ -68,11 +74,12 @@ public static class EquipmentSets
 
     public static string QualityName(string q) => q switch
     {
-        "Lam" => "Lam", "Tim" => "Tím", "Cam" => "Cam", "Do" => "Đỏ", _ => q,
+        "Luc" => "Lục", "Lam" => "Lam", "Tim" => "Tím", "Cam" => "Cam", "Do" => "Đỏ", _ => q,
     };
 
     public static Color QualityColor(string q) => q switch
     {
+        "Luc" => new Color(0.25f, 0.75f, 0.25f),
         "Lam" => new Color(0.15f, 0.55f, 1f),
         "Tim" => new Color(0.85f, 0.25f, 0.95f),
         "Cam" => new Color(1f, 0.6f, 0.1f),
@@ -80,10 +87,18 @@ public static class EquipmentSets
         _ => new Color(0.7f, 0.7f, 0.7f),
     };
 
-    public static int LinesForQuality(string q) => q switch
+    // Phase 2.37: lines/sockets are per-set (two sets can share a
+    // quality color, e.g. Tân Thủ and Bạch Hổ are both Lam).
+    public static int LinesForSet(string setId) => Get(setId).Lines;
+    public static int SocketsForSet(string setId) => Get(setId).Sockets;
+
+    // Phase 2.37 (Huynh): item display name = "{Set} {Slot}",
+    // e.g. "Chu Tước Vũ khí", "Bạch Hổ Giáp".
+    public static string DisplayName(string setId, string slotId)
     {
-        "Lam" => 3, "Tim" => 4, "Cam" => 5, "Do" => 6, _ => 3,
-    };
+        var slot = ProgressionService.Slots.Find(s => s.Id == slotId);
+        return $"{Get(setId).Name} {(slot?.Name ?? slotId)}";
+    }
 }
 
 public static class SetBonusService

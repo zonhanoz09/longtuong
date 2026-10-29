@@ -21,7 +21,7 @@ public partial class TestPhase235 : Node
         gm.Save.BagEquipment.Clear();
         gm.Save.BagEquipment.Add(new BagEquipmentItem
         {
-            SlotId = "weapon", SetId = "chu_tuoc", Tier = 50, Quality = "Tim",
+            SlotId = "weapon", SetId = "chu_tuoc", Tier = 50, Quality = "Luc",
             RefineLines = new List<RefineLine> { new() { StatId = "crit", Value = 0.03 } },
         });
         EquipmentService.EquipFromBag(gm.Save, "custom_hero", 0);

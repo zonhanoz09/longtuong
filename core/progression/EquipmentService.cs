@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +11,47 @@ namespace LongTuong;
 /// </summary>
 public static class EquipmentService
 {
+    // Phase 2.37: deep copy for hypothetical simulation.
+    public static EquipmentState CopyState(EquipmentState eq) => new()
+    {
+        IsEmpty = eq.IsEmpty,
+        Level = eq.Level,
+        RefineIndex = eq.RefineIndex,
+        Tier = eq.Tier,
+        Quality = eq.Quality,
+        SetId = eq.SetId,
+        Sockets = eq.Sockets.Select(s => new EquipmentSocket { Unlocked = s.Unlocked, GemId = s.GemId }).ToList(),
+        RefineLines = eq.RefineLines.Select(l => new RefineLine { StatId = l.StatId, Value = l.Value, Locked = l.Locked }).ToList(),
+    };
+
+    // Phase 2.37: projected stat change for the Cường hóa tab
+    // ("HIỆN TẠI → DỰ KIẾN SAU NÂNG"). Temp-swaps a hypothetical
+    // equipment state, diffs GetEffectiveHero, restores. Only stats
+    // that actually change are returned.
+    public static List<(string Name, double Before, double After)> ProjectEquipChange(
+        SaveData save, string heroId, string slotId, EquipmentState hypothetical)
+    {
+        ProgressionService.EnsureDefaults(save);
+        var before = ProgressionService.GetEffectiveHero(save, heroId);
+        var dict = save.HeroEquipment[heroId];
+        var original = dict[slotId];
+        dict[slotId] = hypothetical;
+        var after = ProgressionService.GetEffectiveHero(save, heroId);
+        dict[slotId] = original;
+        var rows = new List<(string, double, double)>();
+        void Add(string name, double b, double a)
+        {
+            if (Math.Abs(a - b) > 0.0001) rows.Add((name, b, a));
+        }
+        Add("HP", before.Hp, after.Hp);
+        Add("Vật công", before.Atk, after.Atk);
+        Add("Vật phòng", before.Def, after.Def);
+        Add("Tốc độ", before.Speed, after.Speed);
+        Add("Bạo kích", before.Crit, after.Crit);
+        Add("Né tránh", before.Dodge, after.Dodge);
+        return rows;
+    }
+
     // Phase 2.30: equip/unequip carry the full item (set, quality, tier,
     // sockets, refine lines) — never just level/refine.
     private static BagEquipmentItem ToBagItem(string slotId, EquipmentState eq) => new()
