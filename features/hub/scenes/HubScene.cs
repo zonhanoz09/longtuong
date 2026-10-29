@@ -23,7 +23,7 @@ public partial class HubScene : Control
     // stats grid and the "Kinh nghiệm" title need 40px more, still smaller
     // than the original 1180x660; frame is 1036x636, centred at (122, 42)).
     public static readonly Vector2 HeroListPopupSize = new(1000, 600);
-    public static readonly Vector2 BagPopupSize = new(1020, 640);
+    public static readonly Vector2 BagPopupSize = new(760, 600);
     public static readonly Vector2 HeroPopupSize = new(1140, 680);
     public static readonly Vector2 FormationPopupSize = new(900, 540);
     public static readonly Vector2 StagePopupSize = new(1180, 680);

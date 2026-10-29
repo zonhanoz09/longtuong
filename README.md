@@ -26,6 +26,8 @@ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài
   "Cường hóa: +N" + chỉ số); tab trống hiện lưới trống + "Chưa có
   vật phẩm.". Chỉ tab Trang bị có đồ thật; xem-only (mang/tháo
   vẫn ở màn Võ tướng). Style giữ theme tối + gold của game.
+  Bản gọn (Huynh: popup 1020×640 quá rộng): frame 760×600 fit
+  content — cột tab 170px + lưới 536px (5×96+4×14) + lề 16px.
 - Test: `tests/TestPhase228.tscn` ALL PASS; toàn suite 0–2.28
   pass; build 0 error; CI thêm 2.28.
 

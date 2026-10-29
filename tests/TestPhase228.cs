@@ -30,8 +30,15 @@ public partial class TestPhase228 : Node
         var title = bag.GetNode<Label>("TitleLabel");
         Check(title.Text == "Túi", "title is Túi");
         Check(title.HorizontalAlignment == HorizontalAlignment.Center, "title centered");
+        // Compact popup (Huynh: 1020x640 was too wide) — frame fits content.
+        Check(HubScene.BagPopupSize == new Vector2(760, 600), "bag popup is 760x600");
+        Check(title.Size.X == 760, "title spans the 760 frame");
 
         var tabBox = bag.GetNode<VBoxContainer>("TabBox");
+        Check(tabBox.Position == new Vector2(16, 56) && tabBox.Size.X == 170, "tab column fitted at (16,56) x170");
+        var scroll = bag.GetNode<ScrollContainer>("BagScroll");
+        Check(scroll.Position == new Vector2(202, 56) && scroll.Size == new Vector2(542, 432), "grid scroll fitted at (202,56) 542x432");
+        Check(bag.GetNode<Label>("CapacityLabel").Position == new Vector2(202, 496), "capacity line under the grid");
         var tabNames = tabBox.GetChildren().OfType<Button>().Select(b => b.Text).ToList();
         Check(tabNames.SequenceEqual(new[] { "Đạo cụ", "Trang bị", "Nguyên liệu", "Thiên Phú", "Bảo Vật", "Trang sức", "Cánh Giới Đơn", "Kho tạm" }),
             "8 tabs in screenshot order");

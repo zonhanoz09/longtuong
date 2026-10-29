@@ -15,6 +15,8 @@ namespace LongTuong;
 /// Only the Trang bị tab has real data — the other systems don't exist
 /// yet, so their tabs show an empty grid. View-only: equipping still
 /// happens in the Võ tướng screen.
+/// Compact layout (Huynh: popup was too wide): 760x600 frame, content
+/// fitted — 170px tab column + 536px grid (5x96 + 4x14) + 16px margins.
 /// </summary>
 [GlobalClass]
 public partial class BagScene : Control
@@ -60,13 +62,13 @@ public partial class BagScene : Control
     private void BuildTabs()
     {
         var tabBox = new VBoxContainer { Name = "TabBox" };
-        tabBox.SetPosition(new Vector2(16, 60));
-        tabBox.SetSize(new Vector2(180, 500));
+        tabBox.SetPosition(new Vector2(16, 56));
+        tabBox.SetSize(new Vector2(170, 490));
         tabBox.AddThemeConstantOverride("separation", 6);
         foreach (var (id, name) in Tabs)
         {
             var tabId = id;
-            var btn = new Button { Name = $"Tab_{id}", Text = name, CustomMinimumSize = new Vector2(180, UiTheme.ButtonHeight) };
+            var btn = new Button { Name = $"Tab_{id}", Text = name, CustomMinimumSize = new Vector2(170, UiTheme.ButtonHeight) };
             UiTheme.StyleButton(btn, false);
             btn.Pressed += () => SelectTab(tabId);
             tabBox.AddChild(btn);
@@ -82,8 +84,8 @@ public partial class BagScene : Control
             Text = "Mở rộng túi",
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        expand.SetPosition(new Vector2(16, 570));
-        expand.SetSize(new Vector2(180, 30));
+        expand.SetPosition(new Vector2(16, 552));
+        expand.SetSize(new Vector2(170, 28));
         UiTheme.StyleBody(expand, UiTheme.FontSmall);
         expand.AddThemeColorOverride("font_color", UiTheme.Muted);
         AddChild(expand);
@@ -92,16 +94,16 @@ public partial class BagScene : Control
     private void BuildGridArea()
     {
         var scroll = new ScrollContainer { Name = "BagScroll" };
-        scroll.SetPosition(new Vector2(216, 60));
-        scroll.SetSize(new Vector2(788, 460));
+        scroll.SetPosition(new Vector2(202, 56));
+        scroll.SetSize(new Vector2(542, 432));
         _grid = new GridContainer { Name = "BagGrid", Columns = Columns };
         _grid.AddThemeConstantOverride("h_separation", 14);
         _grid.AddThemeConstantOverride("v_separation", 14);
         scroll.AddChild(_grid);
         AddChild(scroll);
         _capacityLabel = new Label { Name = "CapacityLabel", Text = "" };
-        _capacityLabel.SetPosition(new Vector2(216, 530));
-        _capacityLabel.SetSize(new Vector2(400, 30));
+        _capacityLabel.SetPosition(new Vector2(202, 496));
+        _capacityLabel.SetSize(new Vector2(400, 28));
         UiTheme.StyleBody(_capacityLabel);
         AddChild(_capacityLabel);
         _emptyNote = new Label
@@ -110,8 +112,8 @@ public partial class BagScene : Control
             Text = "Chưa có vật phẩm.",
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        _emptyNote.SetPosition(new Vector2(216, 250));
-        _emptyNote.SetSize(new Vector2(788, 40));
+        _emptyNote.SetPosition(new Vector2(202, 220));
+        _emptyNote.SetSize(new Vector2(542, 40));
         UiTheme.StyleBody(_emptyNote, UiTheme.FontButton);
         _emptyNote.AddThemeColorOverride("font_color", UiTheme.Muted);
         AddChild(_emptyNote);
@@ -257,8 +259,8 @@ public partial class BagScene : Control
         }
         _tooltip.Visible = true;
         var mp = GetLocalMousePosition() + new Vector2(16, 12);
-        mp.X = System.Math.Min(mp.X, 1020 - 320);
-        mp.Y = System.Math.Min(mp.Y, 640 - 220);
+        mp.X = System.Math.Min(mp.X, 760 - 320);
+        mp.Y = System.Math.Min(mp.Y, 600 - 220);
         _tooltip.Position = mp;
     }
 

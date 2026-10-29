@@ -13,7 +13,8 @@ script = ExtResource("1_bag")
 
 [node name="TitleLabel" type="Label" parent="."]
 layout_mode = 0
-offset_right = 1020.0
-offset_bottom = 45.0
+offset_top = 8.0
+offset_right = 760.0
+offset_bottom = 48.0
 horizontal_alignment = 1
 text = "Túi"
