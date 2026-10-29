@@ -138,3 +138,30 @@ công thức/tỉ lệ cường hóa, nguồn bản vẽ rèn, bonus set đặc 
   Bạc); UI tab Kế thừa. TestPhase235 ALL PASS, suite 0–2.35 xanh.
 
 **Kế hoạch trang bị 2.30 → 2.35 HOÀN TẤT.**
+
+## 7. Phase 2.36 — Nâng phẩm / Thăng giai (ĐÃ HOÀN THÀNH 2026-10-30)
+
+Mảnh còn thiếu so với spec Huynh (2026-10-29): nâng TRỰC TIẾP món
+đang mang từ bộ cấp cũ lên bộ cấp mới (VD: Giày Chu Tước 50 →
+Giày Bạch Hổ 70), thay vì rèn món mới + kế thừa.
+
+- Chuỗi nâng: Tân Thủ 30 → Chu Tước 50 → Bạch Hổ 70 →
+  Thanh Long 80 → Huyền Vũ 90 → Kỳ Lân 100 (Kỳ Lân là max).
+- Điều kiện (đề xuất): đã học bản vẽ bộ ĐÍCH + đủ Khoáng thạch
+  (Tier_đích/2) + phí Bạc (1.000 × Tier_đích) + cấp tướng chính
+  đạt Tier_đích (đồng bộ gate với rèn).
+- Kết quả: SetId/Tier/Quality đổi sang bộ mới; GIỮ nguyên cấp
+  cường hóa, lỗ đã mở, ngọc đang khảm; dòng tẩy giữ nguyên +
+  tự bù thêm cho đủ số dòng của phẩm mới (roll theo pool vị trí);
+  lỗ khảm tự thêm cho đủ số lỗ phẩm mới (lỗ mới ở trạng thái chưa mở).
+- UI (đề xuất): tab "Nâng cấp" thứ 6 trong popup Trang bị
+  (theo từng món đang mang), hiện yêu cầu + nút Nâng cấp.
+- Test: TestPhase236 (chuỗi nâng, chi phí, bù dòng/lỗ, các gate,
+  UI flow); cập nhật test 229 (5 → 6 tab).
+
+- Huynh chốt: (1) tab "Nâng cấp" thứ 6 trong popup Trang bị,
+  (2) đang phát triển nên chỉ tốn Bạc (1.000 × Tier đích),
+  (3) bù dòng/lỗ mới như đề xuất (lỗ mới chưa mở; mở lỗ bằng đạo
+  cụ/Vàng là thiết kế tương lai — hiện vẫn mở bằng Bạc),
+  (4) chuỗi 30→50→70→80→90→100, Kỳ Lân max.
+- TestPhase236 ALL PASS, suite 0–2.36 xanh, CI thêm 2.36.

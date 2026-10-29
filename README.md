@@ -15,6 +15,20 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.36 — đã làm (nâng phẩm / thăng giai)
+
+- `ForgeService.TryUpgradeTier`: nâng trực tiếp món đang mang lên
+  bộ bậc cao hơn (Tân Thủ 30 → Chu Tước 50 → Bạch Hổ 70 →
+  Thanh Long 80 → Huyền Vũ 90 → Kỳ Lân 100 max); theo chốt của
+  Huynh, đang phát triển nên **chỉ tốn Bạc** (1.000 × Tier đích),
+  không cần bản vẽ/quặng; yêu cầu cấp tướng chính đạt Tier đích.
+- Giữ nguyên cường hóa, lỗ đã mở, ngọc đang khảm; tự bù dòng tẩy
+  cho đủ số dòng phẩm mới (roll theo pool vị trí); lỗ khảm mới tự
+  thêm ở trạng thái chưa mở.
+- UI: tab "Nâng cấp" thứ 6 trong popup Trang bị.
+- Test: `tests/TestPhase236.tscn` ALL PASS; cập nhật test 229
+  (6 tab); toàn suite 0–2.36 pass; build 0 error; CI thêm 2.36.
+
 ## Phase 2.35 — đã làm (kế thừa, mở tab Kế thừa)
 
 - `EquipmentService.TryInherit`: chuyển cấp cường hóa + dòng tẩy

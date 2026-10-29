@@ -76,3 +76,4 @@ jobs:
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase233.tscn
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase234.tscn
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase235.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase236.tscn

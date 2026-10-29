@@ -41,7 +41,7 @@ public partial class TestPhase229 : Node
         Check(equipBox.GetChildren().OfType<Button>().Count() == 6, "middle column has 6 equipment rows");
         var tabRow = screen.GetNode<HBoxContainer>("RightPanel/TabRow");
         var tabNames = tabRow.GetChildren().OfType<Button>().Select(b => b.Text).ToList();
-        Check(tabNames.SequenceEqual(new[] { "Cường hóa", "Tẩy luyện", "Kế thừa", "Đục lỗ", "Phụ ma" }), "5 system tabs in order");
+        Check(tabNames.SequenceEqual(new[] { "Cường hóa", "Tẩy luyện", "Kế thừa", "Đục lỗ", "Nâng cấp", "Phụ ma" }), "6 system tabs in order");
 
         // Equip a weapon, select its row, enhance via the right panel.
         int weaponIdx = gm.Save.BagEquipment.FindIndex(b => b.SlotId == "weapon");

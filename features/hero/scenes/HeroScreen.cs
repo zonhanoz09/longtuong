@@ -26,6 +26,7 @@ public partial class HeroScreen : Control
         ("tay_luyen", "Tẩy luyện"),
         ("ke_thua", "Kế thừa"),
         ("duc_lo", "Đục lỗ"),
+        ("nang_cap", "Nâng cấp"),
         ("phu_ma", "Phụ ma"),
     };
 
@@ -300,6 +301,11 @@ public partial class HeroScreen : Control
         if (_selectedTab == "ke_thua")
         {
             BuildInheritTab();
+            return;
+        }
+        if (_selectedTab == "nang_cap")
+        {
+            BuildUpgradeTab();
             return;
         }
         var slotColor = UiTheme.SlotColors.TryGetValue(_selectedSlot, out var c) ? c : UiTheme.Panel;
@@ -628,6 +634,68 @@ public partial class HeroScreen : Control
         };
         box.AddChild(inheritBtn);
         var statusLabel = new Label { Name = "InheritStatus", Text = _status, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        UiTheme.StyleBody(statusLabel, UiTheme.FontSmall);
+        statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
+        box.AddChild(statusLabel);
+    }
+
+    // ---------- Phase 2.36: Nâng cấp (upgrade tier) tab ----------
+
+    private void BuildUpgradeTab()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        var save = gm.Save;
+        var eq = save.HeroEquipment[_selectedHero][_selectedSlot];
+        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        box.AddThemeConstantOverride("separation", 8);
+        _tabContent!.AddChild(box);
+        var cur = EquipmentSets.Get(eq.SetId);
+        string? next = ForgeService.NextSet(eq.SetId);
+        if (next == null)
+        {
+            box.AddChild(CenteredLabel("Đã đạt bậc cao nhất.", UiTheme.FontButton, UiTheme.Gold, "MaxTierNote"));
+            return;
+        }
+        var target = EquipmentSets.Get(next);
+        var titleLabel = new Label
+        {
+            Text = $"{cur.Name} (Lv{cur.Tier}) → {target.Name} (Lv{target.Tier})",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        UiTheme.StyleBody(titleLabel, UiTheme.FontButton);
+        titleLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(target.Quality));
+        box.AddChild(titleLabel);
+        int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
+        int cost = ForgeService.UpgradeSilverCost(next);
+        box.AddChild(InfoLine($"Yêu cầu cấp tướng chính: {target.Tier} (hiện {mainLevel})"));
+        box.AddChild(InfoLine($"Chi phí: {cost} Bạc"));
+        box.AddChild(InfoLine("Giữ nguyên cường hóa, tẩy luyện, lỗ khảm và ngọc; tự bù dòng/lỗ mới."));
+        var upBtn = new Button
+        {
+            Name = "UpgradeButton",
+            Text = "Nâng cấp",
+            CustomMinimumSize = new Vector2(0, UiTheme.ButtonHeight),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Disabled = mainLevel < target.Tier || save.Silver < cost,
+        };
+        UiTheme.StyleButton(upBtn, true);
+        upBtn.Pressed += () =>
+        {
+            var gm2 = GetNode<GameManager>("/root/GameManager");
+            string msg = ForgeService.TryUpgradeTier(gm2.Save, _selectedHero, _selectedSlot, _rng) switch
+            {
+                ForgeService.UpgradeResult.Success => $"Nâng cấp thành công lên {target.Name}!",
+                ForgeService.UpgradeResult.LowLevel => $"Cấp tướng chính chưa đủ (cần Lv{target.Tier})!",
+                ForgeService.UpgradeResult.NoSilver => "Không đủ Bạc!",
+                _ => "Không nâng cấp được!",
+            };
+            _status = msg;
+            gm2.SaveGame();
+            RefreshEquipRows();
+            RefreshRightPanel();
+        };
+        box.AddChild(upBtn);
+        var statusLabel = new Label { Name = "UpgradeStatus", Text = _status, AutowrapMode = TextServer.AutowrapMode.WordSmart };
         UiTheme.StyleBody(statusLabel, UiTheme.FontSmall);
         statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
         box.AddChild(statusLabel);

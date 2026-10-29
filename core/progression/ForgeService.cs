@@ -69,6 +69,51 @@ public static class ForgeService
         return true;
     }
 
+    // Phase 2.36: Nâng phẩm (upgrade tier) — Huynh's decision: during
+    // development the upgrade costs ONLY Bạc (1.000 x target tier),
+    // no blueprint/ore gating.
+    public static readonly List<string> UpgradeChain = new()
+    {
+        "tan_thu", "chu_tuoc", "bach_ho", "thanh_long", "huyen_vu", "ky_lan",
+    };
+
+    public static string? NextSet(string setId)
+    {
+        int i = UpgradeChain.IndexOf(setId);
+        return i >= 0 && i + 1 < UpgradeChain.Count ? UpgradeChain[i + 1] : null;
+    }
+
+    public static int UpgradeSilverCost(string targetSetId) =>
+        EquipmentSets.Get(targetSetId).Tier * 1000;
+
+    public enum UpgradeResult { Success, NoNext, LowLevel, NoSilver, EmptySlot }
+
+    public static UpgradeResult TryUpgradeTier(SaveData save, string heroId, string slotId, Random rng)
+    {
+        ProgressionService.EnsureDefaults(save);
+        var eq = save.HeroEquipment[heroId][slotId];
+        if (eq.IsEmpty) return UpgradeResult.EmptySlot;
+        string? next = NextSet(eq.SetId);
+        if (next == null) return UpgradeResult.NoNext;
+        var target = EquipmentSets.Get(next);
+        int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
+        if (mainLevel < target.Tier) return UpgradeResult.LowLevel;
+        int cost = UpgradeSilverCost(next);
+        if (save.Silver < cost) return UpgradeResult.NoSilver;
+        save.Silver -= cost;
+        eq.SetId = next;
+        eq.Tier = target.Tier;
+        eq.Quality = target.Quality;
+        // Keep enhance level, unlocks and socketed gems; top up refine
+        // lines to the new quality's count (position pool); grow sockets
+        // (new ones start locked).
+        var pos = FormationService.PositionOfHero(save, heroId);
+        while (eq.RefineLines.Count < EquipmentSets.LinesForQuality(eq.Quality))
+            eq.RefineLines.Add(ProgressionService.RollRefineLine(pos, rng));
+        GemService.EnsureSockets(eq);
+        return UpgradeResult.Success;
+    }
+
     public enum ForgeResult { Success, NoBlueprint, LowLevel, NoOre, BadSet }
 
     public static ForgeResult TryForge(SaveData save, string setId, string slotId, Random rng)
