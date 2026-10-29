@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Fix theo feedback (2026-10-29 khuya, tiếp)
+
+- Tooltip trang bị ĐỒNG NHẤT ở cả 3 popup (Võ tướng / Túi / Trang bị):
+  cùng một BBCode qua `EquipmentTooltip` (tên + set màu theo phẩm
+  trang bị, dòng tẩy luyện, ngọc khảm, bonus set).
+- Dòng tẩy luyện tô màu theo phẩm roll: giá trị roll càng cao trong
+  khoảng pool thì phẩm càng tốt — Cam ≥75%, Tím ≥50%, Lam ≥25%,
+  còn lại xám Trắng (số Pax setup, Huynh chỉnh tùy ý).
+- Test: TestPhase232 thêm grade + BBCode, 26/228/233 cập nhật
+  tooltip RichText; suite 0–2.36 xanh.
+
 ## Fix theo feedback (2026-10-29 khuya)
 
 - Hover vào hàng trang bị hiện tooltip liệt kê ngọc khảm từng lỗ

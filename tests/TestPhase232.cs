@@ -67,6 +67,24 @@ public partial class TestPhase232 : Node
         Check(EquipmentService.DescribeRefineLine(new RefineLine { StatId = "def_pct", Value = 0.1, Locked = true }).Contains("khóa"),
             "describe shows lock");
 
+        // Refine line grades by roll quality (crit pool widest: 0.02-0.08).
+        Check(ProgressionService.RefineLineGrade(new RefineLine { StatId = "crit", Value = 0.03 }) == "Trang", "low roll grades Trang");
+        Check(ProgressionService.RefineLineGrade(new RefineLine { StatId = "crit", Value = 0.05 }) == "Tim", "mid roll grades Tim");
+        Check(ProgressionService.RefineLineGrade(new RefineLine { StatId = "crit", Value = 0.08 }) == "Cam", "max roll grades Cam");
+        Check(ProgressionService.RefineLineGrade(new RefineLine { StatId = "nope", Value = 1 }) == "Trang", "unknown stat grades Trang");
+
+        // Unified tooltip BBCode (same for all 3 popups).
+        var bb = EquipmentTooltip.ForBagItem(new BagEquipmentItem
+        {
+            SlotId = "weapon", SetId = "chu_tuoc", Tier = 50, Quality = "Tim",
+            RefineLines = new List<RefineLine> { new() { StatId = "crit", Value = 0.08 } },
+            Sockets = new List<EquipmentSocket> { new() { Unlocked = true, GemId = "atk_1" } },
+        }, null);
+        Check(bb.Contains("[color=") && bb.Contains("Chu Tước") && bb.Contains("Bạo kích"), "tooltip has colors, set, refine");
+        Check(bb.Contains("Ngọc khảm:") && bb.Contains("atk_1") == false && bb.Contains("Công"), "tooltip shows gems by name");
+        Check(EquipmentTooltip.ForEquipped(new EquipmentState { IsEmpty = true }, "weapon", null).Contains("Ô trống"),
+            "empty slot tooltip");
+
         if (_fails == 0) GD.Print("TEST PHASE 2.32: ALL PASS");
         else GD.Print($"TEST PHASE 2.32: {_fails} FAILURES");
         GetTree().Quit();

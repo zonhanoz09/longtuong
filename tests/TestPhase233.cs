@@ -108,8 +108,9 @@ public partial class TestPhase233 : Node
         rowBtn.EmitSignal(Control.SignalName.MouseEntered);
         var tipPanel = screen.GetNode<PanelContainer>("TooltipPanel");
         Check(tipPanel.Visible, "hover shows the gem tooltip");
-        var tipLabel = screen.GetNode<Label>("TooltipPanel/TooltipLabel");
+        var tipLabel = screen.GetNode<RichTextLabel>("TooltipPanel/TooltipLabel");
         Check(tipLabel.Text.Contains("Ngọc Tốc độ"), "tooltip lists the socketed gem");
+        Check(tipLabel.Text.Contains("Tẩy luyện:") && tipLabel.Text.Contains("Ngọc khảm:"), "unified tooltip has refine + gems");
         rowBtn.EmitSignal(Control.SignalName.MouseExited);
         Check(!tipPanel.Visible, "tooltip hides on exit");
 

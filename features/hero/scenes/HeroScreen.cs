@@ -40,7 +40,7 @@ public partial class HeroScreen : Control
     private int _inheritSource = -1;
     // Hover tooltip (gem info on equipment rows).
     private PanelContainer? _tooltipPanel;
-    private Label? _tooltipLabel;
+    private RichTextLabel? _tooltipLabel;
     private VBoxContainer? _heroListBox;
     private VBoxContainer? _equipListBox;
     private HBoxContainer? _tabRow;
@@ -77,8 +77,9 @@ public partial class HeroScreen : Control
         _tabRow = GetNode<HBoxContainer>("RightPanel/TabRow");
         _tabContent = GetNode<Control>("RightPanel/TabContent");
         _tooltipPanel = GetNode<PanelContainer>("TooltipPanel");
-        _tooltipLabel = GetNode<Label>("TooltipPanel/TooltipLabel");
-        UiTheme.StyleBody(_tooltipLabel, 14);
+        _tooltipLabel = GetNode<RichTextLabel>("TooltipPanel/TooltipLabel");
+        _tooltipLabel.AddThemeFontSizeOverride("normal_font_size", 14);
+        _tooltipLabel.AddThemeColorOverride("default_color", UiTheme.Text);
         _tooltipLabel.CustomMinimumSize = new Vector2(280, 0);
         _tooltipPanel.MouseFilter = MouseFilterEnum.Ignore;
         BuildHeroList();
@@ -152,7 +153,7 @@ public partial class HeroScreen : Control
             btn.MouseEntered += () =>
             {
                 var gm2 = GetNode<GameManager>("/root/GameManager");
-                ShowTooltip(btn, GemTooltipText(gm2.Save.HeroEquipment[_selectedHero][slotId]));
+                ShowTooltip(btn, EquipmentTooltip.ForEquipped(gm2.Save.HeroEquipment[_selectedHero][slotId], slotId, null));
             };
             btn.MouseExited += HideTooltip;
             _equipListBox.AddChild(btn);
@@ -163,22 +164,7 @@ public partial class HeroScreen : Control
     private static T FindRowPart<T>(Node parent, string name) where T : Node
         => (T)parent.FindChild(name, true, false)!;
 
-    // ---------- Hover tooltip: socketed gems ----------
-
-    private static string GemTooltipText(EquipmentState eq)
-    {
-        if (eq.IsEmpty) return "Ô trống — chưa mang trang bị.";
-        var lines = new List<string> { "Ngọc khảm:" };
-        for (int i = 0; i < eq.Sockets.Count; i++)
-        {
-            var s = eq.Sockets[i];
-            string desc = !s.Unlocked ? "(chưa mở)"
-                : string.IsNullOrEmpty(s.GemId) ? "(trống)"
-                : GemService.DescribeGem(s.GemId);
-            lines.Add($"Lỗ {i + 1}: {desc}");
-        }
-        return string.Join("\n", lines);
-    }
+    // ---------- Hover tooltip (unified BBCode via EquipmentTooltip) ----------
 
     private void ShowTooltip(Control cell, string text)
     {

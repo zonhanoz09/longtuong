@@ -169,3 +169,7 @@ Giày Bạch Hổ 70), thay vì rèn món mới + kế thừa.
   khi hover hàng trang bị; lỗ khảm mặc định khóa hết, mở bằng Vàng
   (500/1.000/2.000/4.000 — số Pax setup); sửa nút Lò rèn đè nút X;
   style nút chọn trong Lò Rèn.
+- **Fix theo feedback Huynh (2026-10-29 khuya, tiếp)**: tooltip trang
+  bị đồng nhất 3 popup (Võ tướng/Túi/Trang bị) qua EquipmentTooltip
+  (BBCode, RichTextLabel); dòng tẩy luyện tô màu theo phẩm roll
+  (Cam/Tím/Lam/Trắng theo tỉ lệ giá trị trong pool).

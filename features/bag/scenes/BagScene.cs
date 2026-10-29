@@ -42,7 +42,7 @@ public partial class BagScene : Control
     private Label? _capacityLabel;
     private Label? _emptyNote;
     private PanelContainer? _tooltip;
-    private VBoxContainer? _tooltipBox;
+    private RichTextLabel? _tooltipLabel;
 
     public override void _Ready()
     {
@@ -131,9 +131,17 @@ public partial class BagScene : Control
             CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
             ContentMarginLeft = 12, ContentMarginRight = 12, ContentMarginTop = 10, ContentMarginBottom = 10,
         });
-        _tooltipBox = new VBoxContainer();
-        _tooltipBox.AddThemeConstantOverride("separation", 4);
-        _tooltip.AddChild(_tooltipBox);
+        _tooltipLabel = new RichTextLabel
+        {
+            Name = "BagTooltipLabel",
+            BbcodeEnabled = true,
+            FitContent = true,
+            ScrollActive = false,
+            CustomMinimumSize = new Vector2(300, 0),
+        };
+        _tooltipLabel.AddThemeFontSizeOverride("normal_font_size", 14);
+        _tooltipLabel.AddThemeColorOverride("default_color", UiTheme.Text);
+        _tooltip.AddChild(_tooltipLabel);
         AddChild(_tooltip);
     }
 
@@ -237,36 +245,18 @@ public partial class BagScene : Control
 
     private void ShowTooltip(BagEquipmentItem item)
     {
-        if (_tooltip == null || _tooltipBox == null) return;
-        foreach (var child in _tooltipBox.GetChildren()) { _tooltipBox.RemoveChild(child); child.QueueFree(); }
-        var slotDef = ProgressionService.Slots.Find(s => s.Id == item.SlotId);
-        var slotName = slotDef?.Name ?? item.SlotId;
-        var slotColor = UiTheme.SlotColors.TryGetValue(item.SlotId, out var c) ? c : UiTheme.Gold;
-        var titleLabel = new Label { Text = $"{slotName} +{item.Level}" };
-        UiTheme.StyleBody(titleLabel, UiTheme.FontButton);
-        titleLabel.AddThemeColorOverride("font_color", slotColor);
-        _tooltipBox.AddChild(titleLabel);
-        var enhanceLabel = new Label { Text = $"Cường hóa: +{item.Level}" };
-        UiTheme.StyleBody(enhanceLabel, UiTheme.FontSmall);
-        _tooltipBox.AddChild(enhanceLabel);
-        // Phase 2.30: set + quality line.
-        var setDef = EquipmentSets.Get(item.SetId);
-        var setLabel = new Label { Text = $"Bộ: {setDef.Name} (Lv{setDef.Tier} · {EquipmentSets.QualityName(item.Quality)})" };
-        UiTheme.StyleBody(setLabel, UiTheme.FontSmall);
-        setLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(item.Quality));
-        _tooltipBox.AddChild(setLabel);
-        var detail = EquipmentService.DetailText(item, null);
-        foreach (var line in detail.Split('\n').Skip(1))
-        {
-            var l = new Label { Text = line };
-            UiTheme.StyleBody(l, UiTheme.FontSmall);
-            l.AddThemeColorOverride("font_color", UiTheme.Muted);
-            _tooltipBox.AddChild(l);
-        }
+        if (_tooltip == null || _tooltipLabel == null) return;
+        // Unified tooltip (same BBCode as Võ tướng / Trang bị popups).
+        string bbcode = EquipmentTooltip.ForBagItem(item, null);
+        _tooltipLabel.Text = bbcode;
+        int lines = System.Math.Max(1, bbcode.Split('\n').Length);
+        float height = 16 + lines * 20 + 8;
+        _tooltip.CustomMinimumSize = new Vector2(320, height);
+        _tooltip.Size = new Vector2(320, height);
         _tooltip.Visible = true;
         var mp = GetLocalMousePosition() + new Vector2(16, 12);
-        mp.X = System.Math.Min(mp.X, 760 - 320);
-        mp.Y = System.Math.Min(mp.Y, 600 - 220);
+        mp.X = System.Math.Min(mp.X, 760 - 340);
+        mp.Y = System.Math.Min(mp.Y, 600 - height);
         _tooltip.Position = mp;
     }
 

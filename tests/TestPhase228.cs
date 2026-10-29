@@ -74,9 +74,9 @@ public partial class TestPhase228 : Node
         firstItem.EmitSignal(Control.SignalName.MouseEntered);
         var tooltip = bag.GetNode<PanelContainer>("BagTooltip");
         Check(tooltip.Visible, "tooltip shows on hover");
-        var tipText = string.Join("\n", tooltip.GetChildren().OfType<VBoxContainer>().First()
-            .GetChildren().OfType<Label>().Select(l => l.Text));
-        Check(tipText.Contains("Vũ khí") && tipText.Contains("Cường hóa: +3"), "tooltip has name + Cường hóa: +N");
+        var tipLabel = tooltip.GetNode<RichTextLabel>("BagTooltipLabel");
+        Check(tipLabel.Text.Contains("Vũ khí") && tipLabel.Text.Contains("+3"), "unified tooltip has name + enhance");
+        Check(tipLabel.Text.Contains("Tẩy luyện:") && tipLabel.Text.Contains("[color="), "unified tooltip has colored refine lines");
         firstItem.EmitSignal(Control.SignalName.MouseExited);
         Check(!tooltip.Visible, "tooltip hides on mouse exit");
 

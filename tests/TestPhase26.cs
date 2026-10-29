@@ -34,7 +34,7 @@ public partial class TestPhase26 : Node
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
         var tooltipPanel = heroList.GetNode<PanelContainer>("TooltipPanel");
-        var tooltip = heroList.GetNode<Label>("TooltipPanel/TooltipLabel");
+        var tooltip = heroList.GetNode<RichTextLabel>("TooltipPanel/TooltipLabel");
         Check(gridButtons.All(b => b.Text == "" && b.CustomMinimumSize == new Vector2(64, 64)), "grid cells are icon-only 64x64");
         Check(tooltipPanel.Visible == false, "tooltip is hidden initially");
         // Wait a frame so GridContainer layout has run before checking positions.

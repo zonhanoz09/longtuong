@@ -46,7 +46,7 @@ public partial class HeroListScene : Control
     private GridContainer? _grid;
     private Label? _gridTitle;
     private PanelContainer? _tooltipPanel;
-    private Label? _tooltipLabel;
+    private RichTextLabel? _tooltipLabel;
     // Detail area: static scene nodes (HeroListScene.tscn), code only sets text/values.
     private Label? _nameLabel;
     private ProgressBar? _expBar;
@@ -72,8 +72,9 @@ public partial class HeroListScene : Control
         _gridTitle = GetNode<Label>("GridPanel/GridTitleLabel");
         UiTheme.StyleBody(_gridTitle, 17);
         _tooltipPanel = GetNode<PanelContainer>("TooltipPanel");
-        _tooltipLabel = GetNode<Label>("TooltipPanel/TooltipLabel");
-        UiTheme.StyleBody(_tooltipLabel, 14);
+        _tooltipLabel = GetNode<RichTextLabel>("TooltipPanel/TooltipLabel");
+        _tooltipLabel.AddThemeFontSizeOverride("normal_font_size", 14);
+        _tooltipLabel.AddThemeColorOverride("default_color", UiTheme.Text);
         _tooltipLabel.SizeFlagsHorizontal = Control.SizeFlags.Fill;
         _tooltipLabel.CustomMinimumSize = new Vector2(280, 0);
         _tooltipPanel.MouseFilter = MouseFilterEnum.Ignore;
@@ -366,8 +367,7 @@ public partial class HeroListScene : Control
             // = 180, exactly the portrait height, so all three columns line up.
             slotBtn.CustomMinimumSize = new Vector2(UiTheme.IconEquippedSize, UiTheme.IconEquippedSize);
             var heroId = _selectedHeroId; var slotId = slot.Id;
-            string slotDetail = eq.IsEmpty ? "Ô trống — chưa mang trang bị."
-                : EquipmentService.DetailText(eq, slotId, $"Đang mang: {heroDef.Name}");
+            string slotDetail = EquipmentTooltip.ForEquipped(eq, slotId, $"Đang mang: {heroDef.Name}");
             slotBtn.MouseEntered += () => ShowTooltip(slotBtn, slotDetail);
             slotBtn.MouseExited += HideTooltip;
             slotBtn.GuiInput += (InputEvent e) =>
@@ -409,7 +409,7 @@ public partial class HeroListScene : Control
                 var item = gm.Save.BagEquipment[i];
                 var btn = MakeIconButton(UiTheme.SlotColors[item.SlotId], true, AssetIcons.SlotSymbol(item.SlotId));
                 var bagIndex = i;
-                string detail = EquipmentService.DetailText(item, "Trạng thái: Trong túi");
+                string detail = EquipmentTooltip.ForBagItem(item, "Trạng thái: Trong túi");
                 btn.MouseEntered += () => ShowTooltip(btn, detail);
                 btn.MouseExited += HideTooltip;
                 btn.GuiInput += (InputEvent e) =>

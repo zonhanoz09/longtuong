@@ -271,7 +271,9 @@ visible = false
 layout_mode = 0
 custom_minimum_size = Vector2(280, 160)
 
-[node name="TooltipLabel" type="Label" parent="TooltipPanel"]
+[node name="TooltipLabel" type="RichTextLabel" parent="TooltipPanel"]
 layout_mode = 2
+bbcode_enabled = true
 text = "Tooltip"
-autowrap_mode = 3
+fit_content = true
+scroll_active = false

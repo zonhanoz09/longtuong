@@ -307,6 +307,24 @@ public static class ProgressionService
         return new RefineLine { StatId = stat, Value = pct ? Math.Round(v, 3) : Math.Round(v) };
     }
 
+    // Refine line grade by roll quality (Huynh: lines show colors by
+    // grade). Ratio within the widest pool range for the stat:
+    // >=0.75 Cam, >=0.5 Tím, >=0.25 Lam, else Trắng (gray).
+    // Grade keys match EquipmentSets.QualityColor (no diacritics).
+    public static string RefineLineGrade(RefineLine line)
+    {
+        double min = double.MaxValue, max = double.MinValue;
+        foreach (var pos in new[] { FormationPosition.Front, FormationPosition.Middle, FormationPosition.Rear })
+            foreach (var (stat, lo, hi) in RefinePoolFor(pos))
+                if (stat == line.StatId) { min = Math.Min(min, lo); max = Math.Max(max, hi); }
+        if (max <= min) return "Trang";
+        double r = Math.Clamp((line.Value - min) / (max - min), 0, 1);
+        if (r >= 0.75) return "Cam";
+        if (r >= 0.5) return "Tim";
+        if (r >= 0.25) return "Lam";
+        return "Trang";
+    }
+
     public static bool TryRefine(SaveData save, string heroId, string slotId, Random rng)
     {
         EnsureDefaults(save);
