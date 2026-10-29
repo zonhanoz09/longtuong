@@ -15,6 +15,26 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.30 — đã làm (set trang bị theo mốc cấp)
+
+- `EquipmentSets`: 6 bộ theo đúng spec Huynh (Tân Thủ Lv30 Lam,
+  Chu Tước Lv50 Tím, Bạch Hổ Lv70 Cam, Thanh Long Lv80 Cam,
+  Huyền Vũ Lv90 Cam, Kỳ Lân Lv100 Đỏ) + bonus 2/4/6 món.
+  `SetBonusService` đếm món đang mang và cộng vào
+  `GetEffectiveHero`; Miễn thương chạy tới engine
+  (`DamageReduction`), còn Nộ khởi đầu/Kháng khống chế/Đỡ đòn giữ
+  dạng data "(sắp mở)" chờ engine.
+- Model mới: `Tier`/`Quality`/`SetId`/`Sockets`/`RefineLines` trên
+  cả `EquipmentState` lẫn `BagEquipmentItem`; migration save cũ →
+  set Tân Thủ, `RefineIndex` cũ thành dòng tẩy đầu tiên; mang/tháo
+  copy đủ field; seed 6 món túi là Tân Thủ (Lam, 3 dòng).
+- UI: hàng trang bị hiện tên set màu phẩm, badge = số dòng tẩy;
+  panel phải liệt kê bonus set đang kích hoạt; tooltip Túi/Võ tướng
+  hiện bộ + phẩm + các dòng tẩy + bonus set.
+- Test: `tests/TestPhase230.tscn` ALL PASS (bảng set, seed,
+  bonus 2/4/6, migration, mang/tháo giữ set, tẩy xoay dòng đầu);
+  toàn suite 0–2.30 pass; build 0 error; CI thêm 2.30.
+
 ## Phase 2.29 — đã làm (màn hình Trang bị theo layout ảnh Huynh gửi)
 
 - Nút Hub "Cường hóa" đổi tên thành **"Trang bị"**.

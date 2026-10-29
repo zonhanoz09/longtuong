@@ -36,7 +36,18 @@ public static class SeedService
         // Phase 2.5: starter starts with NO equipped items; the bag holds 6
         // basic items (one per slot) so equip -> unequip -> re-equip can be tested.
         save.BagEquipment = ProgressionService.Slots
-            .Select(s => new BagEquipmentItem { SlotId = s.Id, Level = 0, RefineIndex = 0 })
+            .Select(s => new BagEquipmentItem
+            {
+                SlotId = s.Id, Level = 0, RefineIndex = 0,
+                Tier = 30, Quality = "Lam", SetId = "tan_thu",
+                // Phase 2.30: seed items are Tân Thủ (Lam = 3 lines), fixed lines.
+                RefineLines = new List<RefineLine>
+                {
+                    new() { StatId = "crit", Value = 0.03 },
+                    new() { StatId = "dodge", Value = 0.03 },
+                    new() { StatId = "speed", Value = 5 },
+                },
+            })
             .ToList();
         save.Gold = SeededGold;
         return save;

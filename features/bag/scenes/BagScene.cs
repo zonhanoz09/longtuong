@@ -249,7 +249,13 @@ public partial class BagScene : Control
         var enhanceLabel = new Label { Text = $"Cường hóa: +{item.Level}" };
         UiTheme.StyleBody(enhanceLabel, UiTheme.FontSmall);
         _tooltipBox.AddChild(enhanceLabel);
-        var detail = EquipmentService.DetailText(item.SlotId, item.Level, item.RefineIndex, null);
+        // Phase 2.30: set + quality line.
+        var setDef = EquipmentSets.Get(item.SetId);
+        var setLabel = new Label { Text = $"Bộ: {setDef.Name} (Lv{setDef.Tier} · {EquipmentSets.QualityName(item.Quality)})" };
+        UiTheme.StyleBody(setLabel, UiTheme.FontSmall);
+        setLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(item.Quality));
+        _tooltipBox.AddChild(setLabel);
+        var detail = EquipmentService.DetailText(item, null);
         foreach (var line in detail.Split('\n').Skip(1))
         {
             var l = new Label { Text = line };

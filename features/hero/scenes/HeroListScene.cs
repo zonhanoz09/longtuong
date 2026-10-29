@@ -367,7 +367,7 @@ public partial class HeroListScene : Control
             slotBtn.CustomMinimumSize = new Vector2(UiTheme.IconEquippedSize, UiTheme.IconEquippedSize);
             var heroId = _selectedHeroId; var slotId = slot.Id;
             string slotDetail = eq.IsEmpty ? "Ô trống — chưa mang trang bị."
-                : EquipmentService.DetailText(slotId, eq.Level, eq.RefineIndex, $"Đang mang: {heroDef.Name}");
+                : EquipmentService.DetailText(eq, slotId, $"Đang mang: {heroDef.Name}");
             slotBtn.MouseEntered += () => ShowTooltip(slotBtn, slotDetail);
             slotBtn.MouseExited += HideTooltip;
             slotBtn.GuiInput += (InputEvent e) =>
@@ -409,7 +409,7 @@ public partial class HeroListScene : Control
                 var item = gm.Save.BagEquipment[i];
                 var btn = MakeIconButton(UiTheme.SlotColors[item.SlotId], true, AssetIcons.SlotSymbol(item.SlotId));
                 var bagIndex = i;
-                string detail = EquipmentService.DetailText(item.SlotId, item.Level, item.RefineIndex, "Trạng thái: Trong túi");
+                string detail = EquipmentService.DetailText(item, "Trạng thái: Trong túi");
                 btn.MouseEntered += () => ShowTooltip(btn, detail);
                 btn.MouseExited += HideTooltip;
                 btn.GuiInput += (InputEvent e) =>

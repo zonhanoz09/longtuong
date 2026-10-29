@@ -19,6 +19,13 @@ public class EquipmentState
     // Phase 2.5: true = slot is empty (no item equipped). Defaults to false so
     // old saves (no such field in JSON) keep their equipment equipped.
     public bool IsEmpty { get; set; } = false;
+    // Phase 2.30: equipment sets (Huynh's spec). Old saves get the Tân Thủ
+    // set via migration in EnsureDefaults.
+    public int Tier { get; set; } = 30;
+    public string Quality { get; set; } = "Lam";
+    public string SetId { get; set; } = "tan_thu";
+    public List<EquipmentSocket> Sockets { get; set; } = new();
+    public List<RefineLine> RefineLines { get; set; } = new();
 }
 
 public class EquipmentSlotDef
@@ -45,8 +52,10 @@ public class EquipmentSlotDef
 ///   * (level-1)). Only HP/ATK/DEF scale (Speed/Crit/Dodge stay at base, as
 ///   with the old level/star scaling). Heroes without a tier (custom hero)
 ///   use factors 1.0/1.0.
-/// - Equipment: 4 slots, enhance max 10, cost 100*(level+1) Gold.
-/// - Refine: 1 bonus line per item, cycles through 5 options, cost 100 Gold.
+/// - Equipment: 6 slots, enhance max 10, cost 100*(level+1) Gold.
+/// - Refine: lines per item (3 Lam / 4 Tím / 5 Cam / 6 Đỏ); the old single
+///   option cycles the first line until 2.32. Cost 100 Gold.
+/// - Sets (2.30): 6 level-tier sets with 2/4/6-piece bonuses.
 /// - Star chart: 12 nodes, next node unlocks when total stage stars >= (unlocked+1)*2.
 ///   Each node: +3% HP and +3% ATK for the whole team. (The star chart is
 ///   NOT hero stars: hero stars were removed in 2.23, the chart stays.)
@@ -117,6 +126,85 @@ public static class ProgressionService
                 if (!save.HeroEquipment[hero.Id].ContainsKey(slot.Id))
                     save.HeroEquipment[hero.Id][slot.Id] = new EquipmentState { IsEmpty = true };
         }
+        // Phase 2.30: migrate old equipment (no set fields) to the Tân Thủ
+        // set; old RefineIndex becomes the first refine line.
+        foreach (var heroEq in save.HeroEquipment.Values)
+            foreach (var eq in heroEq.Values)
+                MigrateEquipment(eq);
+        foreach (var item in save.BagEquipment)
+            MigrateBagItem(item);
+    }
+
+    private static void MigrateEquipment(EquipmentState eq)
+    {
+        if (string.IsNullOrEmpty(eq.SetId)) { eq.SetId = "tan_thu"; eq.Tier = 30; eq.Quality = "Lam"; }
+        eq.Sockets ??= new List<EquipmentSocket>();
+        eq.RefineLines ??= new List<RefineLine>();
+        if (!eq.IsEmpty && eq.RefineLines.Count == 0)
+        {
+            var (stat, val) = RefineLineForOldIndex(eq.RefineIndex);
+            eq.RefineLines.Add(new RefineLine { StatId = stat, Value = val });
+            var rng = new Random();
+            while (eq.RefineLines.Count < EquipmentSets.LinesForQuality(eq.Quality))
+                eq.RefineLines.Add(RandomRefineLine(rng));
+        }
+    }
+
+    private static void MigrateBagItem(BagEquipmentItem item)
+    {
+        if (string.IsNullOrEmpty(item.SetId)) { item.SetId = "tan_thu"; item.Tier = 30; item.Quality = "Lam"; }
+        item.Sockets ??= new List<EquipmentSocket>();
+        item.RefineLines ??= new List<RefineLine>();
+        if (item.RefineLines.Count == 0)
+        {
+            var (stat, val) = RefineLineForOldIndex(item.RefineIndex);
+            item.RefineLines.Add(new RefineLine { StatId = stat, Value = val });
+            var rng = new Random();
+            while (item.RefineLines.Count < EquipmentSets.LinesForQuality(item.Quality))
+                item.RefineLines.Add(RandomRefineLine(rng));
+        }
+    }
+
+    /// Maps the pre-2.30 refine option index to a refine line.
+    public static (string StatId, double Value) RefineLineForOldIndex(int index) => (index % 5) switch
+    {
+        0 => ("crit", 0.03),
+        1 => ("dodge", 0.03),
+        2 => ("speed", 5),
+        3 => ("atk_pct", 0.10),
+        _ => ("hp_pct", 0.10),
+    };
+
+    private static int OldIndexOfLine(RefineLine line) => line.StatId switch
+    {
+        "crit" => 0, "dodge" => 1, "speed" => 2, "atk_pct" => 3, "hp_pct" => 4, _ => 0,
+    };
+
+    /// Temporary 2.30 filler: random line from the old 5 options.
+    /// Phase 2.32 replaces this with the position-based pool + lock rules.
+    public static RefineLine RandomRefineLine(Random rng)
+    {
+        var (stat, val) = RefineLineForOldIndex(rng.Next(5));
+        return new RefineLine { StatId = stat, Value = val };
+    }
+
+    public static void ApplyRefineLines(HeroDef def, List<RefineLine> lines, ref double atkMul, ref double hpMul)
+    {
+        if (lines == null) return;
+        foreach (var line in lines)
+        {
+            switch (line.StatId)
+            {
+                case "crit": def.Crit += line.Value; break;
+                case "dodge": def.Dodge += line.Value; break;
+                case "speed": def.Speed += (int)line.Value; break;
+                case "atk": def.Atk += (int)line.Value; break;
+                case "def": def.Def += (int)line.Value; break;
+                case "hp": def.Hp += (int)line.Value; break;
+                case "atk_pct": atkMul *= 1 + line.Value; break;
+                case "hp_pct": hpMul *= 1 + line.Value; break;
+            }
+        }
     }
 
     public static HeroProgress ProgressOf(SaveData save, string heroId)
@@ -155,7 +243,14 @@ public static class ProgressionService
         var eq = save.HeroEquipment[heroId][slotId];
         if (eq.IsEmpty || save.Gold < RefineCostGold) return false;
         save.Gold -= RefineCostGold;
-        eq.RefineIndex = (eq.RefineIndex + 1) % RefineNames.Length;
+        // Phase 2.30: rotate the FIRST line through the old 5 options
+        // (kept in sync with RefineIndex for old displays; full reroll +
+        // lock UI comes in 2.32).
+        if (eq.RefineLines.Count == 0) eq.RefineLines.Add(new RefineLine());
+        int next = (OldIndexOfLine(eq.RefineLines[0]) + 1) % RefineNames.Length;
+        var (stat, val) = RefineLineForOldIndex(next);
+        eq.RefineLines[0] = new RefineLine { StatId = stat, Value = val };
+        eq.RefineIndex = next;
         return true;
     }
 
@@ -240,15 +335,12 @@ public static class ProgressionService
             def.Hp += slot.BaseHp + slot.HpPerLevel * eq.Level;
             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;
             def.Speed += slot.BaseSpeed + slot.SpeedPerLevel * eq.Level;
-            switch (eq.RefineIndex)
-            {
-                case 0: def.Crit += 0.03; break;
-                case 1: def.Dodge += 0.03; break;
-                case 2: def.Speed += 5; break;
-                case 3: atkMul *= 1.10; break;
-                case 4: hpMul *= 1.10; break;
-            }
+            ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul);
         }
+        // Phase 2.30: set bonuses (2/4/6 pieces).
+        var (setAtkMul, setHpMul) = SetBonusService.Apply(def, SetBonusService.ActiveBonuses(save, heroId));
+        atkMul *= setAtkMul;
+        hpMul *= setHpMul;
         def.Atk = (int)Math.Round(def.Atk * atkMul);
         def.Hp = (int)Math.Round(def.Hp * hpMul);
         double chartMul = 1 + 0.03 * save.StarNodesUnlocked;

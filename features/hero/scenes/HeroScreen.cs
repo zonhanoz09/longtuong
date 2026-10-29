@@ -175,10 +175,20 @@ public partial class HeroScreen : Control
             UiTheme.StyleBody(enhLabel, UiTheme.FontSmall);
             enhLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
             var refLabel = FindRowPart<Label>(btn, "RowRefine");
-            refLabel.Text = eq.IsEmpty ? "Tẩy luyện: —"
-                : $"Tẩy luyện: {ProgressionService.RefineNames[eq.RefineIndex % ProgressionService.RefineNames.Length]}";
-            UiTheme.StyleBody(refLabel, UiTheme.FontSmall);
-            refLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
+            if (eq.IsEmpty)
+            {
+                refLabel.Text = "Tẩy luyện: —";
+                UiTheme.StyleBody(refLabel, UiTheme.FontSmall);
+                refLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
+            }
+            else
+            {
+                // Phase 2.30: third line shows the set (quality-colored).
+                var set = EquipmentSets.Get(eq.SetId);
+                refLabel.Text = $"{set.Name} · Lv{set.Tier}";
+                UiTheme.StyleBody(refLabel, UiTheme.FontSmall);
+                refLabel.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(eq.Quality));
+            }
             var badge = FindRowPart<PanelContainer>(btn, "RowBadge");
             badge.AddThemeStyleboxOverride("panel", new StyleBoxFlat
             {
@@ -186,7 +196,7 @@ public partial class HeroScreen : Control
                 CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
                 CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
             });
-            FindRowPart<Label>(badge, "RowBadgeLabel").Text = eq.IsEmpty ? "–" : $"{eq.RefineIndex}";
+            FindRowPart<Label>(badge, "RowBadgeLabel").Text = eq.IsEmpty ? "–" : $"{eq.RefineLines.Count}";
         }
     }
 
@@ -302,6 +312,14 @@ public partial class HeroScreen : Control
         }
         top.AddChild(info);
         box.AddChild(top);
+        // Phase 2.30: active set bonuses for the selected hero.
+        foreach (var line in SetBonusService.DescribeForHero(gm.Save, _selectedHero))
+        {
+            var setLabel = new Label { Text = line, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            UiTheme.StyleBody(setLabel, UiTheme.FontSmall);
+            setLabel.AddThemeColorOverride("font_color", UiTheme.Gold);
+            box.AddChild(setLabel);
+        }
         var actions = new HBoxContainer();
         actions.AddThemeConstantOverride("separation", 12);
         var mainBtn = new Button

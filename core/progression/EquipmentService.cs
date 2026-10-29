@@ -10,15 +10,39 @@ namespace LongTuong;
 /// </summary>
 public static class EquipmentService
 {
+    // Phase 2.30: equip/unequip carry the full item (set, quality, tier,
+    // sockets, refine lines) — never just level/refine.
+    private static BagEquipmentItem ToBagItem(string slotId, EquipmentState eq) => new()
+    {
+        SlotId = slotId, Level = eq.Level, RefineIndex = eq.RefineIndex,
+        Tier = eq.Tier, Quality = eq.Quality, SetId = eq.SetId,
+        Sockets = eq.Sockets.Select(s => new EquipmentSocket { Unlocked = s.Unlocked, GemId = s.GemId }).ToList(),
+        RefineLines = eq.RefineLines.Select(l => new RefineLine { StatId = l.StatId, Value = l.Value, Locked = l.Locked }).ToList(),
+    };
+
+    private static void CopyToState(EquipmentState eq, BagEquipmentItem item)
+    {
+        eq.IsEmpty = false;
+        eq.Level = item.Level;
+        eq.RefineIndex = item.RefineIndex;
+        eq.Tier = item.Tier;
+        eq.Quality = item.Quality;
+        eq.SetId = item.SetId;
+        eq.Sockets = item.Sockets.Select(s => new EquipmentSocket { Unlocked = s.Unlocked, GemId = s.GemId }).ToList();
+        eq.RefineLines = item.RefineLines.Select(l => new RefineLine { StatId = l.StatId, Value = l.Value, Locked = l.Locked }).ToList();
+    }
+
     public static bool Unequip(SaveData save, string heroId, string slotId)
     {
         ProgressionService.EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
         if (eq.IsEmpty) return false;
-        save.BagEquipment.Add(new BagEquipmentItem { SlotId = slotId, Level = eq.Level, RefineIndex = eq.RefineIndex });
+        save.BagEquipment.Add(ToBagItem(slotId, eq));
         eq.IsEmpty = true;
         eq.Level = 0;
         eq.RefineIndex = 0;
+        eq.RefineLines.Clear();
+        eq.Sockets.Clear();
         return true;
     }
 
@@ -38,10 +62,8 @@ public static class EquipmentService
         var item = save.BagEquipment[bagIndex];
         var eq = save.HeroEquipment[heroId][item.SlotId];
         if (!eq.IsEmpty)
-            save.BagEquipment.Add(new BagEquipmentItem { SlotId = item.SlotId, Level = eq.Level, RefineIndex = eq.RefineIndex });
-        eq.IsEmpty = false;
-        eq.Level = item.Level;
-        eq.RefineIndex = item.RefineIndex;
+            save.BagEquipment.Add(ToBagItem(item.SlotId, eq));
+        CopyToState(eq, item);
         save.BagEquipment.RemoveAt(bagIndex);
         return true;
     }
@@ -73,4 +95,54 @@ public static class EquipmentService
         if (!string.IsNullOrEmpty(status)) lines.Add(status);
         return string.Join("\n", lines);
     }
+
+    /// Phase 2.30: detail text with set/quality/refine lines.
+    public static string DescribeRefineLine(RefineLine line)
+    {
+        string name = line.StatId switch
+        {
+            "crit" => "Bạo kích", "dodge" => "Né tránh", "speed" => "Tốc độ",
+            "atk" or "atk_pct" => "Tấn công", "def" => "Phòng thủ",
+            "hp" or "hp_pct" => "HP", _ => line.StatId,
+        };
+        bool pct = line.StatId is "crit" or "dodge" or "atk_pct" or "hp_pct";
+        string val = pct ? $"+{line.Value:P0}" : $"+{line.Value:0}";
+        return $"{name} {val}{(line.Locked ? " (khóa)" : "")}";
+    }
+
+    public static string DetailText(BagEquipmentItem item, string? status)
+    {
+        var set = EquipmentSets.Get(item.SetId);
+        var lines = new List<string>
+        {
+            $"{ProgressionService.Slots.Find(s => s.Id == item.SlotId)?.Name ?? item.SlotId} — Cấp {item.Level}/10",
+            $"Bộ: {set.Name} (Lv{set.Tier} · {EquipmentSets.QualityName(item.Quality)})",
+        };
+        var slot = ProgressionService.Slots.Find(s => s.Id == item.SlotId);
+        if (slot != null)
+        {
+            int atk = slot.BaseAtk + slot.AtkPerLevel * item.Level;
+            int hp = slot.BaseHp + slot.HpPerLevel * item.Level;
+            int def = slot.BaseDef + slot.DefPerLevel * item.Level;
+            int speed = slot.BaseSpeed + slot.SpeedPerLevel * item.Level;
+            if (atk > 0) lines.Add($"Tấn công: {atk}");
+            if (hp > 0) lines.Add($"HP: {hp}");
+            if (def > 0) lines.Add($"Phòng thủ: {def}");
+            if (speed > 0) lines.Add($"Tốc độ: {speed}");
+        }
+        foreach (var line in item.RefineLines)
+            lines.Add($"Tẩy luyện: {DescribeRefineLine(line)}");
+        foreach (var b in set.Bonuses)
+            lines.Add($"Set {b.Pieces} món: {SetBonusService.DescribeBonus(b)}");
+        if (!string.IsNullOrEmpty(status)) lines.Add(status);
+        return string.Join("\n", lines);
+    }
+
+    public static string DetailText(EquipmentState eq, string slotId, string? status) =>
+        DetailText(new BagEquipmentItem
+        {
+            SlotId = slotId, Level = eq.Level, RefineIndex = eq.RefineIndex,
+            Tier = eq.Tier, Quality = eq.Quality, SetId = eq.SetId,
+            Sockets = eq.Sockets, RefineLines = eq.RefineLines,
+        }, status);
 }

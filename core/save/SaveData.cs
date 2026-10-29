@@ -35,4 +35,10 @@ public class BagEquipmentItem
     public string SlotId { get; set; } = "";
     public int Level { get; set; } = 0;
     public int RefineIndex { get; set; } = 0;
+    // Phase 2.30: equipment sets (mirrors EquipmentState).
+    public int Tier { get; set; } = 30;
+    public string Quality { get; set; } = "Lam";
+    public string SetId { get; set; } = "tan_thu";
+    public List<EquipmentSocket> Sockets { get; set; } = new();
+    public List<RefineLine> RefineLines { get; set; } = new();
 }
