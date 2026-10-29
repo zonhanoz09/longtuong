@@ -109,7 +109,7 @@ public partial class TestPhase225 : Node
             var btnRow = new[] { tav.GetNode<Button>("AllWinButton"), tav.GetNode<Button>("NormalButton"), tav.GetNode<Button>("HighButton") };
             Check(btnRow.All(b => b.Position.Y == btnRow[0].Position.Y) && btnRow[2].Position.X + btnRow[2].Size.X <= 980,
                 "3 buttons share one row, right-aligned within the panel");
-            Check(tav.GetNode<Label>("CurrencyLabel").Text.Contains("Bạc"), "currency line shows silver");
+            Check(tav.GetNode<Label>("CurrencyBox/SilverLabel").Text.Contains("Bạc"), "currency box shows silver");
 
             // --- All-win click flow via real button signal ---
             int goldBefore = gm.Save.Gold;

@@ -52,6 +52,19 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > thắng ải giờ chỉ còn Vàng/EXP. Save cũ có field Gems vẫn load
 > được (field lạ bị bỏ qua).
 >
+> Cập nhật 2026-10-29: **Phase 2.27 — ĐÃ HOÀN THÀNH** — Chuẩn hoá
+> asset theo plan `docs/KE_HOACH_CHUANHOA_ASSET.md` (Huynh chốt:
+> 1c giữ placeholder vẽ bằng code, 2 giữ style tối + gold, 3 làm
+> cả icon lẫn chân dung, 4 chân dung VUÔNG, 5 commit thẳng repo).
+> `UiTheme` thành nguồn sự thật duy nhất (palette 6 slot/4 phẩm/
+> HP/nộ/ô trống..., font scale 28/16/13/17/15, kích thước chuẩn
+> icon 64/56, ô 96, chấm 20, nút 56...); `AssetIcons` mới vẽ
+> procedural (ký tự slot VK/GI/MŨ/GY/CH/UY, ký tự chân dung
+> Bị/Vũ/Phi/Vân/Thuyền/Lượng/Bố + chữ đầu username cho tướng tự
+> tạo, viền màu phẩm, coin Vàng/Bạc, chân dung vuông bo góc 8);
+> áp dụng vào icon trang bị, chân dung Võ tướng, viền ô Bày trận,
+> tên tướng trong trận, avatar Hub, coin icon Tửu quán.
+>
 > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
 >
 > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo

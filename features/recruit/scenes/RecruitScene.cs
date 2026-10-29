@@ -34,7 +34,9 @@ public partial class RecruitScene : Control
     }
 
     private Label? _titleLabel;
-    private Label? _currencyLabel;
+    private Label? _goldLabel;
+    private Label? _silverLabel;
+    private Label? _levelLabel;
     private Label? _recruitStatusLabel;
     private Label? _drinkStatusLabel;
     private Button? _rockBtn;
@@ -51,24 +53,19 @@ public partial class RecruitScene : Control
     private string _recruitStatus = "";
     private string _drinkStatus = "";
 
-    public static Color TierDotColor(TavernTier tier) => tier switch
-    {
-        TavernTier.Lam => new Color(0.15f, 0.55f, 1f),
-        TavernTier.Tim => new Color(0.85f, 0.25f, 0.95f),
-        _ => new Color(1f, 0.6f, 0.1f),
-    };
-
     public static string Fmt(long n) =>
         n.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
 
     public static Texture2D MakeDotTexture(Color color)
     {
-        var img = Image.CreateEmpty(20, 20, false, Image.Format.Rgba8);
-        for (int y = 0; y < 20; y++)
-            for (int x = 0; x < 20; x++)
+        int size = UiTheme.TierDotSize;
+        var img = Image.CreateEmpty(size, size, false, Image.Format.Rgba8);
+        float c = size / 2f - 0.5f, r = size / 2f - 1;
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
             {
-                float dx = x - 9.5f, dy = y - 9.5f;
-                if (dx * dx + dy * dy <= 81) img.SetPixel(x, y, color);
+                float dx = x - c, dy = y - c;
+                if (dx * dx + dy * dy <= r * r) img.SetPixel(x, y, color);
             }
         return ImageTexture.CreateFromImage(img);
     }
@@ -90,7 +87,7 @@ public partial class RecruitScene : Control
         UiTheme.StyleButton(_scissorsBtn);
         UiTheme.StyleButton(_rockBtn);
         UiTheme.StyleButton(_paperBtn);
-        _currencyLabel = GetNode<Label>("CurrencyLabel");
+        BuildCurrencyBox();
         _recruitStatusLabel = GetNode<Label>("RecruitStatusLabel");
         _drinkStatusLabel = GetNode<Label>("DrinkStatusLabel");
         _recruitStatus = "Bấm vào tướng để chiêu mộ (trừ hồn theo phẩm).";
@@ -99,6 +96,25 @@ public partial class RecruitScene : Control
         BuildDrinkLabels();
         ShowRecruitView();
         Refresh();
+    }
+
+    private void BuildCurrencyBox()
+    {
+        // Phase 2.27: currency line with coin icons (gold/silver coins
+        // from AssetIcons) instead of a single text label.
+        var box = new HBoxContainer { Name = "CurrencyBox" };
+        box.SetPosition(new Vector2(20, 45));
+        box.SetSize(new Vector2(960, 25));
+        box.AddThemeConstantOverride("separation", 8);
+        box.AddChild(AssetIcons.MakeCoinIcon(true, 24));
+        _goldLabel = new Label { Name = "GoldLabel", Text = "" };
+        box.AddChild(_goldLabel);
+        box.AddChild(AssetIcons.MakeCoinIcon(false, 24));
+        _silverLabel = new Label { Name = "SilverLabel", Text = "" };
+        box.AddChild(_silverLabel);
+        _levelLabel = new Label { Name = "LevelLabel", Text = "" };
+        box.AddChild(_levelLabel);
+        AddChild(box);
     }
 
     private void BuildBalanceLine()
@@ -110,7 +126,7 @@ public partial class RecruitScene : Control
         var tiers = new[] { TavernTier.Lam, TavernTier.Tim, TavernTier.Cam };
         for (int i = 0; i < tiers.Length; i++)
         {
-            var dot = new TextureRect { Texture = MakeDotTexture(TierDotColor(tiers[i])), CustomMinimumSize = new Vector2(20, 20) };
+            var dot = new TextureRect { Texture = MakeDotTexture(UiTheme.TierColor(tiers[i])), CustomMinimumSize = new Vector2(UiTheme.TierDotSize, UiTheme.TierDotSize) };
             var num = new Label { Name = tiers[i].ToString() + "SoulsLabel", Text = "0" };
             box.AddChild(dot);
             box.AddChild(num);
@@ -135,7 +151,7 @@ public partial class RecruitScene : Control
             var name = new Label { Name = "NameLabel", Text = HeroDatabase.Get(heroId).Name };
             name.SetPosition(new Vector2(8, 6));
             name.SetSize(new Vector2(114, 26));
-            var dot = new TextureRect { Name = "DotRect", Texture = MakeDotTexture(TierDotColor(tier)), CustomMinimumSize = new Vector2(20, 20) };
+            var dot = new TextureRect { Name = "DotRect", Texture = MakeDotTexture(UiTheme.TierColor(tier)), CustomMinimumSize = new Vector2(UiTheme.TierDotSize, UiTheme.TierDotSize) };
             dot.SetPosition(new Vector2(8, 84));
             dot.SetSize(new Vector2(20, 20));
             var price = new Label { Name = "PriceLabel", Text = Fmt(TavernService.RecruitCostOf(heroId)) };
@@ -216,8 +232,9 @@ public partial class RecruitScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         var save = gm.Save;
         ProgressionService.EnsureDefaults(save);
-        if (_currencyLabel != null)
-            _currencyLabel.Text = $"Vàng: {Fmt(save.Gold)} | Bạc: {Fmt(save.Silver)} | Cấp tướng tự tạo: {TavernService.PlayerLevel(save)} (tướng Cam vào pool từ cấp 70)";
+        if (_goldLabel != null) _goldLabel.Text = $"Vàng: {Fmt(save.Gold)}";
+        if (_silverLabel != null) _silverLabel.Text = $"Bạc: {Fmt(save.Silver)}";
+        if (_levelLabel != null) _levelLabel.Text = $"| Cấp tướng tự tạo: {TavernService.PlayerLevel(save)} (tướng Cam vào pool từ cấp 70)";
         foreach (var (tier, label) in _balanceNums)
             label.Text = Fmt(TavernService.TierSoulsOf(save, tier));
         foreach (var (id, card) in _recruitCards)

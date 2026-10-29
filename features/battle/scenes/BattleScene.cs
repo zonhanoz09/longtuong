@@ -18,10 +18,10 @@ public partial class BattleHeroCell : PanelContainer
         var box = new VBoxContainer();
         box.AddThemeConstantOverride("separation", 2);
         NameLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
-        NameLabel.AddThemeFontSizeOverride("font_size", 16);
+        NameLabel.AddThemeFontSizeOverride("font_size", UiTheme.FontBody);
         NameLabel.AddThemeColorOverride("font_color", UiTheme.Text);
-        HpBar = MakeBar(new Color(0.25f, 0.75f, 0.30f), new Vector2(132, 14));
-        RageBar = MakeBar(new Color(0.20f, 0.60f, 1.00f), new Vector2(132, 10));
+        HpBar = MakeBar(UiTheme.HpColor, UiTheme.HpBarSize);
+        RageBar = MakeBar(UiTheme.PlayerBlue, UiTheme.RageBarSize);
         box.AddChild(NameLabel);
         box.AddChild(HpBar);
         box.AddChild(RageBar);
@@ -39,7 +39,7 @@ public partial class BattleHeroCell : PanelContainer
             SizeFlagsHorizontal = SizeFlags.Fill,
         };
         bar.AddThemeStyleboxOverride("fill", new StyleBoxFlat { BgColor = fill });
-        bar.AddThemeStyleboxOverride("background", new StyleBoxFlat { BgColor = new Color(0.15f, 0.15f, 0.20f) });
+        bar.AddThemeStyleboxOverride("background", new StyleBoxFlat { BgColor = UiTheme.BarBackground });
         return bar;
     }
 
@@ -63,11 +63,14 @@ public partial class BattleHeroCell : PanelContainer
     public void Refresh(Fighter f, bool isCurrent)
     {
         NameLabel.Text = f.Name;
+        // Phase 2.27: hero name in the tier color (gold for tierless).
+        var tier = TavernData.TierOf(f.Def.Id);
+        NameLabel.AddThemeColorOverride("font_color", tier == null ? UiTheme.Gold : UiTheme.TierColor(tier.Value));
         HpBar.MaxValue = f.MaxHp;
         HpBar.Value = f.Hp;
         RageBar.MaxValue = 100;
         RageBar.Value = f.Rage;
-        Modulate = f.Alive ? Colors.White : new Color(0.5f, 0.5f, 0.5f);
+        Modulate = f.Alive ? Colors.White : UiTheme.DeadGrey;
         SetBorder(isCurrent && f.Alive);
     }
 }
@@ -141,7 +144,7 @@ public partial class BattleScene : Control
     {
         mount.AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
-            BgColor = new Color(0.12f, 0.12f, 0.16f),
+            BgColor = UiTheme.SlotEmpty,
             BorderColor = UiTheme.Muted,
             BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
             CornerRadiusTopLeft = 48, CornerRadiusTopRight = 48,
@@ -300,7 +303,7 @@ public partial class BattleScene : Control
                 var square = new PanelContainer { CustomMinimumSize = new Vector2(64, 64) };
                 square.AddThemeStyleboxOverride("panel", new StyleBoxFlat
                 {
-                    BgColor = new Color(0.12f, 0.12f, 0.16f),
+                    BgColor = UiTheme.SlotEmpty,
                     BorderColor = UiTheme.Muted,
                     BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
                     CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,

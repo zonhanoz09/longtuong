@@ -37,16 +37,10 @@ namespace LongTuong;
 [GlobalClass]
 public partial class HeroListScene : Control
 {
-    private static readonly Dictionary<string, Color> SlotColors = new()
-    {
-        ["weapon"] = new Color(0.65f, 0.25f, 0.20f),
-        ["armor"] = new Color(0.20f, 0.35f, 0.60f),
-        ["helmet"] = new Color(0.25f, 0.55f, 0.30f),
-        ["boots"] = new Color(0.65f, 0.55f, 0.20f),
-        ["cloak"] = new Color(0.50f, 0.30f, 0.75f),
-        ["bracer"] = new Color(0.20f, 0.60f, 0.60f),
-    };
-    private static readonly Color EmptyColor = new(0.12f, 0.12f, 0.16f);
+    // Phase 2.27: slot colors live in UiTheme now. The DetailPortrait
+    // ColorRect doubles as the procedural portrait: panel background,
+    // the hero's given-name char, and a tier-colored ring.
+    private ColorRect? _portraitRect;
 
     private VBoxContainer? _tabButtons;
     private GridContainer? _grid;
@@ -109,10 +103,10 @@ public partial class HeroListScene : Control
         // Small bottom-right button (sketch scale), red border for a
         // destructive action — deliberately NOT UiTheme.StyleButton, which
         // forces 56px height and would push the detail column past 540px.
-        _dismissButton.AddThemeFontSizeOverride("font_size", 15);
+        _dismissButton.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
         _dismissButton.AddThemeColorOverride("font_color", UiTheme.Text);
         var dismissNormal = new StyleBoxFlat { BgColor = UiTheme.Panel, BorderColor = UiTheme.EnemyRed, BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2, CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8 };
-        var dismissHover = (StyleBoxFlat)dismissNormal.Duplicate(); dismissHover.BgColor = new Color(0.30f, 0.15f, 0.15f);
+        var dismissHover = (StyleBoxFlat)dismissNormal.Duplicate(); dismissHover.BgColor = UiTheme.DangerHover;
         var dismissDisabled = new StyleBoxFlat { BgColor = new Color(0.25f, 0.25f, 0.28f), BorderColor = UiTheme.Muted, BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2, CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8, CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8 };
         _dismissButton.AddThemeStyleboxOverride("normal", dismissNormal);
         _dismissButton.AddThemeStyleboxOverride("hover", dismissHover);
@@ -136,11 +130,52 @@ public partial class HeroListScene : Control
         _cellTemplate = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/EquipmentCell.tscn");
         _selectedHeroId = gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId) ? gm.SelectedHeroId
             : gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : "";
+        _portraitRect = GetNode<ColorRect>("DetailBox/PortraitRow/DetailPortrait");
         BuildTabs();
         BuildGrid();
     }
 
     private string CurrentHeroId() => _selectedHeroId;
+
+    private void RefreshPortrait(string heroId)
+    {
+        if (_portraitRect == null) return;
+        var charLabel = _portraitRect.GetChildren().OfType<Label>().FirstOrDefault();
+        if (charLabel == null)
+        {
+            charLabel = new Label
+            {
+                Name = "PortraitCharLabel",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                MouseFilter = MouseFilterEnum.Ignore,
+            };
+            charLabel.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            _portraitRect.AddChild(charLabel);
+        }
+        var ring = _portraitRect.GetChildren().OfType<PanelContainer>().FirstOrDefault();
+        if (ring == null)
+        {
+            ring = new PanelContainer { Name = "PortraitRing", MouseFilter = MouseFilterEnum.Ignore };
+            ring.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            _portraitRect.AddChild(ring);
+        }
+        if (string.IsNullOrEmpty(heroId)) { charLabel.Text = ""; return; }
+        var color = AssetIcons.PortraitBorderColor(heroId);
+        _portraitRect.Color = UiTheme.Panel;
+        charLabel.Text = AssetIcons.PortraitChar(heroId);
+        charLabel.AddThemeColorOverride("font_color", color);
+        charLabel.AddThemeFontSizeOverride("font_size", 60);
+        ring.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = new Color(0, 0, 0, 0),
+            BorderColor = color,
+            BorderWidthLeft = 3, BorderWidthRight = 3, BorderWidthTop = 3, BorderWidthBottom = 3,
+            CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+            CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+            ContentMarginLeft = 0, ContentMarginRight = 0, ContentMarginTop = 0, ContentMarginBottom = 0,
+        });
+    }
 
     private static void ClearBox(Node box)
     {
@@ -154,14 +189,31 @@ public partial class HeroListScene : Control
     private Button InstantiateTabButton()
     {
         if (_tabButtonTemplate != null) return _tabButtonTemplate.Instantiate<Button>();
-        return new Button { CustomMinimumSize = new Vector2(160, 56) };
+        return new Button { CustomMinimumSize = new Vector2(UiTheme.TabWidth, UiTheme.ButtonHeight) };
     }
 
-    private Button MakeIconButton(Color bg, bool filled)
+    private Button MakeIconButton(Color bg, bool filled, string symbol = "")
     {
         Button btn;
         if (_cellTemplate != null) btn = _cellTemplate.Instantiate<Button>();
-        else btn = new Button { Text = "", CustomMinimumSize = new Vector2(64, 64) };
+        else btn = new Button { Text = "", CustomMinimumSize = new Vector2(UiTheme.IconGridSize, UiTheme.IconGridSize) };
+        if (symbol != "")
+        {
+            // Phase 2.27: representative character on the icon (the old
+            // icons were bare color squares).
+            var label = new Label
+            {
+                Name = "IconSymbolLabel",
+                Text = symbol,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            label.AddThemeFontSizeOverride("font_size", 20);
+            label.AddThemeColorOverride("font_color", Colors.White);
+            label.MouseFilter = MouseFilterEnum.Ignore;
+            btn.AddChild(label);
+        }
         var normal = new StyleBoxFlat
         {
             BgColor = bg, BorderColor = filled ? UiTheme.Gold : UiTheme.Muted,
@@ -269,6 +321,7 @@ public partial class HeroListScene : Control
         var p = gm.Save.Heroes[_selectedHeroId];
         var eff = ProgressionService.GetEffectiveHero(gm.Save, _selectedHeroId);
         _nameLabel.Text = $"{heroDef.Name} — Cấp {p.Level} — Loại: {HeroDatabase.RoleName(heroDef.Role)}";
+        RefreshPortrait(_selectedHeroId);
         // Phase 2.17: the portrait label and the EXP/stars/shards text line are
         // removed; only the experience bar stays (locked heroes show an empty bar,
         // their locked state is already shown by the tab's "(Khóa)" suffix).
@@ -307,10 +360,11 @@ public partial class HeroListScene : Control
         foreach (var slot in ProgressionService.Slots)
         {
             var eq = gm.Save.HeroEquipment[_selectedHeroId][slot.Id];
-            var slotBtn = MakeIconButton(eq.IsEmpty ? EmptyColor : SlotColors[slot.Id], !eq.IsEmpty);
+            var slotBtn = MakeIconButton(eq.IsEmpty ? UiTheme.SlotEmpty : UiTheme.SlotColors[slot.Id], !eq.IsEmpty,
+                eq.IsEmpty ? "" : AssetIcons.SlotSymbol(slot.Id));
             // Equipped icons are 56x56 (grid cells stay 64x64): 3x56 + 2x6 gap
             // = 180, exactly the portrait height, so all three columns line up.
-            slotBtn.CustomMinimumSize = new Vector2(56, 56);
+            slotBtn.CustomMinimumSize = new Vector2(UiTheme.IconEquippedSize, UiTheme.IconEquippedSize);
             var heroId = _selectedHeroId; var slotId = slot.Id;
             string slotDetail = eq.IsEmpty ? "Ô trống — chưa mang trang bị."
                 : EquipmentService.DetailText(slotId, eq.Level, eq.RefineIndex, $"Đang mang: {heroDef.Name}");
@@ -353,7 +407,7 @@ public partial class HeroListScene : Control
             if (i < gm.Save.BagEquipment.Count)
             {
                 var item = gm.Save.BagEquipment[i];
-                var btn = MakeIconButton(SlotColors[item.SlotId], true);
+                var btn = MakeIconButton(UiTheme.SlotColors[item.SlotId], true, AssetIcons.SlotSymbol(item.SlotId));
                 var bagIndex = i;
                 string detail = EquipmentService.DetailText(item.SlotId, item.Level, item.RefineIndex, "Trạng thái: Trong túi");
                 btn.MouseEntered += () => ShowTooltip(btn, detail);
@@ -379,7 +433,7 @@ public partial class HeroListScene : Control
             }
             else
             {
-                var empty = MakeIconButton(EmptyColor, false);
+                var empty = MakeIconButton(UiTheme.SlotEmpty, false);
                 empty.Disabled = true;
                 _grid.AddChild(empty);
             }

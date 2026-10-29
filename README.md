@@ -15,6 +15,27 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.27 — đã làm (chuẩn hoá asset bằng code, không file ảnh)
+
+Huynh chốt plan chuẩn hoá asset (`docs/KE_HOACH_CHUANHOA_ASSET.md`):
+1c giữ placeholder vẽ bằng code, 2 giữ nguyên style tối + gold,
+3 làm cả icon lẫn chân dung, 4 chân dung VUÔNG, 5 commit thẳng repo.
+
+- `UiTheme` thành nguồn sự thật duy nhất: palette tập trung
+  (màu 6 slot trang bị, 4 phẩm, HP/nộ, ô trống...), font scale
+  (28/16/13/17/15), kích thước chuẩn (icon 64/56, ô 96, chấm 20,
+  nút 56...). Không còn màu palette hardcode ngoài `UiTheme`.
+- `AssetIcons` mới: ký tự đại diện slot (VK/GI/MŨ/GY/CH/UY), ký
+  tự chân dung (Bị, Vũ, Phi, Vân, Thuyền, Lượng, Bố; tướng tự
+  tạo = chữ đầu username), viền màu phẩm, coin Vàng/Bạc (V/B),
+  chân dung vuông bo góc 8.
+- Áp dụng: icon trang bị có ký tự; chân dung Võ tướng (nền panel
+  + chữ tên gọi + viền phẩm, giữ layout 2.16); ô Bày trận viền
+  màu phẩm; tên tướng trong trận màu phẩm; avatar Hub có ký tự
+  chân dung; Tửu quán có coin icon ở dòng tiền tệ.
+- Test: `tests/TestPhase227.tscn` ALL PASS; toàn suite 0–2.27
+  pass; build 0 error; CI thêm 2.27.
+
 ## Phase 2.26 — đã làm (bỏ Kim Nguyên Bảo, chỉ còn Vàng + Bạc)
 
 - Xóa hẳn KNB: field `Gems`, seed 10.000 KNB, thưởng trận +5/+25

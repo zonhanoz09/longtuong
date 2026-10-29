@@ -187,6 +187,21 @@ public partial class HubScene : Control
             heroId = gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : "";
         GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarNameLabel").Text =
             string.IsNullOrEmpty(gm.CurrentUsername) ? "Chưa đăng nhập" : gm.CurrentUsername;
+        // Phase 2.27: procedural portrait — the AvatarPortrait ColorRect
+        // gets a tier-tinted background plus the hero's given-name char.
+        var portrait = GetNode<ColorRect>("TopBar/AvatarPanel/AvatarBox/AvatarPortrait");
+        var charLabel = portrait.GetChildren().OfType<Label>().FirstOrDefault();
+        if (charLabel == null)
+        {
+            charLabel = new Label
+            {
+                Name = "AvatarPortraitChar",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            charLabel.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            portrait.AddChild(charLabel);
+        }
         if (!string.IsNullOrEmpty(heroId))
         {
             var hero = HeroDatabase.Get(heroId);
@@ -194,11 +209,19 @@ public partial class HubScene : Control
             GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text =
                 $"Tướng: {hero.Name} · Lv {prog.Level}";
             if (_characterName != null) _characterName.Text = hero.Name;
+            var tier = TavernData.TierOf(heroId);
+            var color = tier == null ? UiTheme.Gold : UiTheme.TierColor(tier.Value);
+            portrait.Color = UiTheme.Panel;
+            charLabel.Text = AssetIcons.PortraitChar(heroId);
+            charLabel.AddThemeColorOverride("font_color", color);
+            charLabel.AddThemeFontSizeOverride("font_size", AssetIcons.PortraitChar(heroId).Length <= 2 ? 28 : 20);
+            GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").AddThemeColorOverride("font_color", color);
         }
         else
         {
             GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text = "Chưa có tướng";
             if (_characterName != null) _characterName.Text = "—";
+            charLabel.Text = "";
         }
         GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel").Text =
             $"Vàng: {gm.Save.Gold}  |  Bạc: {gm.Save.Silver}";

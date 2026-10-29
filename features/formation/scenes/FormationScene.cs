@@ -122,14 +122,14 @@ public partial class FormationScene : Control
         {
             if (cell == null)
             {
-                _grid.AddChild(new Control { CustomMinimumSize = new Vector2(96, 96) });
+                _grid.AddChild(new Control { CustomMinimumSize = new Vector2(UiTheme.FormationSlotSize, UiTheme.FormationSlotSize) });
                 continue;
             }
             var slotId = cell;
             var btn = new FormationSlotButton
             {
                 SlotId = slotId,
-                CustomMinimumSize = new Vector2(96, 96),
+                CustomMinimumSize = new Vector2(UiTheme.FormationSlotSize, UiTheme.FormationSlotSize),
                 SizeFlagsHorizontal = SizeFlags.Fill,
                 SizeFlagsVertical = SizeFlags.Fill,
             };
@@ -176,7 +176,7 @@ public partial class FormationScene : Control
             form.TryGetValue(slotId, out var heroId);
             btn.HeroId = heroId ?? "";
             btn.Text = string.IsNullOrEmpty(heroId) ? "" : HeroDatabase.Get(heroId).Name;
-            btn.AddThemeFontSizeOverride("font_size", 13);
+            btn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmall);
             var box = new StyleBoxFlat
             {
                 CornerRadiusTopLeft = 48, CornerRadiusTopRight = 48,
@@ -184,7 +184,7 @@ public partial class FormationScene : Control
             };
             if (string.IsNullOrEmpty(heroId))
             {
-                box.BgColor = new Color(0.12f, 0.12f, 0.16f);
+                box.BgColor = UiTheme.SlotEmpty;
                 box.BorderColor = UiTheme.Muted;
                 box.BorderWidthLeft = box.BorderWidthRight = box.BorderWidthTop = box.BorderWidthBottom = 1;
                 btn.AddThemeColorOverride("font_color", UiTheme.Muted);
@@ -192,12 +192,14 @@ public partial class FormationScene : Control
             else if (FormationService.IsMain(heroId))
             {
                 box.BgColor = UiTheme.Gold;
-                btn.AddThemeColorOverride("font_color", new Color(0.10f, 0.08f, 0.02f));
+                btn.AddThemeColorOverride("font_color", UiTheme.DarkText);
             }
             else
             {
+                // Phase 2.27: filled slots get a tier-colored ring.
                 box.BgColor = UiTheme.Panel;
-                box.BorderColor = UiTheme.Gold;
+                var tier = TavernData.TierOf(heroId);
+                box.BorderColor = tier == null ? UiTheme.Gold : UiTheme.TierColor(tier.Value);
                 box.BorderWidthLeft = box.BorderWidthRight = box.BorderWidthTop = box.BorderWidthBottom = 2;
                 btn.AddThemeColorOverride("font_color", UiTheme.Text);
             }

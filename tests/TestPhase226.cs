@@ -44,7 +44,7 @@ public partial class TestPhase226 : Node
         {
             var tav = tavernScene.Instantiate<RecruitScene>();
             AddChild(tav);
-            var cur = tav.GetNode<Label>("CurrencyLabel").Text;
+            var cur = tav.GetNode<Label>("CurrencyBox/SilverLabel").Text;
             Check(cur.Contains("Bạc") && !cur.Contains("KNB") && !cur.Contains("Kim Nguyên Bảo"), "tavern currency shows silver, never KNB");
             tav.QueueFree();
         }
