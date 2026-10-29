@@ -64,10 +64,14 @@ public partial class TestPhase229 : Node
         tabRow2.GetChildren().OfType<Button>().First(b => b.Text == "Tẩy luyện").EmitSignal(BaseButton.SignalName.Pressed);
         var refineBtn = content.FindChild("ActionRefine", true, false) as Button;
         Check(refineBtn != null, "refine tab shows refine action");
-        int refineBefore = gm.Save.HeroEquipment["custom_hero"]["weapon"].RefineIndex;
+        int stonesBefore = gm.Save.RefineStones;
         refineBtn.EmitSignal(BaseButton.SignalName.Pressed);
-        Check(gm.Save.HeroEquipment["custom_hero"]["weapon"].RefineIndex == (refineBefore + 1) % ProgressionService.RefineNames.Length,
-            "refine advances the refine index");
+        var rlines = gm.Save.HeroEquipment["custom_hero"]["weapon"].RefineLines;
+        Check(rlines.Count == 3 && gm.Save.RefineStones == stonesBefore - 1, "refine consumes a stone");
+        var lineBtn = content.FindChild("RefineLine_0", true, false) as Button;
+        Check(lineBtn != null, "refine line button exists");
+        lineBtn.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(gm.Save.HeroEquipment["custom_hero"]["weapon"].RefineLines[0].Locked, "line lock toggles via UI");
 
         // Locked tab.
         tabRow2.GetChildren().OfType<Button>().First(b => b.Text == "Kế thừa").EmitSignal(BaseButton.SignalName.Pressed);

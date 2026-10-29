@@ -38,7 +38,8 @@ public partial class MoneyTreeScene : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         if (_infoLabel != null)
             _infoLabel.Text = $"Mỗi lượt rung: +{MoneyTreeService.ShakeReward(gm.Save)} Bạc\n" +
-                $"Lượt còn lại hôm nay: {MoneyTreeService.ShakesLeft(gm.Save)}/{MoneyTreeService.FreeShakesPerDay}";
+                $"Lượt còn lại hôm nay: {MoneyTreeService.ShakesLeft(gm.Save)}/{MoneyTreeService.FreeShakesPerDay}\n" +
+                $"Rung đủ {MoneyTreeService.FreeShakesPerDay} lượt: +{MoneyTreeService.CompletionStoneBonus} Đá tẩy luyện";
         if (_shakeButton != null)
             _shakeButton.Disabled = MoneyTreeService.ShakesLeft(gm.Save) <= 0;
     }

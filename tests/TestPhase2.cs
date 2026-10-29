@@ -97,13 +97,35 @@ public partial class TestPhase2 : Node
         Check(ProgressionService.TryEnhance(s4, "custom_hero", "weapon", new System.Random(failSeed)) == ProgressionService.EnhanceResult.Failed_Roll
             && s4.HeroEquipment["custom_hero"]["weapon"].Level == 7 && s4.Silver == silv - ProgressionService.EnhanceCostSilver(7),
             "failed roll keeps level but consumes silver");
+        // Phase 2.32: refine rerolls unlocked lines (stone first, else 200 gold).
         var s3 = Fresh();
         s3.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
         EquipmentService.EquipFromBag(s3, "quan_vu", 0);
-        Check(ProgressionService.TryRefine(s3, "quan_vu", "weapon") && s3.HeroEquipment["quan_vu"]["weapon"].RefineIndex == 1, "refine cycles 0->1 and costs 100");
-        for (int i = 0; i < 4; i++) ProgressionService.TryRefine(s3, "quan_vu", "weapon");
-        Check(s3.HeroEquipment["quan_vu"]["weapon"].RefineIndex == 0, "refine cycles back to 0 after 5");
-        Check(ProgressionService.RefineNames.Length == 5, "5 refine bonus lines");
+        var eq3 = s3.HeroEquipment["quan_vu"]["weapon"];
+        Check(eq3.RefineLines.Count == 3, "fresh Lam item has 3 refine lines");
+        ProgressionService.ToggleRefineLock(s3, "quan_vu", "weapon", 0);
+        string lockedStat = eq3.RefineLines[0].StatId;
+        int goldBeforeRefine = s3.Gold;
+        var rrng = new System.Random(11);
+        Check(ProgressionService.TryRefine(s3, "quan_vu", "weapon", rrng) && s3.Gold == goldBeforeRefine - 200,
+            "refine rerolls unlocked lines for 200 gold (no stones)");
+        Check(eq3.RefineLines[0].StatId == lockedStat && eq3.RefineLines[0].Locked, "locked line is kept");
+        Check(eq3.RefineLines.All(l => ProgressionService.RefinePoolFor(FormationPosition.Middle).Any(p => p.StatId == l.StatId)),
+            "rerolled lines come from the Middle pool (hero not deployed)");
+        s3.RefineStones = 2;
+        int stonesBefore = s3.RefineStones;
+        goldBeforeRefine = s3.Gold;
+        ProgressionService.TryRefine(s3, "quan_vu", "weapon", rrng);
+        Check(s3.RefineStones == stonesBefore - 1 && s3.Gold == goldBeforeRefine, "refine consumes a stone first");
+        s3.RefineStones = 0; s3.Gold = 0;
+        Check(!ProgressionService.TryRefine(s3, "quan_vu", "weapon", rrng), "refine fails with no stones/gold");
+        // Position pool: Tiền => tanker stats.
+        s3.Gold = 100000;
+        s3.Formation["tien_mid"] = "quan_vu";
+        ProgressionService.TryRefine(s3, "quan_vu", "weapon", new System.Random(5));
+        var frontPool = ProgressionService.RefinePoolFor(FormationPosition.Front).Select(p => p.StatId).ToHashSet();
+        Check(eq3.RefineLines.Where(l => !l.Locked).All(l => frontPool.Contains(l.StatId)),
+            "Tiền hero rerolls from the tanker pool");
     }
 
     private void CheckStarChart()

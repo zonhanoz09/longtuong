@@ -24,6 +24,8 @@ public partial class TestPhase231 : Node
         Check(gm.Save.Silver == silver0 + 6000 && gm.Save.MoneyTreeUsed == 1, "shake grants silver, counts use");
         for (int i = 0; i < 9; i++) MoneyTreeService.TryShake(gm.Save);
         Check(MoneyTreeService.ShakesLeft(gm.Save) == 0, "no shakes left after 10");
+        Check(gm.Save.RefineStones == SeedService.SeededRefineStones + MoneyTreeService.CompletionStoneBonus,
+            "completing 10 shakes grants 3 refine stones");
         int silverAfter10 = gm.Save.Silver;
         Check(!MoneyTreeService.TryShake(gm.Save) && gm.Save.Silver == silverAfter10, "11th shake fails, no silver");
         // New day resets.

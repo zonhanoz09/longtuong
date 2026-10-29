@@ -15,6 +15,20 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.32 — đã làm (tẩy luyện mới)
+
+- Tẩy luyện lại full theo spec: mỗi món 3–6 dòng theo phẩm
+  (Lam 3/Tím 4/Cam 5/Đỏ 6); pool dòng theo vị trí đội hình của
+  tướng (Tiền = tank: %HP/Miễn thương/Né/Thủ; Trung = dame: Công/
+  Bạo/Tốc; Hậu = hỗ trợ: Tốc/HP/Công; chưa bày trận dùng pool
+  Trung); chỉ roll chỉ số engine đã hỗ trợ.
+- Khóa dòng: bấm dòng để khóa/mở (viền vàng + "[KHÓA]"); tẩy chỉ
+  xoay các dòng chưa khóa.
+- Chi phí: 1 Đá tẩy luyện (ưu tiên) hoặc 200 Vàng; đá khởi đầu 10,
+  rung đủ 10 lượt Cây Rung Tiền thưởng +3 đá.
+- Test: `tests/TestPhase232.tscn` ALL PASS; cập nhật test 2/25/
+  229/230/231; toàn suite 0–2.32 pass; build 0 error; CI thêm 2.32.
+
 ## Phase 2.31 — đã làm (Cây Rung Tiền + cường hóa Bạc)
 
 - **2.31a Cây Rung Tiền** (nguồn Bạc tối thiểu, làm trước để nuôi

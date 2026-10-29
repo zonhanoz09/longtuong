@@ -96,13 +96,14 @@ public partial class TestPhase230 : Node
         Check(save4.BagEquipment[0].SetId == "huyen_vu" && save4.BagEquipment[0].RefineLines.Count == 1,
             "unequip preserves set fields");
 
-        // 9. Old refine flow rotates the first line and stays in sync.
+        // 9. Refine rerolls lines and consumes a stone (2.32).
         var save5 = SeedService.CreateSeededSave("t230f");
         int w = save5.BagEquipment.FindIndex(b => b.SlotId == "weapon");
         EquipmentService.EquipFromBag(save5, "custom_hero", w);
-        ProgressionService.TryRefine(save5, "custom_hero", "weapon");
+        int st0 = save5.RefineStones;
+        ProgressionService.TryRefine(save5, "custom_hero", "weapon", new System.Random(3));
         var rl = save5.HeroEquipment["custom_hero"]["weapon"];
-        Check(rl.RefineLines[0].StatId == "dodge" && rl.RefineIndex == 1, "refine rotates first line crit->dodge");
+        Check(rl.RefineLines.Count == 3 && save5.RefineStones == st0 - 1, "refine rerolls lines, consumes a stone");
 
         // 10. Describe helpers.
         var desc = SetBonusService.DescribeForHero(save, "custom_hero");

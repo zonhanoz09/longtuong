@@ -12,6 +12,8 @@ namespace LongTuong;
 public static class MoneyTreeService
 {
     public const int FreeShakesPerDay = 10;
+    // Phase 2.32: completing all 10 shakes grants refine stones.
+    public const int CompletionStoneBonus = 3;
 
     public static int ShakeReward(SaveData save)
     {
@@ -34,6 +36,8 @@ public static class MoneyTreeService
         if (save.MoneyTreeUsed >= FreeShakesPerDay) return false;
         save.Silver += ShakeReward(save);
         save.MoneyTreeUsed++;
+        if (save.MoneyTreeUsed >= FreeShakesPerDay)
+            save.RefineStones += CompletionStoneBonus;
         return true;
     }
 

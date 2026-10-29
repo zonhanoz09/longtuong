@@ -17,6 +17,8 @@ public static class SeedService
     // use the tavern right away; Bạc income sources (money tree, tax,
     // bosses, dungeons) arrive with later phases.
     public const int SeededSilver = 1000000;
+    // Phase 2.32: starter refine stones (Pax setup — Huynh adjusts freely).
+    public const int SeededRefineStones = 10;
 
     public const string DefaultStarterHeroId = "custom_hero";
 
@@ -50,6 +52,7 @@ public static class SeedService
             })
             .ToList();
         save.Gold = SeededGold;
+        save.RefineStones = SeededRefineStones;
         return save;
     }
 }

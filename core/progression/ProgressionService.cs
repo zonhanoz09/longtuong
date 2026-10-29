@@ -263,21 +263,68 @@ public static class ProgressionService
         return EnhanceResult.Failed_Roll;
     }
 
-    public static bool TryRefine(SaveData save, string heroId, string slotId)
+    // Phase 2.32: full refine rework (Huynh's spec 4a) — 3-6 random lines
+    // by quality, reroll unlocked lines, lock keeps a line.
+    // Pool follows the hero's formation position (Tiền = tanker,
+    // Trung = damage, Hậu = support); not deployed => Trung pool.
+    // Only engine-supported stats are rolled; exotic stats (Kháng bạo,
+    // Đỡ đòn, Trúng, Sát thương bạo, Khống chế) wait for the engine.
+    public const int RefineStoneCost = 1;
+    public const int RefineGoldFallback = 200;
+
+    public static List<(string StatId, double Min, double Max)> RefinePoolFor(FormationPosition pos) => pos switch
+    {
+        FormationPosition.Front => new()
+        {
+            ("hp_pct", 0.08, 0.15), ("hp", 100, 300), ("dmg_red", 0.03, 0.08),
+            ("dodge", 0.02, 0.05), ("def", 20, 60), ("def_pct", 0.05, 0.10),
+        },
+        FormationPosition.Rear => new()
+        {
+            ("speed", 5, 10), ("hp_pct", 0.08, 0.12), ("atk", 15, 40),
+            ("dodge", 0.02, 0.05), ("crit", 0.02, 0.05),
+        },
+        _ => new() // Middle (Trung) + None
+        {
+            ("atk_pct", 0.08, 0.15), ("atk", 20, 60), ("crit", 0.03, 0.08),
+            ("speed", 3, 8), ("dodge", 0.02, 0.04),
+        },
+    };
+
+    public static RefineLine RollRefineLine(FormationPosition pos, Random rng)
+    {
+        var pool = RefinePoolFor(pos);
+        var (stat, min, max) = pool[rng.Next(pool.Count)];
+        double v = min + rng.NextDouble() * (max - min);
+        bool pct = stat is "hp_pct" or "atk_pct" or "def_pct" or "crit" or "dodge" or "dmg_red";
+        return new RefineLine { StatId = stat, Value = pct ? Math.Round(v, 3) : Math.Round(v) };
+    }
+
+    public static bool TryRefine(SaveData save, string heroId, string slotId, Random rng)
     {
         EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
-        if (eq.IsEmpty || save.Gold < RefineCostGold) return false;
-        save.Gold -= RefineCostGold;
-        // Phase 2.30: rotate the FIRST line through the old 5 options
-        // (kept in sync with RefineIndex for old displays; full reroll +
-        // lock UI comes in 2.32).
-        if (eq.RefineLines.Count == 0) eq.RefineLines.Add(new RefineLine());
-        int next = (OldIndexOfLine(eq.RefineLines[0]) + 1) % RefineNames.Length;
-        var (stat, val) = RefineLineForOldIndex(next);
-        eq.RefineLines[0] = new RefineLine { StatId = stat, Value = val };
-        eq.RefineIndex = next;
+        if (eq.IsEmpty) return false;
+        // Top up to the quality's line count (migrated/old items may be short).
+        var pos = FormationService.PositionOfHero(save, heroId);
+        while (eq.RefineLines.Count < EquipmentSets.LinesForQuality(eq.Quality))
+            eq.RefineLines.Add(RollRefineLine(pos, rng));
+        bool useStone = save.RefineStones >= RefineStoneCost;
+        if (!useStone && save.Gold < RefineGoldFallback) return false;
+        if (useStone) save.RefineStones -= RefineStoneCost;
+        else save.Gold -= RefineGoldFallback;
+        for (int i = 0; i < eq.RefineLines.Count; i++)
+            if (!eq.RefineLines[i].Locked)
+                eq.RefineLines[i] = RollRefineLine(pos, rng);
         return true;
+    }
+
+    public static void ToggleRefineLock(SaveData save, string heroId, string slotId, int lineIndex)
+    {
+        EnsureDefaults(save);
+        var lines = save.HeroEquipment[heroId][slotId].RefineLines;
+        if (lineIndex >= 0 && lineIndex < lines.Count)
+            lines[lineIndex].Locked = !lines[lineIndex].Locked;
     }
 
     public static int StarChartPoints(SaveData save) => save.StageStars.Values.Sum();

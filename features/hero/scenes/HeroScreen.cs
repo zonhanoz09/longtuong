@@ -307,10 +307,47 @@ public partial class HeroScreen : Control
         }
         else
         {
-            var refineName = ProgressionService.RefineNames[eq.RefineIndex % ProgressionService.RefineNames.Length];
-            info.AddChild(InfoLine($"Tẩy luyện hiện tại: {refineName}"));
-            info.AddChild(InfoLine($"Chi phí: {ProgressionService.RefineCostGold} Vàng"));
-            info.AddChild(InfoLine("Mỗi lần tẩy luyện chuyển sang dòng tiếp theo."));
+            // Phase 2.32: lines with lock toggles.
+            info.AddChild(InfoLine($"Tẩy luyện ({eq.RefineLines.Count} dòng) — bấm dòng để khóa/mở:"));
+            for (int li = 0; li < eq.RefineLines.Count; li++)
+            {
+                var line = eq.RefineLines[li];
+                var lineBtn = new Button
+                {
+                    Name = $"RefineLine_{li}",
+                    Text = $"{li + 1}. {EquipmentService.DescribeRefineLine(line)}",
+                    CustomMinimumSize = new Vector2(0, 44),
+                    SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                };
+                lineBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+                bool locked = line.Locked;
+                lineBtn.AddThemeColorOverride("font_color", locked ? UiTheme.Gold : UiTheme.Text);
+                var lb = new StyleBoxFlat
+                {
+                    BgColor = locked ? UiTheme.PanelHover : UiTheme.Panel,
+                    BorderColor = locked ? UiTheme.Gold : UiTheme.Muted,
+                    BorderWidthLeft = 2, BorderWidthRight = 2, BorderWidthTop = 2, BorderWidthBottom = 2,
+                    CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+                    CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+                };
+                lineBtn.AddThemeStyleboxOverride("normal", lb);
+                lineBtn.AddThemeStyleboxOverride("hover", lb);
+                lineBtn.AddThemeStyleboxOverride("pressed", lb);
+                int captured = li;
+                lineBtn.Pressed += () =>
+                {
+                    var gm2 = GetNode<GameManager>("/root/GameManager");
+                    ProgressionService.ToggleRefineLock(gm2.Save, _selectedHero, _selectedSlot, captured);
+                    gm2.SaveGame();
+                    RefreshEquipRows();
+                    RefreshRightPanel();
+                };
+                info.AddChild(lineBtn);
+            }
+            string costText = gm.Save.RefineStones >= ProgressionService.RefineStoneCost
+                ? $"Chi phí: {ProgressionService.RefineStoneCost} Đá tẩy luyện (còn {gm.Save.RefineStones})"
+                : $"Chi phí: {ProgressionService.RefineGoldFallback} Vàng (hết đá)";
+            info.AddChild(InfoLine(costText));
         }
         top.AddChild(info);
         box.AddChild(top);
@@ -339,7 +376,8 @@ public partial class HeroScreen : Control
         }
         else
         {
-            mainBtn.Disabled = gm.Save.Gold < ProgressionService.RefineCostGold;
+            mainBtn.Disabled = gm.Save.RefineStones < ProgressionService.RefineStoneCost
+                && gm.Save.Gold < ProgressionService.RefineGoldFallback;
             mainBtn.Pressed += OnRefinePressed;
         }
         actions.AddChild(mainBtn);
@@ -362,15 +400,15 @@ public partial class HeroScreen : Control
         return l;
     }
 
-    // Phase 2.31b: shared RNG so rapid clicks don't re-seed identically.
-    private static readonly System.Random _enhanceRng = new();
+    // Phase 2.31b/2.32: shared RNG so rapid clicks don't re-seed identically.
+    private static readonly System.Random _rng = new();
 
     private void OnEnhancePressed()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
         var slot = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
         int cost = ProgressionService.EnhanceCostSilver(gm.Save.HeroEquipment[_selectedHero][_selectedSlot].Level);
-        switch (ProgressionService.TryEnhance(gm.Save, _selectedHero, _selectedSlot, _enhanceRng))
+        switch (ProgressionService.TryEnhance(gm.Save, _selectedHero, _selectedSlot, _rng))
         {
             case ProgressionService.EnhanceResult.Success:
                 var eq = gm.Save.HeroEquipment[_selectedHero][_selectedSlot];
@@ -399,14 +437,12 @@ public partial class HeroScreen : Control
     {
         var gm = GetNode<GameManager>("/root/GameManager");
         var slot = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
-        if (ProgressionService.TryRefine(gm.Save, _selectedHero, _selectedSlot))
+        if (ProgressionService.TryRefine(gm.Save, _selectedHero, _selectedSlot, _rng))
         {
-            var eq = gm.Save.HeroEquipment[_selectedHero][_selectedSlot];
-            var name = ProgressionService.RefineNames[eq.RefineIndex % ProgressionService.RefineNames.Length];
-            _status = $"Tẩy luyện {slot?.Name} thành công: {name}!";
+            _status = $"Tẩy luyện {slot?.Name} thành công!";
             gm.SaveGame();
         }
-        else _status = "Tẩy luyện thất bại: không đủ Vàng!";
+        else _status = "Tẩy luyện thất bại: ô trống hoặc không đủ đá/Vàng!";
         RefreshEquipRows();
         RefreshRightPanel();
     }

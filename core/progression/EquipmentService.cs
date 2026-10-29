@@ -102,11 +102,12 @@ public static class EquipmentService
         string name = line.StatId switch
         {
             "crit" => "Bạo kích", "dodge" => "Né tránh", "speed" => "Tốc độ",
-            "atk" or "atk_pct" => "Tấn công", "def" => "Phòng thủ",
-            "hp" or "hp_pct" => "HP", _ => line.StatId,
+            "atk" or "atk_pct" => "Tấn công", "def" or "def_pct" => "Phòng thủ",
+            "hp" or "hp_pct" => "HP", "dmg_red" => "Miễn thương",
+            _ => line.StatId,
         };
-        bool pct = line.StatId is "crit" or "dodge" or "atk_pct" or "hp_pct";
-        string val = pct ? $"+{line.Value:P0}" : $"+{line.Value:0}";
+        bool pct = line.StatId is "crit" or "dodge" or "atk_pct" or "hp_pct" or "def_pct" or "dmg_red";
+        string val = pct ? $"+{line.Value:P1}" : $"+{line.Value:0}";
         return $"{name} {val}{(line.Locked ? " (khóa)" : "")}";
     }
 

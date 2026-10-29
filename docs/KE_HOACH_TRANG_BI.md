@@ -120,3 +120,7 @@ công thức/tỉ lệ cường hóa, nguồn bản vẽ rèn, bonus set đặc 
   + 2.31b cường hóa Bạc (100×2^cấp, max = cấp tướng chính, tỉ lệ
   100/90/80/70%, thất bại mất Bạc). TestPhase231 ALL PASS, suite
   0–2.31 xanh.
+- **Phase 2.32 — ĐÃ HOÀN THÀNH** (2026-10-30 rạng sáng): tẩy luyện
+  mới — pool theo vị trí (Tiền/Trung/Hậu), 3–6 dòng theo phẩm,
+  khóa dòng, chi phí 1 đá hoặc 200 Vàng, đá từ Cây Rung Tiền
+  (+3 khi đủ 10 lượt). TestPhase232 ALL PASS, suite 0–2.32 xanh.
