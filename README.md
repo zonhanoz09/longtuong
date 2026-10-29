@@ -15,6 +15,19 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.33 — đã làm (khảm ngọc, mở tab Đục lỗ)
+
+- `GemService`: 6 loại ngọc (Tốc độ/Công/HP/Vật phòng/Né tránh/
+  Bạo kích, tối đa Lv10); lỗ khảm theo phẩm (Lam 1/Tím 2/Cam 3/
+  Đỏ 4), lỗ đầu mở sẵn, các lỗ sau mở bằng Bạc (20.000/40.000/
+  80.000); ghép 3 viên LvN = 1 viên LvN+1; mua ngọc ngẫu nhiên
+  Lv1 = 2.000 Vàng; seed 6 viên Lv1.
+- Ngọc khảm cộng chỉ số thật vào `GetEffectiveHero`.
+- UI tab Đục lỗ: hàng lỗ khảm (Khảm/Gỡ/Mở), chọn ngọc từ túi,
+  túi ngọc + nút Ghép 3→1 + mua ngọc.
+- Test: `tests/TestPhase233.tscn` ALL PASS; toàn suite 0–2.33
+  pass; build 0 error; CI thêm 2.33.
+
 ## Phase 2.32 — đã làm (tẩy luyện mới)
 
 - Tẩy luyện lại full theo spec: mỗi món 3–6 dòng theo phẩm

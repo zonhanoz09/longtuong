@@ -124,3 +124,7 @@ công thức/tỉ lệ cường hóa, nguồn bản vẽ rèn, bonus set đặc 
   mới — pool theo vị trí (Tiền/Trung/Hậu), 3–6 dòng theo phẩm,
   khóa dòng, chi phí 1 đá hoặc 200 Vàng, đá từ Cây Rung Tiền
   (+3 khi đủ 10 lượt). TestPhase232 ALL PASS, suite 0–2.32 xanh.
+- **Phase 2.33 — ĐÃ HOÀN THÀNH** (2026-10-30 rạng sáng): khảm ngọc —
+  GemService (6 loại, Lv10 max), lỗ theo phẩm, mở lỗ bằng Bạc,
+  ghép 3→1, mua ngọc 2.000 Vàng, ngọc cộng chỉ số thật; UI tab
+  Đục lỗ đầy đủ. TestPhase233 ALL PASS, suite 0–2.33 xanh.

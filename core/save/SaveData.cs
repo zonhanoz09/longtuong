@@ -33,6 +33,8 @@ public class SaveData
     public int MoneyTreeUsed { get; set; } = 0;
     // Phase 2.32: Đá tẩy luyện (refine stones).
     public int RefineStones { get; set; } = 0;
+    // Phase 2.33: gem pouch (gemId -> count).
+    public Dictionary<string, int> GemInventory { get; set; } = new();
 }
 
 public class BagEquipmentItem

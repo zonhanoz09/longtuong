@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LongTuong;
 
@@ -32,6 +33,8 @@ public partial class HeroScreen : Control
     private string _selectedSlot = "weapon";
     private string _selectedTab = "cuong_hoa";
     private string _status = "";
+    // Phase 2.33: socket index awaiting a gem pick (-1 = none).
+    private int _pendingSocket = -1;
     private VBoxContainer? _heroListBox;
     private VBoxContainer? _equipListBox;
     private HBoxContainer? _tabRow;
@@ -83,7 +86,7 @@ public partial class HeroScreen : Control
                 CustomMinimumSize = new Vector2(190, UiTheme.ButtonHeight),
             };
             UiTheme.StyleButton(btn, false);
-            btn.Pressed += () => { _selectedHero = id; RefreshHeroList(); RefreshEquipRows(); RefreshRightPanel(); };
+            btn.Pressed += () => { _selectedHero = id; _pendingSocket = -1; RefreshHeroList(); RefreshEquipRows(); RefreshRightPanel(); };
             _heroListBox.AddChild(btn);
         }
     }
@@ -122,7 +125,7 @@ public partial class HeroScreen : Control
             badge.AddChild(CenteredLabel("", 16, Colors.White, "RowBadgeLabel"));
             row.AddChild(badge);
             btn.AddChild(row);
-            btn.Pressed += () => { _selectedSlot = slotId; RefreshEquipRows(); RefreshRightPanel(); };
+            btn.Pressed += () => { _selectedSlot = slotId; _pendingSocket = -1; RefreshEquipRows(); RefreshRightPanel(); };
             _equipListBox.AddChild(btn);
             _equipRows[slotId] = btn;
         }
@@ -227,7 +230,7 @@ public partial class HeroScreen : Control
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
             btn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
-            btn.Pressed += () => { _selectedTab = tabId; RefreshSysTabs(); RefreshRightPanel(); };
+            btn.Pressed += () => { _selectedTab = tabId; _pendingSocket = -1; RefreshSysTabs(); RefreshRightPanel(); };
             _tabRow.AddChild(btn);
         }
         RefreshSysTabs();
@@ -264,7 +267,7 @@ public partial class HeroScreen : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         var slot = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
         var eq = gm.Save.HeroEquipment[_selectedHero][_selectedSlot];
-        if (_selectedTab == "ke_thua" || _selectedTab == "duc_lo" || _selectedTab == "phu_ma")
+        if (_selectedTab == "ke_thua" || _selectedTab == "phu_ma")
         {
             var note = CenteredLabel("Chưa mở.", UiTheme.FontButton, UiTheme.Muted, "LockedNote");
             _tabContent.AddChild(note);
@@ -274,6 +277,11 @@ public partial class HeroScreen : Control
         {
             var note = CenteredLabel("Ô trống — chưa mang trang bị.", UiTheme.FontButton, UiTheme.Muted, "EmptyNote");
             _tabContent.AddChild(note);
+            return;
+        }
+        if (_selectedTab == "duc_lo")
+        {
+            BuildGemTab();
             return;
         }
         var slotColor = UiTheme.SlotColors.TryGetValue(_selectedSlot, out var c) ? c : UiTheme.Panel;
@@ -398,6 +406,196 @@ public partial class HeroScreen : Control
         var l = new Label { Text = text };
         UiTheme.StyleBody(l);
         return l;
+    }
+
+    // ---------- Phase 2.33: gem socketing ("Đục lỗ" tab) ----------
+
+    private void BuildGemTab()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        var save = gm.Save;
+        GemService.EnsureSockets(save.HeroEquipment[_selectedHero][_selectedSlot]);
+        var eq = save.HeroEquipment[_selectedHero][_selectedSlot];
+        var scroll = new ScrollContainer();
+        scroll.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        box.AddThemeConstantOverride("separation", 8);
+        scroll.AddChild(box);
+        _tabContent!.AddChild(scroll);
+
+        box.AddChild(SectionLabel("Lỗ khảm:"));
+        for (int i = 0; i < eq.Sockets.Count; i++)
+        {
+            var sock = eq.Sockets[i];
+            var row = new HBoxContainer { Name = $"SocketRow_{i}" };
+            row.AddThemeConstantOverride("separation", 8);
+            string infoText;
+            string actionText;
+            if (!sock.Unlocked)
+            {
+                infoText = $"Lỗ {i + 1}: (chưa mở)";
+                actionText = $"Mở ({GemService.UnlockCostSilver(i)} Bạc)";
+            }
+            else if (string.IsNullOrEmpty(sock.GemId))
+            {
+                infoText = $"Lỗ {i + 1}: (trống)";
+                actionText = "Khảm";
+            }
+            else
+            {
+                infoText = $"Lỗ {i + 1}: {GemService.DescribeGem(sock.GemId)}";
+                actionText = "Gỡ";
+            }
+            var infoLabel = new Label { Text = infoText, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            UiTheme.StyleBody(infoLabel, UiTheme.FontSmall);
+            row.AddChild(infoLabel);
+            var si = i;
+            var actionBtn = new Button
+            {
+                Name = $"SocketAction_{i}",
+                Text = actionText,
+                CustomMinimumSize = new Vector2(150, 44),
+            };
+            actionBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+            UiTheme.StyleButton(actionBtn, false);
+            if (!sock.Unlocked)
+                actionBtn.Disabled = save.Silver < GemService.UnlockCostSilver(i);
+            actionBtn.Pressed += () => OnSocketAction(si);
+            row.AddChild(actionBtn);
+            box.AddChild(row);
+        }
+
+        if (_pendingSocket >= 0 && _pendingSocket < eq.Sockets.Count)
+        {
+            box.AddChild(SectionLabel($"Chọn ngọc khảm vào lỗ {_pendingSocket + 1}:"));
+            var owned = save.GemInventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
+            if (owned.Count == 0)
+                box.AddChild(InfoLine("Túi ngọc trống — mua ngọc ở bên dưới."));
+            foreach (var (gemId, count) in owned)
+            {
+                var pickRow = new HBoxContainer();
+                pickRow.AddThemeConstantOverride("separation", 8);
+                var pickLabel = new Label { Text = $"{GemService.DescribeGem(gemId)} ×{count}", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                UiTheme.StyleBody(pickLabel, UiTheme.FontSmall);
+                pickRow.AddChild(pickLabel);
+                var pickBtn = new Button { Name = $"GemPick_{gemId}", Text = "Khảm", CustomMinimumSize = new Vector2(110, 40) };
+                pickBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+                UiTheme.StyleButton(pickBtn, true);
+                var gid = gemId;
+                pickBtn.Pressed += () => OnGemPick(gid);
+                pickRow.AddChild(pickBtn);
+                box.AddChild(pickRow);
+            }
+        }
+
+        box.AddChild(new HSeparator());
+        box.AddChild(SectionLabel("Túi ngọc:"));
+        var pouch = save.GemInventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
+        if (pouch.Count == 0)
+            box.AddChild(InfoLine("Chưa có ngọc."));
+        foreach (var (gemId, count) in pouch)
+        {
+            var (type, level) = GemService.ParseGemId(gemId);
+            var gemRow = new HBoxContainer();
+            gemRow.AddThemeConstantOverride("separation", 8);
+            var gemLabel = new Label { Text = $"{GemService.DescribeGem(gemId)} ×{count}", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            UiTheme.StyleBody(gemLabel, UiTheme.FontSmall);
+            gemRow.AddChild(gemLabel);
+            if (count >= 3 && level < GemService.MaxGemLevel)
+            {
+                var mergeBtn = new Button { Name = $"GemMerge_{type}_{level}", Text = "Ghép 3→1", CustomMinimumSize = new Vector2(110, 40) };
+                mergeBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+                UiTheme.StyleButton(mergeBtn, false);
+                var gt = type; var gl = level;
+                mergeBtn.Pressed += () =>
+                {
+                    var gm2 = GetNode<GameManager>("/root/GameManager");
+                    _status = GemService.TryMerge(gm2.Save, gt, gl)
+                        ? $"Ghép thành công: {GemService.DescribeGem(GemService.MakeGemId(gt, gl + 1))}!"
+                        : "Ghép thất bại!";
+                    gm2.SaveGame();
+                    RefreshEquipRows();
+                    RefreshRightPanel();
+                };
+                gemRow.AddChild(mergeBtn);
+            }
+            box.AddChild(gemRow);
+        }
+        var buyBtn = new Button
+        {
+            Name = "GemBuyButton",
+            Text = $"Mua ngọc ngẫu nhiên Lv1 ({GemService.BuyGemGold} Vàng)",
+            CustomMinimumSize = new Vector2(0, UiTheme.ButtonHeight),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        UiTheme.StyleButton(buyBtn, false);
+        buyBtn.Disabled = save.Gold < GemService.BuyGemGold;
+        buyBtn.Pressed += () =>
+        {
+            var gm2 = GetNode<GameManager>("/root/GameManager");
+            _status = GemService.TryBuyGem(gm2.Save, _rng)
+                ? "Mua ngọc thành công!"
+                : "Không đủ Vàng!";
+            gm2.SaveGame();
+            RefreshRightPanel();
+        };
+        box.AddChild(buyBtn);
+
+        if (!string.IsNullOrEmpty(_status))
+        {
+            var statusLabel = new Label { Text = _status, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            UiTheme.StyleBody(statusLabel, UiTheme.FontSmall);
+            statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
+            box.AddChild(statusLabel);
+        }
+    }
+
+    private static Label SectionLabel(string text)
+    {
+        var l = new Label { Text = text };
+        UiTheme.StyleBody(l, UiTheme.FontButton);
+        l.AddThemeColorOverride("font_color", UiTheme.Gold);
+        return l;
+    }
+
+    private void OnSocketAction(int socketIndex)
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        var save = gm.Save;
+        var eq = save.HeroEquipment[_selectedHero][_selectedSlot];
+        var sock = eq.Sockets[socketIndex];
+        if (!sock.Unlocked)
+        {
+            _status = GemService.TryUnlockSocket(save, _selectedHero, _selectedSlot, socketIndex)
+                ? $"Đã mở lỗ khảm {socketIndex + 1}!"
+                : "Không đủ Bạc để mở lỗ!";
+            gm.SaveGame();
+        }
+        else if (string.IsNullOrEmpty(sock.GemId))
+        {
+            _pendingSocket = socketIndex;
+        }
+        else
+        {
+            _status = GemService.TryUnsocket(save, _selectedHero, _selectedSlot, socketIndex)
+                ? "Đã gỡ ngọc về túi!"
+                : "Gỡ ngọc thất bại!";
+            gm.SaveGame();
+        }
+        RefreshEquipRows();
+        RefreshRightPanel();
+    }
+
+    private void OnGemPick(string gemId)
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        _status = GemService.TrySocket(gm.Save, _selectedHero, _selectedSlot, _pendingSocket, gemId)
+            ? $"Đã khảm {GemService.DescribeGem(gemId)}!"
+            : "Khảm thất bại!";
+        _pendingSocket = -1;
+        gm.SaveGame();
+        RefreshEquipRows();
+        RefreshRightPanel();
     }
 
     // Phase 2.31b/2.32: shared RNG so rapid clicks don't re-seed identically.

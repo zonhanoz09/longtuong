@@ -53,6 +53,13 @@ public static class SeedService
             .ToList();
         save.Gold = SeededGold;
         save.RefineStones = SeededRefineStones;
+        // Phase 2.33: starter gems (Pax setup — Huynh adjusts freely).
+        save.GemInventory = new Dictionary<string, int>
+        {
+            [GemService.MakeGemId("speed", 1)] = 2,
+            [GemService.MakeGemId("atk", 1)] = 2,
+            [GemService.MakeGemId("hp", 1)] = 2,
+        };
         return save;
     }
 }

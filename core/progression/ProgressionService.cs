@@ -120,6 +120,8 @@ public static class ProgressionService
         // Phase 2.24: souls pooled per tier, 0 by default (old saves load
         // fine; per-general souls from 2.23 are discarded, not migrated).
         save.TierSouls ??= new Dictionary<string, int>();
+        // Phase 2.33: gem pouch for old saves.
+        save.GemInventory ??= new Dictionary<string, int>();
         foreach (var tier in new[] { TavernTier.Lam, TavernTier.Tim, TavernTier.Cam })
             if (!save.TierSouls.ContainsKey(tier.ToString())) save.TierSouls[tier.ToString()] = 0;
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
@@ -159,6 +161,7 @@ public static class ProgressionService
     {
         if (string.IsNullOrEmpty(eq.SetId)) { eq.SetId = "tan_thu"; eq.Tier = 30; eq.Quality = "Lam"; }
         eq.Sockets ??= new List<EquipmentSocket>();
+        GemService.EnsureSockets(eq);
         eq.RefineLines ??= new List<RefineLine>();
         if (!eq.IsEmpty && eq.RefineLines.Count == 0)
         {
@@ -174,6 +177,7 @@ public static class ProgressionService
     {
         if (string.IsNullOrEmpty(item.SetId)) { item.SetId = "tan_thu"; item.Tier = 30; item.Quality = "Lam"; }
         item.Sockets ??= new List<EquipmentSocket>();
+        GemService.EnsureSockets(item);
         item.RefineLines ??= new List<RefineLine>();
         if (item.RefineLines.Count == 0)
         {
@@ -409,6 +413,7 @@ public static class ProgressionService
             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;
             def.Speed += slot.BaseSpeed + slot.SpeedPerLevel * eq.Level;
             ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul);
+            GemService.ApplyGems(def, eq, ref atkMul, ref hpMul);
         }
         // Phase 2.30: set bonuses (2/4/6 pieces).
         var (setAtkMul, setHpMul) = SetBonusService.Apply(def, SetBonusService.ActiveBonuses(save, heroId));
