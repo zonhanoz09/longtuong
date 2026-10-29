@@ -127,6 +127,7 @@ public partial class ForgeScene : Control
                 CustomMinimumSize = new Vector2(0, 44),
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
+            UiTheme.StyleButton(setBtn, setId == _selectedSet);
             setBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
             var sid = setId;
             setBtn.Pressed += () => { _selectedSet = sid; Refresh(); };
@@ -149,6 +150,7 @@ public partial class ForgeScene : Control
                 CustomMinimumSize = new Vector2(0, 44),
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
+            UiTheme.StyleButton(slotBtn, slot.Id == _selectedSlot);
             slotBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
             var sl = slot.Id;
             slotBtn.Pressed += () => { _selectedSlot = sl; Refresh(); };

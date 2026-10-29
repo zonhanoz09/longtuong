@@ -25,6 +25,7 @@ public partial class TestPhase235 : Node
             RefineLines = new List<RefineLine> { new() { StatId = "crit", Value = 0.03 } },
         });
         EquipmentService.EquipFromBag(gm.Save, "custom_hero", 0);
+        GemService.TryUnlockSocket(gm.Save, "custom_hero", "weapon", 0); // open the hole for the transferred gem
         // Source: old Tân Thủ weapon, +5, 3 lines, one socketed gem.
         var src = new BagEquipmentItem
         {
@@ -70,6 +71,7 @@ public partial class TestPhase235 : Node
         EquipmentService.EquipFromBag(gm.Save, "custom_hero", 0);
         gm.Save.BagEquipment.RemoveAt(0); // swapped-out old item
         var tgt = gm.Save.HeroEquipment["custom_hero"]["weapon"];
+        GemService.TryUnlockSocket(gm.Save, "custom_hero", "weapon", 0);
         tgt.Sockets[0].GemId = "speed_1"; // target already has a gem
         gm.Save.GemInventory.Clear();
         var src2 = new BagEquipmentItem

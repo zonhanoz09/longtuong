@@ -27,7 +27,7 @@ public partial class TestPhase233 : Node
 
         // Sockets by quality.
         Check(GemService.SocketsForQuality("Lam") == 1 && GemService.SocketsForQuality("Do") == 4, "sockets per quality 1..4");
-        Check(GemService.UnlockCostSilver(1) == 20000, "unlock cost 20000 for 2nd socket");
+        Check(GemService.UnlockCostGold(0) == 500 && GemService.UnlockCostGold(1) == 1000, "unlock costs 500/1000 gold");
 
         // Seed gems.
         Check(GemService.GemCount(gm.Save, "speed_1") == 2, "seed 2 speed gems");
@@ -36,6 +36,8 @@ public partial class TestPhase233 : Node
         int w = gm.Save.BagEquipment.FindIndex(b => b.SlotId == "weapon");
         EquipmentService.EquipFromBag(gm.Save, "custom_hero", w);
         var base0 = ProgressionService.GetEffectiveHero(gm.Save, "custom_hero");
+        Check(!GemService.TrySocket(gm.Save, "custom_hero", "weapon", 0, "speed_1"), "cannot socket into locked hole");
+        Check(GemService.TryUnlockSocket(gm.Save, "custom_hero", "weapon", 0), "open the hole with gold");
         Check(GemService.TrySocket(gm.Save, "custom_hero", "weapon", 0, "speed_1"), "socket speed gem");
         var eff = ProgressionService.GetEffectiveHero(gm.Save, "custom_hero");
         Check(eff.Speed == base0.Speed + 3, "socketed gem adds speed");
@@ -55,10 +57,10 @@ public partial class TestPhase233 : Node
         gm.Save.BagEquipment.Add(new BagEquipmentItem { SlotId = "armor", Quality = "Tim", SetId = "chu_tuoc", Tier = 50 });
         EquipmentService.EquipFromBag(gm.Save, "custom_hero", 0);
         var eqA = gm.Save.HeroEquipment["custom_hero"]["armor"];
-        Check(eqA.Sockets.Count == 2 && eqA.Sockets[0].Unlocked && !eqA.Sockets[1].Unlocked, "Tim item: 2 sockets, first open");
-        int silverBefore = gm.Save.Silver;
+        Check(eqA.Sockets.Count == 2 && !eqA.Sockets[0].Unlocked && !eqA.Sockets[1].Unlocked, "Tim item: 2 sockets, both locked");
+        int goldBeforeUnlock = gm.Save.Gold;
         Check(GemService.TryUnlockSocket(gm.Save, "custom_hero", "armor", 1), "unlock 2nd socket");
-        Check(gm.Save.Silver == silverBefore - 20000 && eqA.Sockets[1].Unlocked, "unlock costs 20000 silver");
+        Check(gm.Save.Gold == goldBeforeUnlock - 1000 && eqA.Sockets[1].Unlocked, "unlock costs 1000 gold");
 
         // Merge 3->1.
         gm.Save.GemInventory["crit_1"] = 3;
@@ -78,6 +80,7 @@ public partial class TestPhase233 : Node
         Check(!GemService.TryBuyGem(gm.Save, new System.Random(1)), "buy fails without gold");
 
         // UI: Đục lỗ tab shows sockets, not "Chưa mở.".
+        gm.Save.HeroEquipment["custom_hero"]["weapon"].Sockets[0].Unlocked = false; // fresh locked hole for the UI flow
         var screenScene = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroScreen.tscn");
         var screen = screenScene.Instantiate<HeroScreen>();
         AddChild(screen);
@@ -87,16 +90,28 @@ public partial class TestPhase233 : Node
         Check(content.FindChild("SocketRow_0", true, false) != null, "gem tab shows socket rows");
         Check(content.FindChild("LockedNote", true, false) == null, "gem tab is open (no Chưa mở.)");
         Check(content.FindChild("GemBuyButton", true, false) != null, "gem pouch has buy button");
-        // Socket flow via UI: Khảm -> pick a gem.
+        // Socket flow via UI: Mở (gold) -> Khảm -> pick a gem.
         gm.Save.Gold = 100000;
         var sockAction = content.FindChild("SocketAction_0", true, false) as Button;
-        Check(sockAction != null && sockAction.Text == "Khảm", "empty socket offers Khảm");
+        Check(sockAction != null && sockAction.Text.Contains("Mở"), "locked socket offers Mở");
+        sockAction.EmitSignal(BaseButton.SignalName.Pressed);
+        sockAction = content.FindChild("SocketAction_0", true, false) as Button;
+        Check(sockAction != null && sockAction.Text == "Khảm", "opened socket offers Khảm");
         sockAction.EmitSignal(BaseButton.SignalName.Pressed);
         var pickBtn = content.FindChild("GemPick_speed_1", true, false) as Button;
         Check(pickBtn != null, "gem picker lists owned gems");
         pickBtn.EmitSignal(BaseButton.SignalName.Pressed);
         var eqW = gm.Save.HeroEquipment["custom_hero"]["weapon"];
         Check(eqW.Sockets[0].GemId == "speed_1", "UI socket flow equips the gem");
+        // Hover tooltip shows gem info.
+        var rowBtn = screen.GetNode<Button>("EquipListBox/EquipRow_weapon");
+        rowBtn.EmitSignal(Control.SignalName.MouseEntered);
+        var tipPanel = screen.GetNode<PanelContainer>("TooltipPanel");
+        Check(tipPanel.Visible, "hover shows the gem tooltip");
+        var tipLabel = screen.GetNode<Label>("TooltipPanel/TooltipLabel");
+        Check(tipLabel.Text.Contains("Ngọc Tốc độ"), "tooltip lists the socketed gem");
+        rowBtn.EmitSignal(Control.SignalName.MouseExited);
+        Check(!tipPanel.Visible, "tooltip hides on exit");
 
         if (_fails == 0) GD.Print("TEST PHASE 2.33: ALL PASS");
         else GD.Print($"TEST PHASE 2.33: {_fails} FAILURES");

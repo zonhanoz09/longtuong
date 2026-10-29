@@ -64,16 +64,19 @@ public static class GemService
         "Lam" => 1, "Tim" => 2, "Cam" => 3, "Do" => 4, _ => 1,
     };
 
-    /// First socket open; unlocking socket i (0-based) costs 10.000 x 2^i Bạc.
-    public static int UnlockCostSilver(int socketIndex) => 10000 * (1 << socketIndex);
+    // Socket opening costs Vàng (Huynh's rule: must punch the hole with
+    // Vàng before socketing). Cost doubles per socket: 500/1000/2000/4000
+    // (Pax setup — Huynh adjusts freely).
+    public static int UnlockCostGold(int socketIndex) => 500 * (1 << socketIndex);
 
     /// Fills an item's sockets to its quality count (idempotent).
+    /// All sockets start locked — open with Vàng before socketing.
     public static void EnsureSockets(EquipmentState eq)
     {
         eq.Sockets ??= new List<EquipmentSocket>();
         int want = SocketsForQuality(eq.Quality);
         while (eq.Sockets.Count < want)
-            eq.Sockets.Add(new EquipmentSocket { Unlocked = eq.Sockets.Count == 0 });
+            eq.Sockets.Add(new EquipmentSocket { Unlocked = false });
     }
 
     public static void EnsureSockets(BagEquipmentItem item)
@@ -81,7 +84,7 @@ public static class GemService
         item.Sockets ??= new List<EquipmentSocket>();
         int want = SocketsForQuality(item.Quality);
         while (item.Sockets.Count < want)
-            item.Sockets.Add(new EquipmentSocket { Unlocked = item.Sockets.Count == 0 });
+            item.Sockets.Add(new EquipmentSocket { Unlocked = false });
     }
 
     public static int GemCount(SaveData save, string gemId)
@@ -105,9 +108,9 @@ public static class GemService
         EnsureSockets(eq);
         if (socketIndex < 0 || socketIndex >= eq.Sockets.Count) return false;
         if (eq.Sockets[socketIndex].Unlocked) return false;
-        int cost = UnlockCostSilver(socketIndex);
-        if (save.Silver < cost) return false;
-        save.Silver -= cost;
+        int cost = UnlockCostGold(socketIndex);
+        if (save.Gold < cost) return false;
+        save.Gold -= cost;
         eq.Sockets[socketIndex].Unlocked = true;
         return true;
     }

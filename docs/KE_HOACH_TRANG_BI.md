@@ -165,3 +165,7 @@ Giày Bạch Hổ 70), thay vì rèn món mới + kế thừa.
   cụ/Vàng là thiết kế tương lai — hiện vẫn mở bằng Bạc),
   (4) chuỗi 30→50→70→80→90→100, Kỳ Lân max.
 - TestPhase236 ALL PASS, suite 0–2.36 xanh, CI thêm 2.36.
+- **Fix theo feedback Huynh (2026-10-29 khuya)**: tooltip ngọc khảm
+  khi hover hàng trang bị; lỗ khảm mặc định khóa hết, mở bằng Vàng
+  (500/1.000/2.000/4.000 — số Pax setup); sửa nút Lò rèn đè nút X;
+  style nút chọn trong Lò Rèn.

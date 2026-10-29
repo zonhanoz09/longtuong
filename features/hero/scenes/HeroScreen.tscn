@@ -49,3 +49,13 @@ layout_mode = 0
 offset_top = 52.0
 offset_right = 506.0
 offset_bottom = 560.0
+
+[node name="TooltipPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
+custom_minimum_size = Vector2(280, 120)
+
+[node name="TooltipLabel" type="Label" parent="TooltipPanel"]
+layout_mode = 2
+text = "Tooltip"
+autowrap_mode = 3

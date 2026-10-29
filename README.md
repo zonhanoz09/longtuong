@@ -15,6 +15,18 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Fix theo feedback (2026-10-29 khuya)
+
+- Hover vào hàng trang bị hiện tooltip liệt kê ngọc khảm từng lỗ
+  (tên ngọc/cấp/chỉ số, (trống), (chưa mở)).
+- Lỗ khảm mặc định KHÓA hết — phải đục lỗ bằng Vàng mới được khảm
+  (500/1.000/2.000/4.000 Vàng theo thứ tự lỗ; số do Pax setup,
+  Huynh chỉnh tùy ý).
+- Sửa nút "Lò rèn" đè lên nút X trong popup Trang bị; style lại
+  các nút chọn bộ/ô trong Lò Rèn cho đồng bộ dark+gold.
+- Test: mở rộng TestPhase233 (khóa/mở lỗ, tooltip hover); toàn
+  suite 0–2.36 pass; build 0 error.
+
 ## Phase 2.36 — đã làm (nâng phẩm / thăng giai)
 
 - `ForgeService.TryUpgradeTier`: nâng trực tiếp món đang mang lên

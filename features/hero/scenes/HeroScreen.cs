@@ -38,6 +38,9 @@ public partial class HeroScreen : Control
     private int _pendingSocket = -1;
     // Phase 2.35: bag index of the inherit source (-1 = none).
     private int _inheritSource = -1;
+    // Hover tooltip (gem info on equipment rows).
+    private PanelContainer? _tooltipPanel;
+    private Label? _tooltipLabel;
     private VBoxContainer? _heroListBox;
     private VBoxContainer? _equipListBox;
     private HBoxContainer? _tabRow;
@@ -59,7 +62,8 @@ public partial class HeroScreen : Control
             Text = "Lò rèn",
             CustomMinimumSize = new Vector2(140, 40),
         };
-        forgeBtn.SetPosition(new Vector2(990, 4));
+        // x=940: ends at 1080, clear of the hub's X button (starts ~1112).
+        forgeBtn.SetPosition(new Vector2(940, 4));
         UiTheme.StyleButton(forgeBtn, false);
         forgeBtn.Pressed += () => FindHub()?.OpenPopup("res://features/forge/scenes/ForgeScene.tscn", ForgeScene.PopupSize);
         AddChild(forgeBtn);
@@ -72,6 +76,11 @@ public partial class HeroScreen : Control
         _equipListBox = GetNode<VBoxContainer>("EquipListBox");
         _tabRow = GetNode<HBoxContainer>("RightPanel/TabRow");
         _tabContent = GetNode<Control>("RightPanel/TabContent");
+        _tooltipPanel = GetNode<PanelContainer>("TooltipPanel");
+        _tooltipLabel = GetNode<Label>("TooltipPanel/TooltipLabel");
+        UiTheme.StyleBody(_tooltipLabel, 14);
+        _tooltipLabel.CustomMinimumSize = new Vector2(280, 0);
+        _tooltipPanel.MouseFilter = MouseFilterEnum.Ignore;
         BuildHeroList();
         BuildEquipRows();
         BuildSysTabs();
@@ -140,6 +149,12 @@ public partial class HeroScreen : Control
             row.AddChild(badge);
             btn.AddChild(row);
             btn.Pressed += () => { _selectedSlot = slotId; _pendingSocket = -1; _inheritSource = -1; RefreshEquipRows(); RefreshRightPanel(); };
+            btn.MouseEntered += () =>
+            {
+                var gm2 = GetNode<GameManager>("/root/GameManager");
+                ShowTooltip(btn, GemTooltipText(gm2.Save.HeroEquipment[_selectedHero][slotId]));
+            };
+            btn.MouseExited += HideTooltip;
             _equipListBox.AddChild(btn);
             _equipRows[slotId] = btn;
         }
@@ -147,6 +162,50 @@ public partial class HeroScreen : Control
 
     private static T FindRowPart<T>(Node parent, string name) where T : Node
         => (T)parent.FindChild(name, true, false)!;
+
+    // ---------- Hover tooltip: socketed gems ----------
+
+    private static string GemTooltipText(EquipmentState eq)
+    {
+        if (eq.IsEmpty) return "Ô trống — chưa mang trang bị.";
+        var lines = new List<string> { "Ngọc khảm:" };
+        for (int i = 0; i < eq.Sockets.Count; i++)
+        {
+            var s = eq.Sockets[i];
+            string desc = !s.Unlocked ? "(chưa mở)"
+                : string.IsNullOrEmpty(s.GemId) ? "(trống)"
+                : GemService.DescribeGem(s.GemId);
+            lines.Add($"Lỗ {i + 1}: {desc}");
+        }
+        return string.Join("\n", lines);
+    }
+
+    private void ShowTooltip(Control cell, string text)
+    {
+        if (_tooltipPanel == null || _tooltipLabel == null) return;
+        _tooltipLabel.Text = text;
+        int lines = System.Math.Max(1, text.Split('\n').Length);
+        float height = 16 + lines * 20 + 8;
+        _tooltipPanel.CustomMinimumSize = new Vector2(280, height);
+        _tooltipPanel.Size = new Vector2(280, height);
+        _tooltipPanel.Visible = true;
+        _tooltipPanel.MoveToFront();
+        var cellGlobal = cell.GetGlobalRect();
+        var rootGlobal = GetGlobalRect();
+        var cellPos = cellGlobal.Position - rootGlobal.Position;
+        float x = cellPos.X + cellGlobal.Size.X + 8;
+        if (x + 280 > 1140) x = cellPos.X - 280 - 8;
+        if (x < 0) x = 0;
+        float y = cellPos.Y;
+        if (y + height > 680) y = 680 - height;
+        if (y < 0) y = 0;
+        _tooltipPanel.Position = new Vector2(x, y);
+    }
+
+    private void HideTooltip()
+    {
+        if (_tooltipPanel != null) _tooltipPanel.Visible = false;
+    }
 
     private static Label CenteredLabel(string text, int fontSize, Color color, string name)
     {
@@ -458,7 +517,7 @@ public partial class HeroScreen : Control
             if (!sock.Unlocked)
             {
                 infoText = $"Lỗ {i + 1}: (chưa mở)";
-                actionText = $"Mở ({GemService.UnlockCostSilver(i)} Bạc)";
+                actionText = $"Mở ({GemService.UnlockCostGold(i)} Vàng)";
             }
             else if (string.IsNullOrEmpty(sock.GemId))
             {
@@ -483,7 +542,7 @@ public partial class HeroScreen : Control
             actionBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
             UiTheme.StyleButton(actionBtn, false);
             if (!sock.Unlocked)
-                actionBtn.Disabled = save.Silver < GemService.UnlockCostSilver(i);
+                actionBtn.Disabled = save.Gold < GemService.UnlockCostGold(i);
             actionBtn.Pressed += () => OnSocketAction(si);
             row.AddChild(actionBtn);
             box.AddChild(row);
