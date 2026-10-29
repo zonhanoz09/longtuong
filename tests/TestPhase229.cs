@@ -35,7 +35,8 @@ public partial class TestPhase229 : Node
         var title = screen.GetNode<Label>("TitleLabel");
         Check(title.Text == "Trang bị" && title.HorizontalAlignment == HorizontalAlignment.Center, "title Trang bị centered");
         var heroBox = screen.GetNode<VBoxContainer>("HeroListBox");
-        Check(heroBox.GetChildCount() == HeroDatabase.Heroes.Count, "left column lists all heroes");
+        Check(heroBox.GetChildCount() == gm.Save.OwnedHeroIds.Count, "left column lists owned heroes only");
+        Check(heroBox.GetChildren().OfType<Button>().All(b => !b.Text.Contains("KHÓA")), "no locked heroes shown");
         var equipBox = screen.GetNode<VBoxContainer>("EquipListBox");
         Check(equipBox.GetChildren().OfType<Button>().Count() == 6, "middle column has 6 equipment rows");
         var tabRow = screen.GetNode<HBoxContainer>("RightPanel/TabRow");

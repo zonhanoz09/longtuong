@@ -72,14 +72,15 @@ public partial class HeroScreen : Control
         _heroListBox.AddThemeConstantOverride("separation", 6);
         foreach (var hero in HeroDatabase.Heroes)
         {
-            bool owned = gm.Save.OwnedHeroIds.Contains(hero.Id);
+            // Phase 2.29b (Huynh): non-owned heroes are hidden entirely —
+            // the equipment screen only lists owned heroes.
+            if (!gm.Save.OwnedHeroIds.Contains(hero.Id)) continue;
             var id = hero.Id;
             var btn = new Button
             {
                 Name = $"Hero_{id}",
-                Text = owned ? hero.Name : $"{hero.Name} (KHÓA)",
+                Text = hero.Name,
                 CustomMinimumSize = new Vector2(190, UiTheme.ButtonHeight),
-                Disabled = !owned,
             };
             UiTheme.StyleButton(btn, false);
             btn.Pressed += () => { _selectedHero = id; RefreshHeroList(); RefreshEquipRows(); RefreshRightPanel(); };
