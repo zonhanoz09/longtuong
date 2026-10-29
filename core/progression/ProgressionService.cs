@@ -122,6 +122,9 @@ public static class ProgressionService
         save.TierSouls ??= new Dictionary<string, int>();
         // Phase 2.33: gem pouch for old saves.
         save.GemInventory ??= new Dictionary<string, int>();
+        // Phase 2.34: forge data for old saves.
+        save.Blueprints ??= new Dictionary<string, bool>();
+        save.Materials ??= new Dictionary<string, int>();
         foreach (var tier in new[] { TavernTier.Lam, TavernTier.Tim, TavernTier.Cam })
             if (!save.TierSouls.ContainsKey(tier.ToString())) save.TierSouls[tier.ToString()] = 0;
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.

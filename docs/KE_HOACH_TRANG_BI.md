@@ -128,3 +128,8 @@ công thức/tỉ lệ cường hóa, nguồn bản vẽ rèn, bonus set đặc 
   GemService (6 loại, Lv10 max), lỗ theo phẩm, mở lỗ bằng Bạc,
   ghép 3→1, mua ngọc 2.000 Vàng, ngọc cộng chỉ số thật; UI tab
   Đục lỗ đầy đủ. TestPhase233 ALL PASS, suite 0–2.33 xanh.
+- **Phase 2.34 — ĐÃ HOÀN THÀNH** (2026-10-30 rạng sáng): rèn —
+  ForgeService (bản vẽ 5 bộ mua bằng Vàng, Khoáng thạch 100
+  Vàng/viên, rèn tốn Tier/2 quặng, gate cấp tướng chính, đồ vào
+  túi); UI Lò Rèn từ popup Trang bị. TestPhase234 ALL PASS,
+  suite 0–2.34 xanh.

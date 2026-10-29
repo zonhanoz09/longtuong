@@ -15,6 +15,17 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.34 — đã làm (rèn: bản vẽ + nguyên liệu)
+
+- `ForgeService`: bản vẽ theo bộ (mua vĩnh viễn bằng Vàng:
+  50k/100k/200k/400k/800k; Tân Thủ không rèn); mỗi lần rèn tốn
+  Khoáng thạch (Tier/2, mua 100 Vàng/viên); yêu cầu cấp tướng
+  chính đạt mốc bộ; đồ rèn vào Túi (mang qua popup Võ tướng).
+- UI: nút "Lò rèn" trong popup Trang bị → popup Lò Rèn 760×600
+  (mua bản vẽ, mua quặng, chọn bộ + ô, rèn).
+- Test: `tests/TestPhase234.tscn` ALL PASS; toàn suite 0–2.34
+  pass; build 0 error; CI thêm 2.34.
+
 ## Phase 2.33 — đã làm (khảm ngọc, mở tab Đục lỗ)
 
 - `GemService`: 6 loại ngọc (Tốc độ/Công/HP/Vật phòng/Né tránh/

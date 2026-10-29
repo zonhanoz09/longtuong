@@ -49,6 +49,17 @@ public partial class HeroScreen : Control
         var title = GetNode<Label>("TitleLabel");
         title.Text = "Trang bị";
         UiTheme.StyleTitle(title);
+        // Phase 2.34: forge entry (FunctionBar is full; forge lives here).
+        var forgeBtn = new Button
+        {
+            Name = "ForgeOpenButton",
+            Text = "Lò rèn",
+            CustomMinimumSize = new Vector2(140, 40),
+        };
+        forgeBtn.SetPosition(new Vector2(990, 4));
+        UiTheme.StyleButton(forgeBtn, false);
+        forgeBtn.Pressed += () => FindHub()?.OpenPopup("res://features/forge/scenes/ForgeScene.tscn", ForgeScene.PopupSize);
+        AddChild(forgeBtn);
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         if (!string.IsNullOrEmpty(gm.SelectedHeroId) && gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId))
             _selectedHero = gm.SelectedHeroId;
@@ -548,6 +559,18 @@ public partial class HeroScreen : Control
             statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
             box.AddChild(statusLabel);
         }
+    }
+
+    // Finds the hosting HubScene by walking up (works in game and in tests).
+    private HubScene? FindHub()
+    {
+        Node? n = this;
+        while (n != null)
+        {
+            if (n is HubScene hub) return hub;
+            n = n.GetParent();
+        }
+        return null;
     }
 
     private static Label SectionLabel(string text)
