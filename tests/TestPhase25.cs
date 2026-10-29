@@ -43,7 +43,7 @@ public partial class TestPhase25 : Node
         var scaled = ProgressionService.GetScaledBase("quan_vu", 1);
         var eff = ProgressionService.GetEffectiveHero(s, "quan_vu");
         Check(eff.Hp == scaled.Hp && eff.Atk == scaled.Atk, "empty slots add no equipment bonus (effective == scaled base)");
-        Check(!ProgressionService.TryEnhance(s, "quan_vu", "weapon"), "enhance fails on empty slot");
+        Check(ProgressionService.TryEnhance(s, "quan_vu", "weapon", new System.Random()) == ProgressionService.EnhanceResult.Failed_Empty, "enhance fails on empty slot");
         Check(!ProgressionService.TryRefine(s, "quan_vu", "weapon"), "refine fails on empty slot");
     }
 

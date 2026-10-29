@@ -193,6 +193,15 @@ offset_right = 164.0
 offset_bottom = 92.0
 text = "Tuong Tinh"
 
+[node name="MoneyTreeButton" type="Button" parent="FunctionBar"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 180.0
+offset_top = 12.0
+offset_right = 328.0
+offset_bottom = 92.0
+text = "Cay Tien"
+
 [node name="HeroListButton" type="Button" parent="FunctionBar"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 0
@@ -246,6 +255,7 @@ text = "Chieu mo"
 [connection signal="pressed" from="FunctionBar/EnhanceButton" to="." method="OnEnhancePressed"]
 [connection signal="pressed" from="FunctionBar/RecruitButton" to="." method="OnRecruitPressed"]
 [connection signal="pressed" from="FunctionBar/StarChartButton" to="." method="OnStarChartPressed"]
+[connection signal="pressed" from="FunctionBar/MoneyTreeButton" to="." method="OnMoneyTreePressed"]
 [connection signal="gui_input" from="Courtyard" to="." method="OnCourtyardGuiInput"]
 
 [node name="Dim" type="ColorRect" parent="."]

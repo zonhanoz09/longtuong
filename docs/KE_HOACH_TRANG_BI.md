@@ -115,3 +115,8 @@ công thức/tỉ lệ cường hóa, nguồn bản vẽ rèn, bonus set đặc 
   (đếm + cộng bonus, Miễn thương tới engine, 3 bonus đặc biệt giữ
   data "(sắp mở)"), migration save cũ → Tân Thủ, seed Tân Thủ,
   UI hiện set/phẩm/bonus, TestPhase230 ALL PASS, suite 0–2.30 xanh.
+- **Phase 2.31 — ĐÃ HOÀN THÀNH** (2026-10-29 khuya): 2.31a Cây Rung
+  Tiền (10 lượt/ngày, +5.000 + 1.000×cấp Bạc/lượt, nút Hub + popup)
+  + 2.31b cường hóa Bạc (100×2^cấp, max = cấp tướng chính, tỉ lệ
+  100/90/80/70%, thất bại mất Bạc). TestPhase231 ALL PASS, suite
+  0–2.31 xanh.

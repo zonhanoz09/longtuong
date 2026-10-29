@@ -70,16 +70,33 @@ public partial class TestPhase2 : Node
         // Phase 2.5: fresh heroes start with empty slots, so equip a bag item first.
         s.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
         Check(EquipmentService.EquipFromBag(s, "quan_vu", 0) && !s.HeroEquipment["quan_vu"]["weapon"].IsEmpty, "equip bag weapon into empty slot");
-        int goldBefore = s.Gold;
-        Check(ProgressionService.EnhanceCost(0) == 100, "enhance cost level 0 = 100");
-        Check(ProgressionService.TryEnhance(s, "quan_vu", "weapon") && s.HeroEquipment["quan_vu"]["weapon"].Level == 1 && s.Gold == goldBefore - 100, "enhance weapon 0->1 costs 100");
+        var rng = new System.Random(7);
+        int silverBefore = s.Silver;
+        Check(ProgressionService.EnhanceCostSilver(0) == 100 && ProgressionService.EnhanceCostSilver(9) == 51200, "enhance cost 100x2^level silver");
+        Check(ProgressionService.MaxEnhanceForHero(s) == 1, "max enhance follows custom hero level (1)");
+        Check(ProgressionService.TryEnhance(s, "quan_vu", "weapon", rng) == ProgressionService.EnhanceResult.Success
+            && s.HeroEquipment["quan_vu"]["weapon"].Level == 1 && s.Silver == silverBefore - 100, "enhance weapon 0->1 costs 100 silver");
+        Check(ProgressionService.TryEnhance(s, "quan_vu", "weapon", rng) == ProgressionService.EnhanceResult.Failed_Maxed, "enhance fails at hero-level cap");
         s.HeroEquipment["quan_vu"]["weapon"].Level = 10;
-        Check(!ProgressionService.TryEnhance(s, "quan_vu", "weapon"), "enhance fails at max 10");
-        var s2 = Fresh(); s2.Gold = 50;
-        Check(!ProgressionService.TryEnhance(s2, "quan_vu", "weapon") && s2.Gold == 50, "enhance fails on empty slot, no deduction");
+        Check(ProgressionService.TryEnhance(s, "quan_vu", "weapon", rng) == ProgressionService.EnhanceResult.Failed_Maxed, "enhance fails at max 10");
+        var s2 = Fresh(); s2.Silver = 50;
+        Check(ProgressionService.TryEnhance(s2, "quan_vu", "weapon", rng) == ProgressionService.EnhanceResult.Failed_Empty && s2.Silver == 50, "enhance fails on empty slot, no deduction");
         s2.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
         EquipmentService.EquipFromBag(s2, "quan_vu", 0);
-        Check(!ProgressionService.TryEnhance(s2, "quan_vu", "weapon") && s2.Gold == 50, "enhance fails with insufficient gold, no deduction");
+        Check(ProgressionService.TryEnhance(s2, "quan_vu", "weapon", rng) == ProgressionService.EnhanceResult.Failed_NoSilver && s2.Silver == 50, "enhance fails with insufficient silver, no deduction");
+        Check(ProgressionService.EnhanceSuccessRate(7) == 1.0 && ProgressionService.EnhanceSuccessRate(8) == 0.9
+            && ProgressionService.EnhanceSuccessRate(9) == 0.8 && ProgressionService.EnhanceSuccessRate(10) == 0.7, "success rates 100/90/80/70");
+        int failSeed = -1;
+        for (int i = 0; i < 500 && failSeed < 0; i++) if (new System.Random(i).NextDouble() >= 0.9) failSeed = i;
+        Check(failSeed >= 0, "found a failing roll seed");
+        var s4 = Fresh();
+        s4.Heroes["custom_hero"].Level = 10;
+        s4.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 7 });
+        EquipmentService.EquipFromBag(s4, "custom_hero", 0);
+        int silv = s4.Silver;
+        Check(ProgressionService.TryEnhance(s4, "custom_hero", "weapon", new System.Random(failSeed)) == ProgressionService.EnhanceResult.Failed_Roll
+            && s4.HeroEquipment["custom_hero"]["weapon"].Level == 7 && s4.Silver == silv - ProgressionService.EnhanceCostSilver(7),
+            "failed roll keeps level but consumes silver");
         var s3 = Fresh();
         s3.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
         EquipmentService.EquipFromBag(s3, "quan_vu", 0);

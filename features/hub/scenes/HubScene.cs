@@ -33,6 +33,8 @@ public partial class HubScene : Control
     public static readonly Vector2 RecruitPopupSize = new(1000, 620);
     // Phase 2.29: Tướng Tinh moved out of the Trang bị popup (Huynh 2b).
     public static readonly Vector2 StarChartPopupSize = new(520, 400);
+    // Phase 2.31a: Cây Rung Tiền (minimal Bạc income for the silver economy).
+    public static readonly Vector2 MoneyTreePopupSize = new(440, 360);
 
     // Zone bounds on the 1280x720 viewport, from the second sketch:
     // top 42.5%, middle 42.5%, bottom 14.9%; avatar column 21.3%.
@@ -97,6 +99,7 @@ public partial class HubScene : Control
             ("EnhanceButton", "Trang bị", false),
             ("RecruitButton", "Chiêu mộ", false),
             ("StarChartButton", "Tướng\nTinh", false),
+            ("MoneyTreeButton", "Cây\nTiền", false),
         };
         foreach (var (node, text, primary) in functions)
         {
@@ -314,6 +317,7 @@ public partial class HubScene : Control
     private void OnEnhancePressed() => OpenPopup("res://features/hero/scenes/HeroScreen.tscn", HeroPopupSize);
     private void OnRecruitPressed() => OpenPopup("res://features/recruit/scenes/RecruitScene.tscn", RecruitPopupSize);
     private void OnStarChartPressed() => OpenPopup("res://features/hero/scenes/StarChartScene.tscn", StarChartPopupSize);
+    private void OnMoneyTreePressed() => OpenPopup("res://features/moneytree/scenes/MoneyTreeScene.tscn", MoneyTreePopupSize);
     private void OnLogoutPressed()
     {
         var gm = GetNode<GameManager>("/root/GameManager");

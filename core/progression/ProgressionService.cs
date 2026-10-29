@@ -52,7 +52,8 @@ public class EquipmentSlotDef
 ///   * (level-1)). Only HP/ATK/DEF scale (Speed/Crit/Dodge stay at base, as
 ///   with the old level/star scaling). Heroes without a tier (custom hero)
 ///   use factors 1.0/1.0.
-/// - Equipment: 6 slots, enhance max 10, cost 100*(level+1) Gold.
+/// - Equipment: 6 slots; enhance costs 100*2^level Bạc (2.31b), max follows
+///   the main hero's level, success 100% to +7 then 90/80/70%.
 /// - Refine: lines per item (3 Lam / 4 Tím / 5 Cam / 6 Đỏ); the old single
 ///   option cycles the first line until 2.32. Cost 100 Gold.
 /// - Sets (2.30): 6 level-tier sets with 2/4/6-piece bonuses.
@@ -84,7 +85,26 @@ public static class ProgressionService
 
     public static int ExpToNext(int level) => 100 + 50 * (level - 1);
 
-    public static int EnhanceCost(int currentLevel) => 100 * (currentLevel + 1);
+    // Phase 2.31b: enhance costs Bạc (Huynh's currency spec + decision 2a).
+    // Cost grows geometrically: 100 x 2^level. Max enhance follows the main
+    // hero's level; high levels have a success roll (fail = Bạc lost).
+    public enum EnhanceResult { Success, Failed_Empty, Failed_Maxed, Failed_NoSilver, Failed_Roll }
+
+    public static int EnhanceCostSilver(int currentLevel) => 100 * (1 << currentLevel);
+
+    public static int MaxEnhanceForHero(SaveData save)
+    {
+        EnsureDefaults(save);
+        return Math.Min(MaxEnhanceLevel, ProgressOf(save, "custom_hero").Level);
+    }
+
+    public static double EnhanceSuccessRate(int targetLevel) => targetLevel switch
+    {
+        <= 7 => 1.0,
+        8 => 0.9,
+        9 => 0.8,
+        _ => 0.7,
+    };
 
     public static void EnsureDefaults(SaveData save)
     {
@@ -226,15 +246,21 @@ public static class ProgressionService
         if (p.Level >= MaxLevel) p.Exp = 0;
     }
 
-    public static bool TryEnhance(SaveData save, string heroId, string slotId)
+    public static EnhanceResult TryEnhance(SaveData save, string heroId, string slotId, Random rng)
     {
         EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
-        int cost = EnhanceCost(eq.Level);
-        if (eq.IsEmpty || eq.Level >= MaxEnhanceLevel || save.Gold < cost) return false;
-        save.Gold -= cost;
-        eq.Level++;
-        return true;
+        if (eq.IsEmpty) return EnhanceResult.Failed_Empty;
+        if (eq.Level >= MaxEnhanceForHero(save)) return EnhanceResult.Failed_Maxed;
+        int cost = EnhanceCostSilver(eq.Level);
+        if (save.Silver < cost) return EnhanceResult.Failed_NoSilver;
+        save.Silver -= cost;
+        if (rng.NextDouble() < EnhanceSuccessRate(eq.Level + 1))
+        {
+            eq.Level++;
+            return EnhanceResult.Success;
+        }
+        return EnhanceResult.Failed_Roll;
     }
 
     public static bool TryRefine(SaveData save, string heroId, string slotId)

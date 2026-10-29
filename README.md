@@ -15,6 +15,20 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.31 — đã làm (Cây Rung Tiền + cường hóa Bạc)
+
+- **2.31a Cây Rung Tiền** (nguồn Bạc tối thiểu, làm trước để nuôi
+  cường hóa Bạc): nút Hub "Cây Tiền" + popup 440×360; 10 lượt
+  rung/ngày (reset theo ngày), mỗi lượt +5.000 + 1.000×cấp tướng
+  chính Bạc.
+- **2.31b Cường hóa mới**: tốn **Bạc** 100×2^cấp (thay Vàng);
+  cấp tối đa = min(10, cấp tướng chính); tỉ lệ thành công 100% đến
+  +7 rồi 90/80/70% cho +8/+9/+10, thất bại mất Bạc không lên cấp.
+  Panel Cường hóa hiện chi phí Bạc + tỉ lệ % + giới hạn theo cấp.
+- Test: `tests/TestPhase231.tscn` ALL PASS; cập nhật test 2/25/213/
+  229 theo API mới; toàn suite 0–2.31 pass; build 0 error; CI thêm
+  2.31.
+
 ## Phase 2.30 — đã làm (set trang bị theo mốc cấp)
 
 - `EquipmentSets`: 6 bộ theo đúng spec Huynh (Tân Thủ Lv30 Lam,

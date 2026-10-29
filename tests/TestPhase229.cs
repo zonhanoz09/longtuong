@@ -54,10 +54,10 @@ public partial class TestPhase229 : Node
         var content = screen2.GetNode<Control>("RightPanel/TabContent");
         var enhanceBtn = content.FindChild("ActionEnhance", true, false) as Button;
         Check(enhanceBtn != null, "right panel shows enhance action for the selected row");
-        int goldBefore = gm.Save.Gold;
+        int silverBefore = gm.Save.Silver;
         enhanceBtn.EmitSignal(BaseButton.SignalName.Pressed);
         Check(gm.Save.HeroEquipment["custom_hero"]["weapon"].Level == 1, "enhance raises weapon to +1");
-        Check(gm.Save.Gold == goldBefore - ProgressionService.EnhanceCost(0), "enhance costs 100 gold");
+        Check(gm.Save.Silver == silverBefore - ProgressionService.EnhanceCostSilver(0), "enhance costs 100 silver");
 
         // Refine tab.
         var tabRow2 = screen2.GetNode<HBoxContainer>("RightPanel/TabRow");

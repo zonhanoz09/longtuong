@@ -171,7 +171,7 @@ public partial class HeroScreen : Control
             UiTheme.StyleBody(nameLabel, UiTheme.FontButton);
             nameLabel.AddThemeColorOverride("font_color", eq.IsEmpty ? UiTheme.Muted : slotColor);
             var enhLabel = FindRowPart<Label>(btn, "RowEnhance");
-            enhLabel.Text = eq.IsEmpty ? "Cường hóa: —" : $"Cường hóa: +{eq.Level}/{ProgressionService.MaxEnhanceLevel}";
+            enhLabel.Text = eq.IsEmpty ? "Cường hóa: —" : $"Cường hóa: +{eq.Level}/{ProgressionService.MaxEnhanceForHero(gm.Save)}";
             UiTheme.StyleBody(enhLabel, UiTheme.FontSmall);
             enhLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
             var refLabel = FindRowPart<Label>(btn, "RowRefine");
@@ -299,9 +299,11 @@ public partial class HeroScreen : Control
         info.AddChild(titleLabel);
         if (_selectedTab == "cuong_hoa")
         {
-            info.AddChild(InfoLine($"Cấp cường hóa: +{eq.Level}/{ProgressionService.MaxEnhanceLevel}"));
-            info.AddChild(InfoLine(eq.Level >= ProgressionService.MaxEnhanceLevel ? "Chi phí: MAX" : $"Chi phí: {ProgressionService.EnhanceCost(eq.Level)} Vàng"));
-            info.AddChild(InfoLine("Tỉ lệ thành công: 100%"));
+            // Phase 2.31b: silver cost, hero-level cap, success rate.
+            int maxEnh = ProgressionService.MaxEnhanceForHero(gm.Save);
+            info.AddChild(InfoLine($"Cấp cường hóa: +{eq.Level}/{maxEnh} (tối đa theo cấp tướng chính)"));
+            info.AddChild(InfoLine(eq.Level >= maxEnh ? "Chi phí: MAX" : $"Chi phí: {ProgressionService.EnhanceCostSilver(eq.Level)} Bạc"));
+            info.AddChild(InfoLine($"Tỉ lệ thành công: {ProgressionService.EnhanceSuccessRate(eq.Level + 1):P0}"));
         }
         else
         {
@@ -331,7 +333,8 @@ public partial class HeroScreen : Control
         UiTheme.StyleButton(mainBtn, true);
         if (_selectedTab == "cuong_hoa")
         {
-            mainBtn.Disabled = eq.Level >= ProgressionService.MaxEnhanceLevel || gm.Save.Gold < ProgressionService.EnhanceCost(eq.Level);
+            int maxEnh = ProgressionService.MaxEnhanceForHero(gm.Save);
+            mainBtn.Disabled = eq.Level >= maxEnh || gm.Save.Silver < ProgressionService.EnhanceCostSilver(eq.Level);
             mainBtn.Pressed += OnEnhancePressed;
         }
         else
@@ -359,17 +362,35 @@ public partial class HeroScreen : Control
         return l;
     }
 
+    // Phase 2.31b: shared RNG so rapid clicks don't re-seed identically.
+    private static readonly System.Random _enhanceRng = new();
+
     private void OnEnhancePressed()
     {
         var gm = GetNode<GameManager>("/root/GameManager");
         var slot = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
-        if (ProgressionService.TryEnhance(gm.Save, _selectedHero, _selectedSlot))
+        int cost = ProgressionService.EnhanceCostSilver(gm.Save.HeroEquipment[_selectedHero][_selectedSlot].Level);
+        switch (ProgressionService.TryEnhance(gm.Save, _selectedHero, _selectedSlot, _enhanceRng))
         {
-            var eq = gm.Save.HeroEquipment[_selectedHero][_selectedSlot];
-            _status = $"Cường hóa {slot?.Name} thành công! (+{eq.Level})";
-            gm.SaveGame();
+            case ProgressionService.EnhanceResult.Success:
+                var eq = gm.Save.HeroEquipment[_selectedHero][_selectedSlot];
+                _status = $"Cường hóa {slot?.Name} thành công! (+{eq.Level})";
+                gm.SaveGame();
+                break;
+            case ProgressionService.EnhanceResult.Failed_Maxed:
+                _status = $"Đã đạt cấp tối đa (+{ProgressionService.MaxEnhanceForHero(gm.Save)}, theo cấp tướng chính)!";
+                break;
+            case ProgressionService.EnhanceResult.Failed_NoSilver:
+                _status = "Không đủ Bạc! Rung Cây Rung Tiền để kiếm thêm.";
+                break;
+            case ProgressionService.EnhanceResult.Failed_Roll:
+                _status = $"Cường hóa thất bại! (mất {cost} Bạc)";
+                gm.SaveGame();
+                break;
+            default:
+                _status = "Ô này đang trống, không có gì để cường hóa!";
+                break;
         }
-        else _status = "Cường hóa thất bại: đã tối đa hoặc không đủ Vàng!";
         RefreshEquipRows();
         RefreshRightPanel();
     }

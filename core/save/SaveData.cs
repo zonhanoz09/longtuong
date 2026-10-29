@@ -28,6 +28,9 @@ public class SaveData
     public Dictionary<string, Dictionary<string, EquipmentState>> HeroEquipment { get; set; } = new();
     public List<BagEquipmentItem> BagEquipment { get; set; } = new();
     public int StarNodesUnlocked { get; set; } = 0;
+    // Phase 2.31a: Cây Rung Tiền — free shakes per day.
+    public string MoneyTreeDate { get; set; } = "";
+    public int MoneyTreeUsed { get; set; } = 0;
 }
 
 public class BagEquipmentItem
