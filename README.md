@@ -32,6 +32,10 @@ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài
   khóa (đá), Vàng = 200×(1+khóa).
 - TestPhase237 mới; cập nhật 2/229/230/232–236; suite 0–2.37 xanh;
   CI thêm 2.37.
+- Fix 2.37b theo ảnh chụp của Huynh: xóa nút "Lò rèn" (mua bản vẽ /
+  quặng chuyển vào inline trong mục Đúc Lại), tab Cường hóa cuộn
+  được (ScrollContainer) hết tràn panel, thêm header TÀI NGUYÊN còn
+  thiếu, sửa format delta (+N35 → +35). Cập nhật test 234/237.
 
 ## Fix theo feedback (2026-10-29 khuya, tiếp)
 

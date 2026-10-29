@@ -65,11 +65,11 @@ public partial class TestPhase234 : Node
         hub.GetNode<Button>("FunctionBar/EnhanceButton").EmitSignal(BaseButton.SignalName.Pressed);
         Check(hub.IsPopupOpen, "Trang bị popup opens");
         var heroScreen = hub.GetNode("PopupFrame/PopupContent").GetChild(0);
-        var forgeOpen = heroScreen.FindChild("ForgeOpenButton", true, false) as Button;
-        Check(forgeOpen != null, "Trang bị popup has Lò rèn button");
-        forgeOpen.EmitSignal(BaseButton.SignalName.Pressed);
-        var forgeWidget = hub.GetNode("PopupFrame/PopupContent").GetChild(0);
-        Check(forgeWidget is ForgeScene, "Lò rèn opens the forge popup");
+        Check(heroScreen.FindChild("ForgeOpenButton", true, false) == null, "Lo ren button removed (2.37b)");
+        // Forge popup still works standalone (blueprint/ore shop).
+        var forgeScene = ResourceLoader.Load<PackedScene>("res://features/forge/scenes/ForgeScene.tscn");
+        var forgeWidget = forgeScene.Instantiate<ForgeScene>();
+        AddChild(forgeWidget);
         Check(forgeWidget.FindChild("BlueprintRow_chu_tuoc", true, false) != null, "blueprint rows listed");
         var oreBtn = forgeWidget.FindChild("OreBuyButton", true, false) as Button;
         oreBtn.EmitSignal(BaseButton.SignalName.Pressed);

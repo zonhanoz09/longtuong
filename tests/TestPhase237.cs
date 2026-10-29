@@ -103,6 +103,20 @@ public partial class TestPhase237 : Node
         var rowName = armorRow.FindChild("RowName", true, false) as Label;
         Check(rowName != null && rowName.Text.Contains("Tân Thủ Giáp"), "row shows Set + Slot name");
 
+        // 2.37b fixes: no Lò rèn button; projection deltas formatted "+35" (not "+N35").
+        Check(screen.FindChild("ForgeOpenButton", true, false) == null, "Lo ren button removed");
+        var allLabels = screen.FindChildren("*", "Label", true, false).OfType<Label>().Select(l => l.Text).ToList();
+        Check(allLabels.Any(t => t.Contains("(+") && !t.Contains("+N")), "delta format is (+N), not (+NN)");
+        // Inline blueprint purchase (helmet is now Tan Thu -> Chu Tuoc, no blueprint learned).
+        content = screen.GetNode<Control>("RightPanel/TabContent"); // re-fetch after rebuild
+        var bpBuy = content.FindChildren("*", "Button", true, false).OfType<Button>()
+            .FirstOrDefault(b => b.Text.Contains("Mua") && b.Text.Contains("Vàng"));
+        Check(bpBuy != null, "inline blueprint buy button shown");
+        int goldBefore = gm.Save.Gold;
+        bpBuy.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(ForgeService.HasBlueprint(gm.Save, "chu_tuoc"), "UI buys the blueprint");
+        Check(gm.Save.Gold == goldBefore - ForgeService.BlueprintPrices["chu_tuoc"], "blueprint costs gold");
+
         if (_fails == 0) GD.Print("TEST PHASE 2.37: ALL PASS");
         else GD.Print($"TEST PHASE 2.37: {_fails} FAILURES");
         GetTree().Quit();

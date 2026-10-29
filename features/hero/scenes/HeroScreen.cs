@@ -54,18 +54,8 @@ public partial class HeroScreen : Control
         var title = GetNode<Label>("TitleLabel");
         title.Text = "Trang bị";
         UiTheme.StyleTitle(title);
-        // Phase 2.34: forge entry (FunctionBar is full; forge lives here).
-        var forgeBtn = new Button
-        {
-            Name = "ForgeOpenButton",
-            Text = "Lò rèn",
-            CustomMinimumSize = new Vector2(140, 40),
-        };
-        // x=940: ends at 1080, clear of the hub's X button (starts ~1112).
-        forgeBtn.SetPosition(new Vector2(940, 4));
-        UiTheme.StyleButton(forgeBtn, false);
-        forgeBtn.Pressed += () => FindHub()?.OpenPopup("res://features/forge/scenes/ForgeScene.tscn", ForgeScene.PopupSize);
-        AddChild(forgeBtn);
+        // Phase 2.37: the Lò rèn button was removed (Huynh); blueprint/ore
+        // purchase is inline in the Đúc Lại section instead.
         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
         if (!string.IsNullOrEmpty(gm.SelectedHeroId) && gm.Save.OwnedHeroIds.Contains(gm.SelectedHeroId))
             _selectedHero = gm.SelectedHeroId;
@@ -685,9 +675,13 @@ public partial class HeroScreen : Control
         var save = gm.Save;
         var eq = save.HeroEquipment[_selectedHero][_selectedSlot];
         var slotDef = ProgressionService.Slots.Find(s => s.Id == _selectedSlot);
+        var scroll = new ScrollContainer { Name = "EnhanceScroll" };
+        scroll.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         box.AddThemeConstantOverride("separation", 8);
-        _tabContent!.AddChild(box);
+        scroll.AddChild(box);
+        _tabContent!.AddChild(scroll);
 
         var set = EquipmentSets.Get(eq.IsEmpty ? ForgeService.CraftSetId : eq.SetId);
         var top = new HBoxContainer();
@@ -767,6 +761,7 @@ public partial class HeroScreen : Control
                     ? new List<(string, double, double)>()
                     : EquipmentService.ProjectEquipChange(save, _selectedHero, _selectedSlot, hypEnh));
             int enhCost = ProgressionService.EnhanceCostSilver(eq.Level);
+            box.AddChild(SectionLabel("TÀI NGUYÊN TIÊU TỐN:"));
             box.AddChild(ResourceLine("Bạc", save.Silver, eq.Level >= maxEnh ? 0 : enhCost));
             var enhBtn = new Button { Name = "ActionEnhance", Text = "Cường hóa", CustomMinimumSize = new Vector2(200, UiTheme.ButtonHeight) };
             UiTheme.StyleButton(enhBtn, true);
@@ -787,10 +782,33 @@ public partial class HeroScreen : Control
                 int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
                 bool hasBp = ForgeService.HasBlueprint(save, next);
                 int oreNeed = ForgeService.RecastOreCost(next), silverNeed = ForgeService.RecastSilverCost(next);
-                box.AddChild(ReqLine($"Bản vẽ {target.Name}", hasBp));
                 box.AddChild(ReqLine($"Cấp tướng chính Lv{target.Tier} (hiện Lv{mainLevel})", mainLevel >= target.Tier));
+                box.AddChild(SectionLabel("TÀI NGUYÊN TIÊU TỐN:"));
+                box.AddChild(BuyRow(ReqLine($"Bản vẽ {target.Name}", hasBp), !hasBp ? MakeBuyButton(
+                    $"Mua {ForgeService.BlueprintPrices[next]:N0} Vàng",
+                    save.Gold >= ForgeService.BlueprintPrices[next],
+                    () =>
+                    {
+                        var gm2 = GetNode<GameManager>("/root/GameManager");
+                        _status = ForgeService.TryBuyBlueprint(gm2.Save, next)
+                            ? $"Đã học bản vẽ {target.Name}!"
+                            : "Không đủ Vàng mua bản vẽ!";
+                        gm2.SaveGame();
+                        RefreshRightPanel();
+                    }) : null));
                 box.AddChild(ResourceLine("Bạc", save.Silver, silverNeed));
-                box.AddChild(ResourceLine(ForgeService.OreName, ForgeService.OreCount(save), oreNeed));
+                box.AddChild(BuyRow(ResourceLine(ForgeService.OreName, ForgeService.OreCount(save), oreNeed),
+                    MakeBuyButton($"Mua +10 ({10 * ForgeService.OrePriceGold:N0} Vàng)",
+                        save.Gold >= 10 * ForgeService.OrePriceGold,
+                        () =>
+                        {
+                            var gm2 = GetNode<GameManager>("/root/GameManager");
+                            _status = ForgeService.TryBuyOre(gm2.Save, 10)
+                                ? "Đã mua 10 Khoáng thạch!"
+                                : "Không đủ Vàng mua quặng!";
+                            gm2.SaveGame();
+                            RefreshRightPanel();
+                        })));
                 var hypRecast = EquipmentService.CopyState(eq);
                 hypRecast.SetId = next; hypRecast.Tier = target.Tier; hypRecast.Quality = target.Quality;
                 AddProjection(box, "DỰ KIẾN SAU ĐÚC LẠI:",
@@ -848,6 +866,27 @@ public partial class HeroScreen : Control
         return l;
     }
 
+    // Row with an optional small buy button on the right (inline shop).
+    private static HBoxContainer BuyRow(Control label, Button? buyBtn)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(label);
+        if (buyBtn != null) row.AddChild(buyBtn);
+        return row;
+    }
+
+    private static Button MakeBuyButton(string text, bool affordable, System.Action onBuy)
+    {
+        var b = new Button { Text = text, CustomMinimumSize = new Vector2(0, 40) };
+        UiTheme.StyleButton(b, false);
+        b.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+        b.Disabled = !affordable;
+        b.Pressed += onBuy;
+        return b;
+    }
+
     private static Label ResourceLine(string name, int have, int need)
     {
         var l = InfoLine($"{name}: {need:N0} / {have:N0}");
@@ -868,7 +907,7 @@ public partial class HeroScreen : Control
             bool pct = name is "Bạo kích" or "Né tránh";
             string fb = pct ? $"{b * 100:0.0}%" : $"{b:N0}";
             string fa = pct ? $"{a * 100:0.0}%" : $"{a:N0}";
-            string fd = pct ? $"{(a - b) * 100:+0.0;-0.0}%" : $"{(a - b):+N0;-N0}";
+            string fd = pct ? $"{(a - b) * 100:+0.0;-0.0}%" : $"{(a - b):+0;-0}";
             box.AddChild(InfoLine($"{name}: {fb} → {fa} ({fd})"));
         }
     }

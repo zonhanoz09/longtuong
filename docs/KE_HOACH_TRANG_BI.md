@@ -284,3 +284,9 @@ Set khởi đầu Lv30 (phẩm Lam) xử lý thế nào khi remap?
     Chu Tước; chuỗi nâng bắt đầu từ Chu Tước.
 (b) Giữ Tân Thủ (Lam) làm đồ khởi đầu ngoài ladder;
     Chế Tạo chỉ chế Tân Thủ; 5 set trên remap phẩm.
+- **Fix 2.37b theo ảnh chụp của Huynh (2026-10-30)**: xóa nút "Lò rèn"
+  (mua bản vẽ/quặng làm inline trong mục Đúc Lại: nút "Mua ..." cạnh
+  dòng yêu cầu); tab Cường hóa bọc ScrollContainer (hết tràn panel,
+  nút bấm luôn với tới); thêm header TÀI NGUYÊN TIÊU TỐN còn thiếu ở
+  mục cường hóa/đúc lại; sửa bug format delta (+N35 -> +35).
+  Test 234/237 cập nhật; suite 0-2.37 xanh.
