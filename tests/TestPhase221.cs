@@ -48,6 +48,7 @@ public partial class TestPhase221 : Node
         var team = FormationService.FormationToTeam(gm.Save.Formation);
         gm.SelectedTeamIds = new List<string>(team);
         gm.StartBattle(1, new List<string>(team), 12345);
+        int silverBefore = gm.Save.Silver;
         int goldBefore = gm.Save.Gold;
 
         var scene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn").Instantiate<BattleScene>();
@@ -101,14 +102,15 @@ public partial class TestPhase221 : Node
             CollectLabels(popup, allLabels);
             Check(allLabels.Any(l => l.Text.Contains("Thắng trận")), "2.21: win popup title");
             Check(allLabels.Any(l => l.Text.Contains("Sao:")), "2.21: win popup shows stars");
-            Check(allLabels.Any(l => l.Text.Contains("Vàng")), "2.21: win popup shows gold reward");
+            Check(allLabels.Any(l => l.Text.Contains("Bạc")), "2.21: win popup shows silver reward (2.39)");
             var foundSquares = FindNode<HBoxContainer>(popup, "RewardSquares");
             Check(foundSquares != null && foundSquares.GetChildCount() == 5,
                 "2.21: win popup has 5 empty reward squares");
             var exitButton = FindNode<Button>(popup, "");
             Check(exitButton != null && exitButton.Text == "Thoát", "2.21: win popup has Thoat button");
         }
-        Check(gm.Save.Gold > goldBefore, "2.21: win rewards applied immediately (gold increased)");
+        Check(gm.Save.Silver > silverBefore && gm.Save.Gold == goldBefore,
+            "2.21: win rewards applied immediately (2.39: silver up, gold unchanged)");
         scene.QueueFree();
 
         // --- Loss case: custom hero alone vs stage 1 ---

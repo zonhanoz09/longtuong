@@ -82,8 +82,9 @@ public partial class BattleHeroCell : PanelContainer
 /// button during battle is Tăng tốc (x1 → x2 → x3 → x1). No battle log.
 /// Left: the player's formation grid (Hậu / Trung / Tiền columns, 7 slots,
 /// empty slots blank); right: the enemy grid mirrored (Tiền closest to the
-/// middle), with a temporary enemy layout (Tiền giữa + Trung trên +
-/// Trung dưới) until enemy formations are updated in a later phase.
+/// middle). Phase 2.39: enemies are drawn on their real engine slots
+/// (StageDef.EnemySlot: Tiền giữa, Trung trên, Trung dưới, Hậu giữa,
+/// Trung giữa) and the win popup shows Bạc + drops in the reward squares.
 /// A "Thú cưỡi" placeholder circle sits above each side (no mount system
 /// yet). When the battle ends, a result popup appears (Thắng/Thua trận);
 /// the win popup shows stars, the reward text and 5 empty reward-item
@@ -101,12 +102,6 @@ public partial class BattleScene : Control
     private int _speed = 1;
     private bool _finished;
     private Control? _resultPopup;
-
-    // Temporary enemy layout (visual only; enemies have no engine positions
-    // yet): first enemy to Tiền giữa, then Trung trên, Trung dưới, then any
-    // extra enemies to the remaining slots in this order.
-    private static readonly string[] EnemySlotOrder =
-        { "tien_mid", "trung_top", "trung_bot", "trung_mid", "hau_mid", "hau_top", "hau_bot" };
 
     // Enemy grid cells in row-major order, columns = Tiền / Trung / Hậu
     // (mirrored vs the player); null = no Tiền slot on top/bottom rows.
@@ -177,8 +172,9 @@ public partial class BattleScene : Control
     {
         var grid = GetNode<GridContainer>("EnemyGrid");
         var placed = new Dictionary<string, Fighter>();
-        for (int i = 0; i < _engine!.EnemyFighters.Count && i < EnemySlotOrder.Length; i++)
-            placed[EnemySlotOrder[i]] = _engine.EnemyFighters[i];
+        // Phase 2.39: enemies are drawn on their real engine slots.
+        for (int i = 0; i < _engine!.EnemyFighters.Count; i++)
+            placed[_engine.Stage.EnemySlot(i)] = _engine.EnemyFighters[i];
         foreach (var cell in EnemyGridOrder)
         {
             if (cell == null || !placed.TryGetValue(cell, out var fighter))
@@ -238,17 +234,14 @@ public partial class BattleScene : Control
         _timer?.Stop();
         if (_speedButton != null) _speedButton.Disabled = true;
         var gm = GetNode<GameManager>("/root/GameManager");
-        var stage = HeroDatabase.GetStage(gm.CurrentStageId);
         int stars = _engine.Stars();
-        int rewardGold = _engine.PlayerWon ? stage.RewardGold : 0;
-        int expPerHero = 40 + gm.CurrentStageId * 10;
         // Rewards are applied immediately on win; the popup is display-only.
-        gm.ApplyBattleResult(_engine.PlayerWon, stars, rewardGold);
-        ShowResultPopup(_engine.PlayerWon, stars, rewardGold, expPerHero);
+        var reward = gm.ApplyBattleResult(_engine.PlayerWon, stars);
+        ShowResultPopup(_engine.PlayerWon, stars, reward);
         Refresh();
     }
 
-    private void ShowResultPopup(bool won, int stars, int gold, int expPerHero)
+    private void ShowResultPopup(bool won, int stars, BattleReward? reward)
     {
         bool win = won;
         var popup = new Control { Name = "ResultPopup" };
@@ -287,7 +280,7 @@ public partial class BattleScene : Control
             vbox.AddChild(starsLabel);
             var rewardLabel = new Label
             {
-                Text = $"Thưởng: +{gold} Vàng, +{expPerHero} EXP mỗi tướng",
+                Text = $"Thưởng: +{reward?.Silver ?? 0:N0} Bạc, +{reward?.ExpPerHero ?? 0} EXP mỗi tướng",
                 HorizontalAlignment = HorizontalAlignment.Center,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             };
@@ -298,17 +291,35 @@ public partial class BattleScene : Control
             vbox.AddChild(header);
             var squares = new HBoxContainer { Name = "RewardSquares", Alignment = BoxContainer.AlignmentMode.Center };
             squares.AddThemeConstantOverride("separation", 12);
+            // Phase 2.39: dropped items fill the first squares (gold border),
+            // the rest stay empty.
+            var drops = reward?.Drops ?? new List<RewardDrop>();
             for (int i = 0; i < 5; i++)
             {
+                var drop = i < drops.Count ? drops[i] : null;
                 var square = new PanelContainer { CustomMinimumSize = new Vector2(64, 64) };
                 square.AddThemeStyleboxOverride("panel", new StyleBoxFlat
                 {
                     BgColor = UiTheme.SlotEmpty,
-                    BorderColor = UiTheme.Muted,
+                    BorderColor = drop != null ? UiTheme.Gold : UiTheme.Muted,
                     BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
                     CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
                     CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
                 });
+                if (drop != null)
+                {
+                    square.TooltipText = $"{drop.Name} x{drop.Count}";
+                    var dropLabel = new Label
+                    {
+                        Name = "DropLabel",
+                        Text = drop.Name,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                    };
+                    UiTheme.StyleBody(dropLabel, UiTheme.FontSmall);
+                    square.AddChild(dropLabel);
+                }
                 squares.AddChild(square);
             }
             vbox.AddChild(squares);

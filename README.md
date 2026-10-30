@@ -15,6 +15,22 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.39 — đã làm (vòng chơi ải)
+
+- Thắng ải: **+1.000 Bạc** (bỏ thưởng Vàng) + EXP 40 + 10 × ải;
+  rơi đồ 3 lượt × 10%: Khoáng thạch, Đá tẩy luyện, ngọc Lv1 — hiện
+  trong 5 ô thưởng của popup thắng.
+- **Chương 2** (ải 11–20, 4–5 địch) + tab Chương trong màn chọn ải;
+  EXP lên cấp giảm còn `100 + 20 × (cấp − 1)` (Lv50: 28.420 thay 63.700).
+- **Tách Vật/Sách**: Mưu/Phụ đánh vào Sách phòng, còn lại vào Vật phòng;
+  chỉ số Sách phòng mới cho 8 tướng, Mũ/Choàng có Sách phòng.
+- Địch có vị trí đội hình thật; luật Tiền/Trung/Hậu áp dụng cả hai bên.
+- **Quét ải** đã 3 sao (20 lượt/ngày); lưu trận gần nhất (ải, seed,
+  đội, kết quả) trong save.
+- Test: `tests/TestPhase239.tscn` mới; cập nhật 1/2/221/222; suite
+  0–2.39 42/42 pass; CI thêm 2.39. Chi tiết + bảng cân bằng ở
+  `docs/KE_HOACH_LONGTUONG.md` §Phase 2.39.
+
 ## Phase 2.38 — đã làm (ổn định nền + công thức sát thương mới)
 
 - CI bắt lỗi thật: test 2.27–2.37 trước đây luôn exit 0 dù fail.

@@ -38,6 +38,20 @@ public class SaveData
     // Phase 2.34: forge — learned blueprints + materials.
     public Dictionary<string, bool> Blueprints { get; set; } = new();
     public Dictionary<string, int> Materials { get; set; } = new();
+    // Phase 2.39: last battle (stage + seed, so it can be replayed) and
+    // the daily sweep counter (Quét ải, reset by local date).
+    public BattleRecord? LastBattle { get; set; }
+    public string SweepDate { get; set; } = "";
+    public int SweepUsed { get; set; } = 0;
+}
+
+public class BattleRecord
+{
+    public int StageId { get; set; }
+    public int Seed { get; set; }
+    public bool Won { get; set; }
+    public int Stars { get; set; }
+    public List<string> TeamIds { get; set; } = new();
 }
 
 public class BagEquipmentItem

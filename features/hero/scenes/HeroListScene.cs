@@ -339,7 +339,8 @@ public partial class HeroListScene : Control
         _statValues["hp"].Text = $"{eff.Hp}";
         _statValues["speed"].Text = $"{eff.Speed}";
         _statValues["power"].Text = $"~{power}";
-        _statValues["def"].Text = $"{eff.Def}";
+        // Phase 2.39: Vật phòng / Sách phòng.
+        _statValues["def"].Text = $"{eff.Def} / {eff.MagicDef}";
         _statValues["crit"].Text = $"{eff.Crit:P0}";
         _statValues["dodge"].Text = $"{eff.Dodge:P0}";
         _statValues["role"].Text = HeroDatabase.RoleName(heroDef.Role);

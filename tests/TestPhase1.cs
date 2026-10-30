@@ -40,13 +40,14 @@ public partial class TestPhase1 : Node
 
     private void CheckStages()
     {
-        Check(HeroDatabase.Stages.Count == 10, "10 stages");
-        Check(HeroDatabase.Stages.All(s => s.EnemyIds.Count == 3), "every stage has 3 enemies");
+        // Phase 2.39: 2 chapters x 10 stages; chapter 1 keeps 3 enemies.
+        Check(HeroDatabase.Stages.Count == 20, "20 stages (2 chapters)");
+        Check(HeroDatabase.Stages.Where(s => s.Chapter == 1).All(s => s.EnemyIds.Count == 3), "every chapter 1 stage has 3 enemies");
         bool scaleUp = true;
         for (int i = 1; i < HeroDatabase.Stages.Count; i++)
             if (HeroDatabase.Stages[i].Scale <= HeroDatabase.Stages[i - 1].Scale) scaleUp = false;
         Check(scaleUp, "stage scale strictly increases");
-        Check(HeroDatabase.GetStage(1).RewardGold == 150 && HeroDatabase.GetStage(10).RewardGold == 600, "reward 150 -> 600 by stage");
+        Check(StageRewardService.SilverPerWin == 1000, "2.39: every win rewards 1000 silver");
     }
 
     private BattleEngine NewEngine(int seed) => new(

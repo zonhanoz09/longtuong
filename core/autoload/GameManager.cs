@@ -32,7 +32,7 @@ public partial class GameManager : Node
     public int CurrentSeed { get; set; }
     public bool LastBattleWon { get; private set; }
     public int LastBattleStars { get; private set; }
-    public int LastBattleReward { get; private set; }
+    public BattleReward? LastBattleReward { get; private set; }
 
     // Save tách theo tài khoản (Phase 2.1, vẫn local; server phase sau mới tách thật).
     // Chưa đăng nhập thì dùng save.json cũ để không mất tiến trình Phase 0-2.
@@ -50,7 +50,7 @@ public partial class GameManager : Node
         SelectedHeroId = ""; // no account => no default hero
         Save = new SaveData();
         SelectedTeamIds = new List<string> { "quan_vu", "truong_phi", "gia_cat_luong" };
-        LastBattleWon = false; LastBattleStars = 0; LastBattleReward = 0;
+        LastBattleWon = false; LastBattleStars = 0; LastBattleReward = null;
     }
 
     public void SaveGame()
@@ -105,23 +105,32 @@ public partial class GameManager : Node
         CurrentSeed = seed;
         LastBattleWon = false;
         LastBattleStars = 0;
-        LastBattleReward = 0;
+        LastBattleReward = null;
     }
 
-    public void ApplyBattleResult(bool won, int stars, int rewardGold)
+    // Phase 2.39: wins give Bạc + EXP + 10% drops (StageRewardService), no
+    // Vàng. Drops come from the battle seed, and the battle (stage, seed,
+    // team, result) is recorded in the save so it can be replayed.
+    public BattleReward? ApplyBattleResult(bool won, int stars)
     {
         LastBattleWon = won;
         LastBattleStars = stars;
-        LastBattleReward = rewardGold;
-        if (!won) return;
+        LastBattleReward = null;
+        Save.LastBattle = new BattleRecord
+        {
+            StageId = CurrentStageId, Seed = CurrentSeed, Won = won, Stars = stars,
+            TeamIds = new List<string>(SelectedTeamIds),
+        };
+        if (!won) { SaveGame(); return null; }
         bool firstClear = CurrentStageId > Save.LastStage;
         Save.Wins++;
         if (firstClear) Save.LastStage = CurrentStageId;
         var key = CurrentStageId.ToString();
         if (!Save.StageStars.TryGetValue(key, out var old) || stars > old) Save.StageStars[key] = stars;
-        Save.Gold += rewardGold;
-        foreach (var heroId in SelectedTeamIds)
-            ProgressionService.AddExp(Save, heroId, 40 + CurrentStageId * 10);
+        var reward = StageRewardService.Roll(CurrentStageId, StageRewardService.DropRng(CurrentSeed));
+        StageRewardService.Apply(Save, SelectedTeamIds, reward);
+        LastBattleReward = reward;
         SaveGame();
+        return reward;
     }
 }

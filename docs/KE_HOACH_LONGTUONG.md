@@ -97,6 +97,12 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > Huynh chốt cùng lúc: sau 2.38 làm **2.39 vòng chơi ải**; thưởng thắng
 > ải chuyển sang **Bạc**.
 >
+> Cập nhật 2026-10-30: **Phase 2.39 — ĐÃ HOÀN THÀNH** — vòng chơi ải:
+> thắng ải +1.000 Bạc (bỏ Vàng) + rơi đồ 10%, chương 2 (ải 11–20, 4–5
+> địch), EXP lên cấp giảm còn 100 + 20 × (cấp − 1), tách Vật/Sách, địch có
+> vị trí đội hình, quét ải 3 sao (20 lượt/ngày), lưu seed trận. Xem
+> §Phase 2.39.
+>
 > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
 >
 > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
@@ -111,8 +117,7 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 >   dưỡng nhân vật, mua vật phẩm cơ bản. Đã dùng: đối tửu
 >   150.000/300.000 Bạc. Các nguồn Bạc (Cây Rung Tiền, Thu Thuế,
 >   Boss...) thuộc Phase 3/hoạt động ngày, chưa triển khai; thưởng
->   thắng ải hiện vẫn là Vàng — Huynh chốt 2026-10-30: thưởng thắng ải
->   chuyển sang **Bạc** (làm ở Phase 2.39).
+>   thắng ải: từ Phase 2.39 là **1.000 Bạc** mỗi trận (không còn Vàng).
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
@@ -1090,17 +1095,84 @@ Cấp tướng có giá trị hơn (Công tăng theo cấp còn Thủ địch c�
 - Test: `tests/TestPhase238.tscn` (bug B1–B8/B11, cách ly save, công thức,
   trần, đánh trượt không cộng nộ, Huyền Vũ Đỡ đòn); suite 0–2.38: 41/41 pass.
 
-### Phase 2.39 — Vòng chơi ải (KẾ TIẾP, chưa làm)
+### Phase 2.39 — Vòng chơi ải (ĐÃ HOÀN THÀNH 2026-10-30)
 
-Mục tiêu: đồ 2.30–2.37 với tới được bằng chơi bình thường (hiện cần
+Mục tiêu: đồ 2.30–2.37 với tới được bằng chơi bình thường (trước đây cần
 khoảng 455 trận thắng ải 10 mới đủ Lv50 để Đúc Lại lên Chu Tước).
-- Thưởng thắng ải: **Bạc** thay Vàng (chốt Huynh), số cụ thể chờ chốt.
-- Ải rơi đồ vào 5 ô thưởng đang trống: Khoáng thạch / Đá tẩy luyện /
-  ngọc Lv1.
-- Chương 2 (ải 11–20) + EXP theo chương, hoặc giảm đường cong EXP (chờ chốt).
-- Quét ải đã 3 sao.
-- Đội hình địch có vị trí Tiền/Trung/Hậu, tối đa 5 địch.
-- Lưu seed trận vào kết quả.
+
+Chốt của Huynh: (1) mỗi trận thắng 1.000 Bạc, (2) rơi đồ 10%, (3c) mở
+chương 2 **và** giảm đường cong EXP, (4) tách Vật/Sách ngay; "ok" cho các
+đề xuất chi tiết (thưởng cố định kể cả đánh lại, bỏ Vàng khỏi thưởng
+trận, 3 lượt roll rơi đồ riêng, cách tách Vật/Sách, làm luôn quét ải +
+đội hình địch + lưu seed).
+
+**Thưởng thắng ải** (`StageRewardService`)
+- Mọi trận thắng (kể cả đánh lại): **+1.000 Bạc** + EXP mỗi tướng
+  = 40 + 10 × ải (ải 20: 240). **Không còn thưởng Vàng.**
+- Rơi đồ: 3 lượt roll độc lập, mỗi lượt **10%**: 1 Khoáng thạch,
+  1 Đá tẩy luyện, 1 ngọc Lv1 (loại ngẫu nhiên). Roll từ seed trận nên
+  cùng seed thì rơi giống nhau. Đồ rơi hiện trong 5 ô thưởng của popup
+  thắng (viền vàng + tên).
+- Hệ quả cần biết: sau 100.000 Vàng khởi đầu không còn nguồn Vàng nào,
+  mà quặng (100 Vàng/viên) và bản vẽ (50.000–800.000 Vàng) vẫn mua bằng
+  Vàng. Đúc Lại lên Chu Tước cần 25 quặng ≈ 250 trận nếu chỉ chờ rơi.
+
+**Chương 2 + đường cong EXP**
+- Ải 11–20 (`StageDef.Chapter`, 10 ải/chương): ải 11–15 có 4 địch,
+  16–20 có 5 địch; hệ số khó tiếp tục +0.09/ải (1.75 → 2.56). Tên ải
+  tự đặt theo mạch Tam Quốc. Chương 2 mở khi qua ải 10.
+- EXP lên cấp: `100 + 20 × (cấp − 1)` (trước `100 + 50 × …`).
+  Lv1 → Lv50 cần 28.420 EXP (trước 63.700) ≈ 118 trận ải 20 hoặc
+  ≈ 203 trận ải 10.
+
+**Tách Vật / Sách**
+- `HeroDef.MagicDef` = Sách phòng. Tướng **Mưu (Gia Cát Lượng) và Phụ
+  (Điêu Thuyền)** đánh bằng Sách công (trừ Sách phòng); các hệ khác đánh
+  Vật công (trừ Vật phòng). Mỗi tướng vẫn một chỉ số Công.
+- Sách phòng gốc: Tự tạo 25, Lưu Bị 35, Quan Vũ 25, Trương Phi 35,
+  Triệu Vân 25, Gia Cát Lượng 45, Điêu Thuyền 40, Lữ Bố 15. Tăng theo cấp
+  và theo hệ số ải giống Vật phòng.
+- Mũ +8 (+1/cấp) và Choàng +6 (+1/cấp) Sách phòng. Tiền quân +20% cả
+  hai loại phòng. Màn Võ tướng hiện "Vật/Sách phòng: 35 / 25"; dự kiến
+  chỉ số ở tab Cường hóa có dòng Sách phòng.
+- Chưa có ngọc / dòng tẩy / bonus set Sách phòng.
+
+**Đội hình địch**
+- Địch đứng trên ô thật (`HeroDatabase.DefaultEnemySlots`): Tiền giữa,
+  Trung trên, Trung dưới, Hậu giữa, Trung giữa (theo thứ tự địch).
+- Luật vị trí áp dụng cho cả hai bên: Tiền +20% phòng và đòn đơn mục
+  tiêu đánh Tiền trước, Trung +20% Công, Hậu 20% cơ hội đánh trước
+  mỗi vòng. Trước đây chỉ phe ta có.
+
+**Quét ải + lưu seed**
+- Ải đã 3 sao quét được (nút "Quét ải" trong màn chọn ải), nhận thưởng
+  như thắng trận. Giới hạn **20 lượt/ngày** (số Pax đặt: quét là tức
+  thì, không giới hạn thì Bạc vô hạn; Huynh chỉnh `SweepsPerDay`).
+- `SaveData.LastBattle` lưu ải, seed, đội, thắng/thua, số sao của trận
+  gần nhất → có thể replay đúng trận đó.
+- Màn chọn ải có tab Chương 1 / Chương 2 và dòng thưởng.
+
+**Ảnh hưởng cân bằng** (mô phỏng 40 seed/ải, không trang bị; % thắng):
+
+| Đội | Cấp | Chương 1 (ải 1→10) | Chương 2 (ải 11→20) |
+|---|---|---|---|
+| Tự tạo solo | 30 | 100 100 100 10 0 … | 0 |
+| Tự tạo solo | 50 | 100 ×6, 0 … | 0 |
+| Đội 3 | 1 | 100 100 100 72 2 0 … | 0 |
+| Đội 3 | 10 | 100 ×7, 97 32 10 | 0 |
+| Đội 3 | 30 | 100 | 100 47 100 0 100 0 … |
+| Đội 3 | 50 | 100 | 100 ×8, 85, 0 |
+| Đội 5 | 1 | 100 ×6, 97 70 25 2 | 0 |
+| Đội 5 | 20 | 100 | 100 100 100 97 100 0 … |
+| Đội 5 | 30 | 100 | 100 ×7, 97 65 0 |
+| Đội 5 | 40 | 100 | 100 |
+
+Cuối chương 1 khó hơn 2.38 với đội cấp thấp (địch giờ có thưởng vị trí,
+Mưu/Phụ ta gặp Sách phòng). Ví dụ đội 3 Lv10 ở ải 9/10: 98/50% → 32/10%.
+Chương 2 cần đội khoảng Lv20–40.
+
+- Test: `tests/TestPhase239.tscn` mới; cập nhật 1/2/221/222; suite
+  0–2.39: 42/42 pass; CI thêm 2.39.
 
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).

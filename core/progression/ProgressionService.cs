@@ -36,6 +36,9 @@ public class EquipmentSlotDef
     public int BaseHp { get; set; }
     public int BaseDef { get; set; }
     public int BaseSpeed { get; set; }
+    // Phase 2.39: Sách phòng from Mũ / Choàng (same amount as their Vật phòng).
+    public int BaseMagicDef { get; set; }
+    public int MagicDefPerLevel { get; set; }
     public int AtkPerLevel { get; set; }
     public int HpPerLevel { get; set; }
     public int DefPerLevel { get; set; }
@@ -45,7 +48,7 @@ public class EquipmentSlotDef
 /// <summary>
 /// Phase 2 progression. All formulas are public and data-driven here so balance
 /// can be tuned without touching combat code.
-/// - EXP to next level: 100 + 50*(level-1). Max level 180 (raised from 60
+/// - EXP to next level: 100 + 20*(level-1) (2.39; was 50). Max level 180 (raised from 60
 ///   in 2.23 so the tavern's Cam gate at custom-hero level 70 is reachable).
 /// - Quality (2.23, TavernData): higher tier => higher base stats and faster
 ///   per-level growth. Stat scale: base * qualityStat * (1 + 0.04 * qualityGrowth
@@ -72,9 +75,9 @@ public static class ProgressionService
     {
         new EquipmentSlotDef { Id = "weapon", Name = "Vũ khí", BaseAtk = 20, AtkPerLevel = 5 },
         new EquipmentSlotDef { Id = "armor", Name = "Giáp", BaseHp = 150, HpPerLevel = 30, BaseDef = 10, DefPerLevel = 2 },
-        new EquipmentSlotDef { Id = "helmet", Name = "Mũ", BaseHp = 80, HpPerLevel = 15, BaseDef = 8, DefPerLevel = 1 },
+        new EquipmentSlotDef { Id = "helmet", Name = "Mũ", BaseHp = 80, HpPerLevel = 15, BaseDef = 8, DefPerLevel = 1, BaseMagicDef = 8, MagicDefPerLevel = 1 },
         new EquipmentSlotDef { Id = "boots", Name = "Giày", BaseSpeed = 8, SpeedPerLevel = 1, BaseDef = 5, DefPerLevel = 1 },
-        new EquipmentSlotDef { Id = "cloak", Name = "Choàng", BaseHp = 120, HpPerLevel = 25, BaseDef = 6, DefPerLevel = 1 },
+        new EquipmentSlotDef { Id = "cloak", Name = "Choàng", BaseHp = 120, HpPerLevel = 25, BaseDef = 6, DefPerLevel = 1, BaseMagicDef = 6, MagicDefPerLevel = 1 },
         new EquipmentSlotDef { Id = "bracer", Name = "Uyển", BaseAtk = 12, AtkPerLevel = 3, BaseSpeed = 4, SpeedPerLevel = 1 },
     };
 
@@ -82,7 +85,9 @@ public static class ProgressionService
     public static readonly string[] RefineNames =
         { "Bạo kích +3%", "Né tránh +3%", "Tốc độ +5", "Tấn công +10%", "HP +10%" };
 
-    public static int ExpToNext(int level) => 100 + 50 * (level - 1);
+    // Phase 2.39 (Huynh 3c): flatter curve, was 100 + 50*(level-1).
+    // Lv1 -> Lv50 now needs 28.420 EXP (was 63.700).
+    public static int ExpToNext(int level) => 100 + 20 * (level - 1);
 
     // Phase 2.31b: enhance costs Bạc (Huynh's currency spec + decision 2a).
     // Cost grows geometrically: 100 x 2^level. Max enhance follows the main
@@ -437,6 +442,7 @@ public static class ProgressionService
             Hp = (int)Math.Round(baseDef.Hp * statFactor * levelFactor),
             Atk = (int)Math.Round(baseDef.Atk * statFactor * levelFactor),
             Def = (int)Math.Round(baseDef.Def * statFactor * levelFactor),
+            MagicDef = (int)Math.Round(baseDef.MagicDef * statFactor * levelFactor),
             Speed = baseDef.Speed, Crit = baseDef.Crit, Dodge = baseDef.Dodge,
             DamageReduction = baseDef.DamageReduction,
             Hit = baseDef.Hit, CritResist = baseDef.CritResist, Block = baseDef.Block,
@@ -459,6 +465,7 @@ public static class ProgressionService
             def.Atk += slot.BaseAtk + slot.AtkPerLevel * eq.Level;
             def.Hp += slot.BaseHp + slot.HpPerLevel * eq.Level;
             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;
+            def.MagicDef += slot.BaseMagicDef + slot.MagicDefPerLevel * eq.Level;
             def.Speed += slot.BaseSpeed + slot.SpeedPerLevel * eq.Level;
             ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul, ref defMul);
             GemService.ApplyGems(def, eq, ref atkMul, ref hpMul);

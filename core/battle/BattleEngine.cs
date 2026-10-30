@@ -5,7 +5,7 @@ using System.Linq;
 namespace LongTuong;
 
 /// <summary>
-/// Pure C# 3v3 side-view battle engine. Deterministic for a given seed:
+/// Pure C# side-view battle engine (up to 5v5). Deterministic for a given seed:
 /// same seed + same teams + same stage => same winner, turns and final HP.
 /// </summary>
 public class BattleEngine
@@ -31,8 +31,8 @@ public class BattleEngine
     public BattleEngine(List<HeroDef> playerDefs, StageDef stage, int seed)
         : this(playerDefs, null, stage, seed) { }
 
-    // playerPositions parallels playerDefs (None when absent); enemies have
-    // no formation positions yet (their team grows in a later phase).
+    // playerPositions parallels playerDefs (None when absent); enemy
+    // positions come from the stage (StageDef.EnemySlot).
     public BattleEngine(List<HeroDef> playerDefs, List<FormationPosition>? playerPositions, StageDef stage, int seed)
     {
         Stage = stage;
@@ -44,7 +44,13 @@ public class BattleEngine
             if (playerPositions != null && i < playerPositions.Count) f.Position = playerPositions[i];
             PlayerFighters.Add(f);
         }
-        foreach (var id in stage.EnemyIds) EnemyFighters.Add(new Fighter(HeroDatabase.Get(id).WithScale(stage.Scale), false));
+        // Phase 2.39: enemies stand on the stage's formation slots and get the
+        // same position rules as the player side.
+        for (int i = 0; i < stage.EnemyIds.Count; i++)
+            EnemyFighters.Add(new Fighter(HeroDatabase.Get(stage.EnemyIds[i]).WithScale(stage.Scale), false)
+            {
+                Position = FormationService.PositionOfSlot(stage.EnemySlot(i)),
+            });
         RebuildOrder();
     }
 
@@ -77,7 +83,9 @@ public class BattleEngine
     {
         if (dodged) return 0;
         double atk = attacker.EffectiveAtk;
-        double dmg = Math.Max(MinDamageRatio * atk, (atk - defender.EffectiveDef) * power);
+        // Phase 2.39: Mưu/Phụ hit Sách phòng, others hit Vật phòng.
+        double def = HeroDatabase.UsesStrategy(attacker.Def.Role) ? defender.EffectiveMagicDef : defender.EffectiveDef;
+        double dmg = Math.Max(MinDamageRatio * atk, (atk - def) * power);
         if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= CounterMultiplier;
         dmg *= 1.0 - Math.Min(defender.Def.DamageReduction, DamageReductionCap);
         if (critHit) dmg *= BaseCritMultiplier + attacker.Def.CritDamage;
@@ -105,12 +113,14 @@ public class BattleEngine
     private void RebuildOrder()
     {
         var alive = PlayerFighters.Concat(EnemyFighters).Where(f => f.Alive).ToList();
-        // Phase 2.20 — Hậu quân: each alive rear player hero has a 20% chance
+        // Phase 2.20 — Hậu quân: each alive rear hero has a 20% chance
         // (seeded RNG, so a given seed still replays deterministically) to act
         // first this round. First-movers go before everyone else, once each;
-        // they do NOT get an extra action.
+        // they do NOT get an extra action. Phase 2.39: enemy rear heroes too
+        // (rolled after the player side, so stages without enemy Hậu keep
+        // the old RNG sequence).
         var first = new List<Fighter>();
-        foreach (var f in PlayerFighters.Where(f => f.Alive && f.Position == FormationPosition.Rear))
+        foreach (var f in PlayerFighters.Concat(EnemyFighters).Where(f => f.Alive && f.Position == FormationPosition.Rear))
             if (_rng.NextDouble() < 0.20) first.Add(f);
         first = first.OrderByDescending(f => f.Def.Speed).ToList();
         var rest = alive.Where(f => !first.Contains(f))
@@ -119,18 +129,15 @@ public class BattleEngine
         _orderIndex = 0;
     }
 
-    // Single-target choice. Phase 2.20 — Tiền quân: an enemy attack targets
-    // an alive front (Tiền) player hero first, instead of the lowest-HP foe.
-    // Player attacks keep the old lowest-HP rule (enemies have no positions).
+    // Single-target choice. Phase 2.20 — Tiền quân: a single-target attack
+    // hits an alive front (Tiền) foe first, else the lowest-HP foe.
+    // Phase 2.39: applies to both sides (enemies now have positions).
     private Fighter? PickTarget(Fighter actor)
     {
         var foes = EnemiesOf(actor).Where(f => f.Alive).ToList();
         if (foes.Count == 0) return null;
-        if (!actor.IsPlayer)
-        {
-            var front = foes.FirstOrDefault(f => f.Position == FormationPosition.Front);
-            if (front != null) return front;
-        }
+        var front = foes.FirstOrDefault(f => f.Position == FormationPosition.Front);
+        if (front != null) return front;
         return foes.OrderBy(f => f.Hp).First();
     }
 

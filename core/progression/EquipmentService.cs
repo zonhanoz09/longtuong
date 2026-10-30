@@ -58,6 +58,7 @@ public static class EquipmentService
         Add("HP", before.Hp, after.Hp);
         Add("Vật công", before.Atk, after.Atk);
         Add("Vật phòng", before.Def, after.Def);
+        Add("Sách phòng", before.MagicDef, after.MagicDef);
         Add("Tốc độ", before.Speed, after.Speed);
         Add("Bạo kích", before.Crit, after.Crit);
         Add("Né tránh", before.Dodge, after.Dodge);

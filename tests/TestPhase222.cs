@@ -67,10 +67,10 @@ public partial class TestPhase222 : Node
         gm.Save.OwnedHeroIds.Add("quan_vu");
         gm.SelectedTeamIds = new List<string> { "custom_hero", "quan_vu" };
         gm.CurrentStageId = 1;
-        int goldBefore = gm.Save.Gold;
+        int silverBefore = gm.Save.Silver;
         int expBefore = gm.Save.Heroes["custom_hero"].Exp;
-        gm.ApplyBattleResult(true, 3, 150);
-        Check(gm.Save.Gold == goldBefore + 150, "battle win still grants gold");
+        gm.ApplyBattleResult(true, 3);
+        Check(gm.Save.Silver == silverBefore + StageRewardService.SilverPerWin, "battle win grants silver (2.39: was gold)");
         Check(gm.Save.Heroes["custom_hero"].Exp > expBefore || gm.Save.Heroes["custom_hero"].Level > 1,
             "battle win still grants EXP");
         Check(!gm.Save.OwnedHeroIds.Contains("luu_bi"), "battle win does NOT auto-unlock any locked hero");

@@ -40,10 +40,11 @@ public partial class TestPhase2 : Node
 
     private void CheckExpAndLevel()
     {
-        Check(ProgressionService.ExpToNext(1) == 100 && ProgressionService.ExpToNext(2) == 150, "exp curve 100/150");
+        // Phase 2.39: flatter curve 100 + 20*(level-1).
+        Check(ProgressionService.ExpToNext(1) == 100 && ProgressionService.ExpToNext(2) == 120, "exp curve 100/120");
         var s = Fresh();
-        ProgressionService.AddExp(s, "quan_vu", 250);
-        Check(s.Heroes["quan_vu"].Level == 3 && s.Heroes["quan_vu"].Exp == 0, "250 exp: level 1 -> 3, exp 0");
+        ProgressionService.AddExp(s, "quan_vu", 220);
+        Check(s.Heroes["quan_vu"].Level == 3 && s.Heroes["quan_vu"].Exp == 0, "220 exp: level 1 -> 3, exp 0");
         var s2 = Fresh();
         s2.Heroes["quan_vu"].Level = 180;
         ProgressionService.AddExp(s2, "quan_vu", 99999);
