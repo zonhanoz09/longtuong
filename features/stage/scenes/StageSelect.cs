@@ -10,7 +10,7 @@ namespace LongTuong;
 /// trận như vậy"). This popup only picks the stage and shows the formation
 /// team (with each hero's position) as read-only info. To change the team,
 /// close this popup and open Bày trận.
-/// Phase 2.39: chapter tabs (10 stages each), reward line (1.000 Bạc + EXP
+/// Phase 2.39: chapter tabs (Phase 2.41: 8 chapters, own stage counts), reward line (1.000 Bạc + EXP
 /// + 10% drops) and Quét ải for 3-star stages (daily limit).
 /// </summary>
 [GlobalClass]
@@ -79,26 +79,35 @@ public partial class StageSelect : Control
         var gm = GetNode<GameManager>("/root/GameManager");
         var box = GetNode<VBoxContainer>("StageBox");
         foreach (var child in box.GetChildren()) { box.RemoveChild(child); child.QueueFree(); }
-        // Chapter tabs.
-        var tabs = new HBoxContainer { Name = "ChapterTabs" };
-        tabs.AddThemeConstantOverride("separation", 8);
-        for (int ch = 1; ch <= HeroDatabase.ChapterCount; ch++)
+        // Phase 2.41: the longest chapter has 12 stages — tighter rows keep it in the column.
+        box.AddThemeConstantOverride("separation", 2);
+        // Chapter tabs. Phase 2.41: 8 chapters with their own stage ranges,
+        // laid out 4 x 2 so they fit the 580px stage column; the chapter
+        // name shows in the tooltip and in the header under the tabs.
+        var tabs = new GridContainer { Name = "ChapterTabs", Columns = 4 };
+        tabs.AddThemeConstantOverride("h_separation", 6);
+        tabs.AddThemeConstantOverride("v_separation", 6);
+        foreach (var chapterDef in HeroDatabase.Chapters)
         {
-            int chapter = ch;
-            int firstStage = (chapter - 1) * HeroDatabase.StagesPerChapter + 1;
-            bool chapterOpen = firstStage <= gm.Save.LastStage + 1;
+            int chapter = chapterDef.Number;
+            bool chapterOpen = chapterDef.FirstStage <= gm.Save.LastStage + 1;
             var tab = new Button
             {
                 Name = $"Chapter_{chapter}",
                 Text = $"Chương {chapter}{(chapterOpen ? "" : " (KHÓA)")}",
+                TooltipText = chapterDef.Name,
                 Disabled = !chapterOpen,
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
             };
             UiTheme.StyleButton(tab, chapter == _selectedChapter);
+            tab.CustomMinimumSize = new Vector2(0, 40);
             tab.Pressed += () => { _selectedChapter = chapter; CallDeferred(nameof(BuildStageButtons)); };
             tabs.AddChild(tab);
         }
         box.AddChild(tabs);
+        var header = new Label { Name = "ChapterHeader", Text = $"Chương {_selectedChapter}: {HeroDatabase.Chapters[_selectedChapter - 1].Name}" };
+        UiTheme.StyleBody(header, UiTheme.FontBody);
+        box.AddChild(header);
         foreach (var stage in HeroDatabase.Stages.Where(s => s.Chapter == _selectedChapter))
         {
             bool unlocked = stage.Id <= gm.Save.LastStage + 1;

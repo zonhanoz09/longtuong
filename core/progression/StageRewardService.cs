@@ -16,6 +16,8 @@ public class BattleReward
 {
     public int Silver { get; set; }
     public int ExpPerHero { get; set; }
+    // Phase 2.47: Chiến tích (merit) — Ải Vượt Tướng / Tổ Đội rewards.
+    public int Merit { get; set; }
     public List<RewardDrop> Drops { get; set; } = new();
 }
 
@@ -38,7 +40,8 @@ public static class StageRewardService
     public const int SilverPerWin = 1000;
     public const double DropChance = 0.10;
     public const int SweepsPerDay = 20;
-    public const string OreKind = "ore", StoneKind = "stone", GemKind = "gem";
+    // Phase 2.44: "material" = any Materials[itemId] (set fragments).
+    public const string OreKind = "ore", StoneKind = "stone", GemKind = "gem", MaterialKind = "material";
 
     public static int ExpPerHero(int stageId) => 40 + 10 * stageId;
 
@@ -65,6 +68,7 @@ public static class StageRewardService
     {
         ProgressionService.EnsureDefaults(save);
         save.Silver += reward.Silver;
+        save.Merit += reward.Merit;
         foreach (var heroId in teamIds)
             ProgressionService.AddExp(save, heroId, reward.ExpPerHero);
         foreach (var d in reward.Drops)
@@ -74,6 +78,9 @@ public static class StageRewardService
                 case OreKind: save.Materials[ForgeService.OreId] = ForgeService.OreCount(save) + d.Count; break;
                 case StoneKind: save.RefineStones += d.Count; break;
                 case GemKind: GemService.AddGems(save, d.ItemId, d.Count); break;
+                case MaterialKind:
+                    save.Materials[d.ItemId] = (save.Materials.TryGetValue(d.ItemId, out var have) ? have : 0) + d.Count;
+                    break;
             }
         }
     }
@@ -105,6 +112,7 @@ public static class StageRewardService
     public static string Describe(BattleReward r)
     {
         var parts = new List<string> { $"+{r.Silver:N0} Bạc", $"+{r.ExpPerHero} EXP mỗi tướng" };
+        if (r.Merit > 0) parts.Add($"+{r.Merit} Chiến tích");
         parts.AddRange(r.Drops.Select(d => $"+{d.Count} {d.Name}"));
         return string.Join(", ", parts);
     }

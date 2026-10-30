@@ -35,6 +35,18 @@ public partial class HubScene : Control
 	public static readonly Vector2 StarChartPopupSize = new(520, 400);
 	// Phase 2.31a: Cây Rung Tiền (minimal Bạc income for the silver economy).
 	public static readonly Vector2 MoneyTreePopupSize = new(440, 360);
+	// Phase 2.42: Hoạt Động (campaign-gated PvE modes). The bottom bar is
+	// full (positions fixed by 2.14), so the button sits in the top bar,
+	// left of Vào ải.
+	public static readonly Vector2 ActivityPopupSize = new(960, 560);
+	// Phase 2.46: Phó Bản screen (opened from the Hoạt Động card).
+	public static readonly Vector2 DungeonPopupSize = new(920, 600);
+	// Phase 2.47: Ải Vượt Tướng (+ Cửa hàng Chiến tích tab, 2.48).
+	public static readonly Vector2 DuelPopupSize = new(720, 520);
+	// Phase 2.49: Thí Luyện Tháp.
+	public static readonly Vector2 TrialPopupSize = new(700, 500);
+	// Phase 2.51: Chiến Dịch Tổ Đội.
+	public static readonly Vector2 PartyPopupSize = new(860, 540);
 
 	// Zone bounds on the 1280x720 viewport, from the second sketch:
 	// top 42.5%, middle 42.5%, bottom 14.9%; avatar column 21.3%.
@@ -91,6 +103,9 @@ public partial class HubScene : Control
 			btn.Text = text;
 			UiTheme.StyleButton(btn, primary);
 		}
+		var activityBtn = GetNode<Button>("TopBar/ActivityButton");
+		activityBtn.Text = "Hoạt Động";
+		UiTheme.StyleButton(activityBtn, true);
 		var functions = new (string Node, string Text, bool Primary)[]
 		{
 			("HeroListButton", "Võ\ntướng", false),
@@ -318,6 +333,7 @@ public partial class HubScene : Control
 	private void OnRecruitPressed() => OpenPopup("res://features/recruit/scenes/RecruitScene.tscn", RecruitPopupSize);
 	private void OnStarChartPressed() => OpenPopup("res://features/hero/scenes/StarChartScene.tscn", StarChartPopupSize);
 	private void OnMoneyTreePressed() => OpenPopup("res://features/moneytree/scenes/MoneyTreeScene.tscn", MoneyTreePopupSize);
+	private void OnActivityPressed() => OpenPopup("res://features/activity/scenes/ActivityScene.tscn", ActivityPopupSize);
 	private void OnLogoutPressed()
 	{
 		var gm = GetNode<GameManager>("/root/GameManager");

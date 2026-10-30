@@ -15,6 +15,27 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.40–2.52 — đã làm (chiến dịch 8 chương + 4 chế độ PvE)
+
+- **Chiến dịch 8 chương / 70 ải** theo cốt truyện (Hoàng Cân → Hán Trung),
+  mỗi chương số ải riêng (6/8/6/10/8/10/12/10); 8 lính + 27 boss riêng
+  (`EnemyDatabase`, không vào roster); boss có Scale × 1,3. Id ải toàn cục
+  nên save cũ giữ tiến độ.
+- **Nút Hub "Hoạt Động"** → 4 thẻ, mở khi qua chương VÀ đủ cấp: Phó Bản
+  (ch2+Lv30), Ải Vượt Tướng (ch3+Lv20), Thí Luyện Tháp (ch4+Lv25), Tổ Đội
+  (ch5+Lv40).
+- **8 tướng Tửu Quán mới**, mỗi chương mở 1 (Tôn Kiên … Mã Siêu); tài khoản
+  mới vẫn rút đúng 7 tướng cũ.
+- **Mảnh set**: Đúc Lại tốn thêm 10/15/20/25/30 mảnh của set đích.
+- **Phó Bản Trang Bị**: 5 phó bản × 4 ải × Thường/Khó, rơi mảnh set mốc kế
+  tiếp. **Ải Vượt Tướng**: chủ tướng 1v1, 100 tầng, Bạc + Chiến tích; **Cửa
+  hàng Chiến tích**. **Thí Luyện Tháp**: 60 tầng, rơi ngọc. **Tổ Đội**: đội
+  mình + 2 bot, HP boss giữ qua 3 đội.
+- Cân bằng bằng mô phỏng (`TestPhase252`); bảng số ở
+  `docs/KE_HOACH_LONGTUONG.md` §Phase 2.40–2.52.
+- Test: `tests/TestPhase240.tscn` … `TestPhase252.tscn` mới; cập nhật
+  1/2/22/24/29/210/223/224/225/236/239; CI thêm 2.40–2.52.
+
 ## Phase 2.39 — đã làm (vòng chơi ải)
 
 - Thắng ải: **+1.000 Bạc** (bỏ thưởng Vàng) + EXP 40 + 10 × ải;

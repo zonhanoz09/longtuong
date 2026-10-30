@@ -29,15 +29,39 @@ public static class TavernData
         ["dieu_thuyen"] = TavernTier.Cam,
         ["gia_cat_luong"] = TavernTier.Cam,
         ["lu_bo"] = TavernTier.Cam,
+        // Phase 2.43: one new hero per campaign chapter (see UnlockChapter).
+        ["ton_kien"] = TavernTier.Lam,
+        ["dien_vi"] = TavernTier.Lam,
+        ["gia_hu"] = TavernTier.Tim,
+        ["truong_lieu"] = TavernTier.Tim,
+        ["tu_thu"] = TavernTier.Tim,
+        ["chu_du"] = TavernTier.Cam,
+        ["chuc_dung"] = TavernTier.Cam,
+        ["ma_sieu"] = TavernTier.Cam,
+    };
+
+    // Phase 2.43: a new hero enters the draw pool and can be recruited once
+    // this campaign chapter is cleared. Heroes not listed are always open.
+    public static readonly Dictionary<string, int> UnlockChapter = new()
+    {
+        ["ton_kien"] = 1, ["dien_vi"] = 2, ["gia_hu"] = 3, ["truong_lieu"] = 4,
+        ["tu_thu"] = 5, ["chu_du"] = 6, ["chuc_dung"] = 7, ["ma_sieu"] = 8,
     };
 
     public static TavernTier? TierOf(string heroId) =>
         TierOfHero.TryGetValue(heroId, out var t) ? t : null;
 
+    /// Every hero the tavern can ever offer (locked ones included).
     public static List<string> PoolHeroIds => TierOfHero.Keys.ToList();
 
-    public static List<string> HeroesOfTier(TavernTier tier) =>
-        TierOfHero.Where(kv => kv.Value == tier).Select(kv => kv.Key).ToList();
+    /// Phase 2.43: false while the hero's chapter is not cleared. New accounts
+    /// therefore still draw from the original 7 heroes.
+    public static bool IsInPool(SaveData save, string heroId) =>
+        TierOfHero.ContainsKey(heroId)
+        && (!UnlockChapter.TryGetValue(heroId, out var chapter) || HeroDatabase.ChapterCleared(save, chapter));
+
+    public static List<string> HeroesOfTier(SaveData save, TavernTier tier) =>
+        TierOfHero.Where(kv => kv.Value == tier && IsInPool(save, kv.Key)).Select(kv => kv.Key).ToList();
 
     public static string TierName(TavernTier tier) => tier switch
     {

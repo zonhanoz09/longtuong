@@ -1,0 +1,61 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/duel/scenes/DuelTowerScene.cs" id="1_duel"]
+
+[node name="DuelTowerScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_duel")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 400.0
+offset_bottom = 46.0
+text = "Ải Vượt Tướng"
+
+[node name="MeritLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 300.0
+offset_top = 16.0
+offset_right = 660.0
+offset_bottom = 44.0
+horizontal_alignment = 2
+text = ""
+
+[node name="TabRow" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 56.0
+offset_right = 700.0
+offset_bottom = 112.0
+
+[node name="ClimbTab" type="Button" parent="TabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Leo tầng"
+
+[node name="ShopTab" type="Button" parent="TabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cửa hàng"
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 124.0
+offset_right = 700.0
+offset_bottom = 470.0
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 478.0
+offset_right = 700.0
+offset_bottom = 510.0
+text = ""

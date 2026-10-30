@@ -1,0 +1,55 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/trial/scenes/TrialTowerScene.cs" id="1_trial"]
+
+[node name="TrialTowerScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_trial")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 680.0
+offset_bottom = 46.0
+text = "Thí Luyện Tháp"
+
+[node name="FloorLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 680.0
+offset_bottom = 90.0
+text = ""
+
+[node name="InfoLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 100.0
+offset_right = 680.0
+offset_bottom = 330.0
+autowrap_mode = 3
+text = ""
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 340.0
+offset_right = 680.0
+offset_bottom = 380.0
+text = ""
+
+[node name="ChallengeButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 420.0
+offset_right = 300.0
+offset_bottom = 476.0
+text = "Khiêu chiến"
+
+[connection signal="pressed" from="ChallengeButton" to="." method="OnChallengePressed"]

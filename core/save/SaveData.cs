@@ -43,10 +43,27 @@ public class SaveData
     public BattleRecord? LastBattle { get; set; }
     public string SweepDate { get; set; } = "";
     public int SweepUsed { get; set; } = 0;
+    // Phase 2.45: dungeon progress. "<dungeon>:<normal|hard>" -> stages cleared
+    // in the current run (0..3, back to 0 after the last stage), and
+    // "<dungeon>:<diff>:done" -> 1 once the whole dungeon was ever cleared
+    // (Khó opens after Thường is done).
+    public Dictionary<string, int> DungeonProgress { get; set; } = new();
+    // Phase 2.47: Chiến tích (merit) currency + Ải Vượt Tướng highest floor
+    // cleared (kept forever, no daily reset).
+    public int Merit { get; set; } = 0;
+    public int DuelFloor { get; set; } = 0;
+    // Phase 2.49: Thí Luyện Tháp highest floor cleared (kept forever).
+    public int TrialFloor { get; set; } = 0;
+    // Phase 2.50: Tổ Đội bosses beaten (bossId -> times won). Boss n+1
+    // opens once boss n was beaten.
+    public Dictionary<string, int> PartyCleared { get; set; } = new();
 }
 
 public class BattleRecord
 {
+    // Phase 2.45: "Campaign" for old saves (the field is missing there).
+    public string Mode { get; set; } = "Campaign";
+    public string ModeKey { get; set; } = "";
     public int StageId { get; set; }
     public int Seed { get; set; }
     public bool Won { get; set; }

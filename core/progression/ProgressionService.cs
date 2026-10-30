@@ -132,11 +132,15 @@ public static class ProgressionService
         // Phase 2.34: forge data for old saves.
         save.Blueprints ??= new Dictionary<string, bool>();
         save.Materials ??= new Dictionary<string, int>();
+        save.DungeonProgress ??= new Dictionary<string, int>();
+        save.PartyCleared ??= new Dictionary<string, int>();
         foreach (var tier in new[] { TavernTier.Lam, TavernTier.Tim, TavernTier.Cam })
             if (!save.TierSouls.ContainsKey(tier.ToString())) save.TierSouls[tier.ToString()] = 0;
+        // Phase 2.41: stage ids are global (1..70); clamp out-of-range progress.
+        save.LastStage = Math.Clamp(save.LastStage, 0, HeroDatabase.Stages.Count);
         // Legacy saves (pre-2.2) have no OwnedHeroIds: they keep all heroes.
         if (save.OwnedHeroIds.Count == 0)
-            save.OwnedHeroIds = HeroDatabase.Heroes.Select(h => h.Id).ToList();
+            save.OwnedHeroIds = HeroDatabase.LegacyHeroIds.ToList();
         // Phase 2.22: the custom hero is the ONLY permanent hero — old
         // accounts missing it gain it on load. Every other hero (including
         // Luu Bi) is unlocked via recruit (a later feature), never granted

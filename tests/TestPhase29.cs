@@ -16,7 +16,7 @@ public partial class TestPhase29 : Node
 
     private void RunChecks()
     {
-        Check(HeroDatabase.Heroes.Count == 8, "8 heroes in roster");
+        Check(HeroDatabase.Heroes.Count == 16, "16 heroes in roster (2.43)");
         var luuBi = HeroDatabase.Get("luu_bi");
         Check(luuBi.Name == "Lưu Bị" && luuBi.Role == HeroRole.Vanguard, "Luu Bi is a Vanguard hero");
         Check(luuBi.UltKind == UltKind.SingleDamage && luuBi.UltPower == 1.8, "Luu Bi ult is single damage x1.8");
@@ -31,7 +31,7 @@ public partial class TestPhase29 : Node
         ProgressionService.EnsureDefaults(legacy);
         Check(legacy.OwnedHeroIds.Count == 8 && legacy.OwnedHeroIds.Contains("luu_bi"), "legacy save keeps all 8 heroes");
         // Tavern pool covers all 7 heroes, weights sum to 100 per grade.
-        Check(TavernData.PoolHeroIds.Count == 7 && TavernData.PoolHeroIds.Contains("luu_bi") && !TavernData.PoolHeroIds.Contains("custom_hero"), "tavern pool includes Luu Bi, excludes the custom hero");
+        Check(TavernData.PoolHeroIds.Count == 15 && TavernData.PoolHeroIds.Contains("luu_bi") && !TavernData.PoolHeroIds.Contains("custom_hero"), "tavern pool includes Luu Bi, excludes the custom hero (2.43: 15 listed)");
         var (ln, tn, cn) = TavernData.DrawWeights(TavernGrade.Normal);
         var (lh, th, ch) = TavernData.DrawWeights(TavernGrade.High);
         Check(ln + tn + cn == 100 && lh + th + ch == 100, "tavern draw weights sum to 100 per grade");

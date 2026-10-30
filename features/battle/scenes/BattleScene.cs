@@ -120,13 +120,26 @@ public partial class BattleScene : Control
         StyleMount(GetNode<PanelContainer>("PlayerMount"));
         StyleMount(GetNode<PanelContainer>("EnemyMount"));
 
-        var stage = HeroDatabase.GetStage(gm.CurrentStageId);
-        var effectiveTeam = gm.SelectedTeamIds.Select(id => ProgressionService.GetEffectiveHero(gm.Save, id)).ToList();
-        var positions = gm.SelectedTeamIds.Select(id => FormationService.PositionOfHero(gm.Save, id)).ToList();
-        _engine = new BattleEngine(effectiveTeam, positions, stage, gm.CurrentSeed);
-
-        BuildPlayerGrid(gm);
-        BuildEnemyGrid();
+        if (gm.CurrentMode == BattleMode.Party)
+        {
+            // Phase 2.51: Tổ Đội — 3 teams in a row against one boss.
+            _partyBossId = gm.CurrentModeKey;
+            _partyBossMaxHp = new BattleEngine(new List<HeroDef>(), PartyService.BossStage(_partyBossId), 0).EnemyFighters[0].MaxHp;
+            _partyBossHp = _partyBossMaxHp;
+            StartPartyTeam(gm, 0);
+        }
+        else
+        {
+            // Phase 2.45: non-campaign modes fight their own generated stage.
+            var stage = gm.CurrentMode != BattleMode.Campaign && gm.CurrentStage != null
+                ? gm.CurrentStage
+                : HeroDatabase.GetStage(gm.CurrentStageId);
+            var effectiveTeam = gm.SelectedTeamIds.Select(id => ProgressionService.GetEffectiveHero(gm.Save, id)).ToList();
+            var positions = gm.SelectedTeamIds.Select(id => FormationService.PositionOfHero(gm.Save, id)).ToList();
+            _engine = new BattleEngine(effectiveTeam, positions, stage, gm.CurrentSeed);
+            BuildPlayerGrid(gm.Save.Formation ?? new Dictionary<string, string>());
+            BuildEnemyGrid();
+        }
 
         _timer = new Timer { WaitTime = 1.0, OneShot = false, Autostart = false };
         _timer.Timeout += OnBattleTick;
@@ -149,11 +162,50 @@ public partial class BattleScene : Control
         UiTheme.StyleBody(label, 15);
     }
 
-    private void BuildPlayerGrid(GameManager gm)
+    // Phase 2.51: Tổ Đội state (unused in other modes).
+    private string _partyBossId = "";
+    private int _partyIndex;
+    private int _partyBossHp, _partyBossMaxHp;
+    private readonly List<PartyRun> _partyRuns = new();
+    private Label? _partyLabel;
+    private Label? _bossHpLabel;
+    public int PartyTeamIndex => _partyIndex;
+    public IReadOnlyList<PartyRun> PartyRuns => _partyRuns;
+
+    private void StartPartyTeam(GameManager gm, int index)
+    {
+        _partyIndex = index;
+        var team = PartyService.TeamFor(gm.Save, index, gm.CurrentSeed);
+        _engine = PartyService.EngineFor(team, _partyBossId, gm.CurrentSeed, index, _partyBossHp);
+        foreach (var gridName in new[] { "PlayerGrid", "EnemyGrid" })
+        {
+            var grid = GetNode<GridContainer>(gridName);
+            foreach (var child in grid.GetChildren()) { grid.RemoveChild(child); child.QueueFree(); }
+        }
+        _cells.Clear();
+        // The player's team stands on its formation; bots on the enemy-style slots.
+        var layout = new Dictionary<string, string>();
+        if (index == 0) layout = gm.Save.Formation ?? layout;
+        else for (int i = 0; i < team.Heroes.Count; i++) layout[HeroDatabase.DefaultEnemySlots[i]] = team.Heroes[i].Id;
+        BuildPlayerGrid(layout);
+        BuildEnemyGrid();
+        if (_partyLabel == null)
+        {
+            _partyLabel = new Label { Name = "PartyLabel", Position = new Vector2(20, 60), Size = new Vector2(400, 30) };
+            UiTheme.StyleBody(_partyLabel, 18);
+            _partyLabel.AddThemeColorOverride("font_color", UiTheme.Gold);
+            AddChild(_partyLabel);
+            _bossHpLabel = new Label { Name = "BossHpLabel", Position = new Vector2(760, 60), Size = new Vector2(500, 30), HorizontalAlignment = HorizontalAlignment.Right };
+            UiTheme.StyleBody(_bossHpLabel, 18);
+            AddChild(_bossHpLabel);
+        }
+        _partyLabel.Text = team.Label;
+    }
+
+    private void BuildPlayerGrid(Dictionary<string, string> formation)
     {
         var grid = GetNode<GridContainer>("PlayerGrid");
         var byId = _engine!.PlayerFighters.ToDictionary(f => f.Def.Id);
-        var formation = gm.Save.Formation ?? new Dictionary<string, string>();
         foreach (var cell in FormationService.GridOrder)
         {
             if (cell == null || !formation.TryGetValue(cell, out var heroId)
@@ -193,6 +245,8 @@ public partial class BattleScene : Control
         if (_engine == null) return;
         var current = _engine.Current;
         foreach (var (fighter, cell) in _cells) cell.Refresh(fighter, current == fighter);
+        if (_bossHpLabel != null && _engine.EnemyFighters.Count > 0)
+            _bossHpLabel.Text = $"HP boss: {_engine.EnemyFighters[0].Hp:N0} / {_partyBossMaxHp:N0}";
         if (_turnLabel != null)
             _turnLabel.Text = _engine.IsOver ? "Trận đã kết thúc."
                 : current == null ? "—"
@@ -230,14 +284,29 @@ public partial class BattleScene : Control
     private void FinishIfOver()
     {
         if (_engine == null || !_engine.IsOver || _finished) return;
+        var gm = GetNode<GameManager>("/root/GameManager");
+        bool won = _engine.PlayerWon;
+        if (gm.CurrentMode == BattleMode.Party)
+        {
+            // Phase 2.51: record this team's run; the boss HP carries over.
+            int after = _engine.EnemyFighters[0].Hp;
+            _partyRuns.Add(new PartyRun { Label = _partyLabel?.Text ?? "", BossHpBefore = _partyBossHp, BossHpAfter = after, Turns = _engine.TurnCount });
+            _partyBossHp = after;
+            won = after <= 0;
+            if (!won && _partyIndex < PartyService.Teams - 1)
+            {
+                StartPartyTeam(gm, _partyIndex + 1);
+                Refresh();
+                return;
+            }
+        }
         _finished = true;
         _timer?.Stop();
         if (_speedButton != null) _speedButton.Disabled = true;
-        var gm = GetNode<GameManager>("/root/GameManager");
-        int stars = _engine.Stars();
+        int stars = gm.CurrentMode == BattleMode.Party ? (won ? 3 : 0) : _engine.Stars();
         // Rewards are applied immediately on win; the popup is display-only.
-        var reward = gm.ApplyBattleResult(_engine.PlayerWon, stars);
-        ShowResultPopup(_engine.PlayerWon, stars, reward);
+        var reward = gm.ApplyBattleResult(won, stars);
+        ShowResultPopup(won, stars, reward);
         Refresh();
     }
 
@@ -245,7 +314,7 @@ public partial class BattleScene : Control
     {
         bool win = won;
         var popup = new Control { Name = "ResultPopup" };
-        int pw = 560, ph = win ? 400 : 280;
+        int pw = 560, ph = (win ? 400 : 280) + (_partyRuns.Count > 0 ? 110 : 0);
         popup.SetAnchorsPreset(Control.LayoutPreset.Center);
         popup.OffsetLeft = -pw / 2.0f;
         popup.OffsetTop = -ph / 2.0f;
@@ -273,6 +342,25 @@ public partial class BattleScene : Control
         title.AddThemeFontSizeOverride("font_size", 28);
         title.AddThemeColorOverride("font_color", win ? UiTheme.Gold : UiTheme.EnemyRed);
         vbox.AddChild(title);
+        if (_partyRuns.Count > 0)
+        {
+            // Phase 2.51: damage dealt by each team to the boss.
+            var dmg = new Label
+            {
+                Name = "PartyDamageLabel",
+                Text = string.Join("\n", _partyRuns.Select(r => $"{r.Label}: {r.Damage:N0} sát thương")),
+                HorizontalAlignment = HorizontalAlignment.Center,
+            };
+            UiTheme.StyleBody(dmg, 15);
+            vbox.AddChild(dmg);
+            if (win)
+            {
+                var chest = new Label { Name = "PartyChestLabel", Text = "Rương chiến công", HorizontalAlignment = HorizontalAlignment.Center };
+                UiTheme.StyleBody(chest, 16);
+                chest.AddThemeColorOverride("font_color", UiTheme.Gold);
+                vbox.AddChild(chest);
+            }
+        }
         if (win)
         {
             var starsLabel = new Label { Text = $"Sao: {stars}/3", HorizontalAlignment = HorizontalAlignment.Center };
@@ -280,7 +368,8 @@ public partial class BattleScene : Control
             vbox.AddChild(starsLabel);
             var rewardLabel = new Label
             {
-                Text = $"Thưởng: +{reward?.Silver ?? 0:N0} Bạc, +{reward?.ExpPerHero ?? 0} EXP mỗi tướng",
+                Text = $"Thưởng: +{reward?.Silver ?? 0:N0} Bạc, +{reward?.ExpPerHero ?? 0} EXP mỗi tướng"
+                    + ((reward?.Merit ?? 0) > 0 ? $", +{reward!.Merit} Chiến tích" : ""),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             };

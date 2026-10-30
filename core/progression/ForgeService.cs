@@ -79,12 +79,44 @@ public static class ForgeService
         return i >= 0 && i + 1 < UpgradeChain.Count ? UpgradeChain[i + 1] : null;
     }
 
+    // Phase 2.44: set fragments ("mảnh chế tạo") — dropped by dungeons,
+    // bought with Chiến tích, and consumed by each Đúc Lại into that set
+    // (Huynh 3 = b: the blueprint is still bought with Vàng). Stored in
+    // Materials["frag_<setId>"]. Tân Thủ is never recast into, so it has none.
+    public static string FragmentId(string setId) => "frag_" + setId;
+    public static string FragmentName(string setId) => "Mảnh " + EquipmentSets.Get(setId).Name;
+
+    // Fragments per recast INTO the set (Pax setup — Huynh tunes freely).
+    public static readonly Dictionary<string, int> RecastFragmentCosts = new()
+    {
+        ["chu_tuoc"] = 10,
+        ["bach_ho"] = 15,
+        ["thanh_long"] = 20,
+        ["huyen_vu"] = 25,
+        ["ky_lan"] = 30,
+    };
+
+    public static int RecastFragmentCost(string targetSetId) =>
+        RecastFragmentCosts.TryGetValue(targetSetId, out int n) ? n : 0;
+
+    public static int FragmentCount(SaveData save, string setId)
+    {
+        ProgressionService.EnsureDefaults(save);
+        return save.Materials.TryGetValue(FragmentId(setId), out int n) ? n : 0;
+    }
+
+    public static void AddFragments(SaveData save, string setId, int count)
+    {
+        ProgressionService.EnsureDefaults(save);
+        save.Materials[FragmentId(setId)] = FragmentCount(save, setId) + count;
+    }
+
     public static int RecastOreCost(string targetSetId) =>
         EquipmentSets.Get(targetSetId).Tier / 2;
     public static int RecastSilverCost(string targetSetId) =>
         EquipmentSets.Get(targetSetId).Tier * 1000;
 
-    public enum RecastResult { Success, NoNext, LowLevel, NoBlueprint, NoOre, NoSilver, EmptySlot }
+    public enum RecastResult { Success, NoNext, LowLevel, NoBlueprint, NoOre, NoSilver, EmptySlot, NoFragments }
 
     public static RecastResult TryRecast(SaveData save, string heroId, string slotId, Random rng)
     {
@@ -99,9 +131,12 @@ public static class ForgeService
         if (!HasBlueprint(save, next)) return RecastResult.NoBlueprint;
         int oreNeed = RecastOreCost(next);
         if (OreCount(save) < oreNeed) return RecastResult.NoOre;
+        int fragNeed = RecastFragmentCost(next);
+        if (FragmentCount(save, next) < fragNeed) return RecastResult.NoFragments;
         int silverNeed = RecastSilverCost(next);
         if (save.Silver < silverNeed) return RecastResult.NoSilver;
         save.Materials[OreId] = OreCount(save) - oreNeed;
+        save.Materials[FragmentId(next)] = FragmentCount(save, next) - fragNeed;
         save.Silver -= silverNeed;
         eq.SetId = next;
         eq.Tier = target.Tier;

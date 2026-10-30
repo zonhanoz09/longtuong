@@ -32,16 +32,16 @@ public partial class TestPhase1 : Node
 
     private void CheckData()
     {
-        Check(HeroDatabase.Heroes.Count == 8, "8 heroes");
-        Check(HeroDatabase.Heroes.Select(h => h.Id).Distinct().Count() == 8, "hero ids unique");
+        Check(HeroDatabase.Heroes.Count == 16, "16 heroes (2.43: 8 original + 8 tavern)");
+        Check(HeroDatabase.Heroes.Select(h => h.Id).Distinct().Count() == 16, "hero ids unique");
         Check(HeroDatabase.Heroes.All(h => h.NormalName.Length > 0 && h.UltName.Length > 0 && h.PassiveName.Length > 0 && h.PassiveDesc.Length > 0), "every hero has normal + ult + passive");
         Check(HeroDatabase.Heroes.All(h => h.Hp > 0 && h.Atk > 0 && h.Speed > 0), "hero stats positive");
     }
 
     private void CheckStages()
     {
-        // Phase 2.39: 2 chapters x 10 stages; chapter 1 keeps 3 enemies.
-        Check(HeroDatabase.Stages.Count == 20, "20 stages (2 chapters)");
+        // Phase 2.41: 8 story chapters, 70 stages; chapter 1 keeps 3 enemies.
+        Check(HeroDatabase.Stages.Count == 70, "70 stages (8 chapters)");
         Check(HeroDatabase.Stages.Where(s => s.Chapter == 1).All(s => s.EnemyIds.Count == 3), "every chapter 1 stage has 3 enemies");
         bool scaleUp = true;
         for (int i = 1; i < HeroDatabase.Stages.Count; i++)

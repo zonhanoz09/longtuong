@@ -44,7 +44,7 @@ public partial class TestPhase223 : Node
         Check(TavernData.RecruitCost(TavernTier.Lam) == 100 && TavernData.RecruitCost(TavernTier.Tim) == 500 && TavernData.RecruitCost(TavernTier.Cam) == 1500, "recruit costs 100/500/1500");
         Check(TavernData.DrinkPrice(TavernGrade.Normal) == 150000 && TavernData.DrinkPrice(TavernGrade.High) == 300000, "drink prices 150000/300000 silver (2.25)");
         Check(TavernData.StatFactor(TavernTier.Lam) < TavernData.StatFactor(TavernTier.Tim) && TavernData.StatFactor(TavernTier.Tim) < TavernData.StatFactor(TavernTier.Cam) && TavernData.StatFactor(TavernTier.Cam) < TavernData.StatFactor(TavernTier.Do), "quality factors increase with tier");
-        Check(TavernData.PoolHeroIds.Count == 7 && !TavernData.PoolHeroIds.Contains("custom_hero"), "tavern pool is 7 heroes, no custom hero");
+        Check(TavernData.PoolHeroIds.Count == 15 && !TavernData.PoolHeroIds.Contains("custom_hero"), "tavern lists 15 heroes (2.43), no custom hero");
 
         // --- Player level = custom hero level; MaxLevel 180 ---
         var s = SeedService.CreateSeededSave("tester223");

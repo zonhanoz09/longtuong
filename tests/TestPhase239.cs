@@ -45,8 +45,9 @@ public partial class TestPhase239 : Node
 
     private void CheckChapters()
     {
-        Check(HeroDatabase.ChapterCount == 2, "2 chapters");
-        Check(HeroDatabase.GetStage(10).Chapter == 1 && HeroDatabase.GetStage(11).Chapter == 2, "stage 11 opens chapter 2");
+        // Phase 2.41: 8 chapters with their own stage counts (chapter 2 = ải 7–14).
+        Check(HeroDatabase.ChapterCount == 8, "8 chapters");
+        Check(HeroDatabase.GetStage(6).Chapter == 1 && HeroDatabase.GetStage(7).Chapter == 2, "stage 7 opens chapter 2");
         Check(Enumerable.Range(11, 5).All(id => HeroDatabase.GetStage(id).EnemyIds.Count == 4), "stages 11-15 have 4 enemies");
         Check(Enumerable.Range(16, 5).All(id => HeroDatabase.GetStage(id).EnemyIds.Count == 5), "stages 16-20 have 5 enemies");
         Check(HeroDatabase.GetStage(20).Scale > HeroDatabase.GetStage(10).Scale, "chapter 2 is harder");
@@ -207,8 +208,8 @@ public partial class TestPhase239 : Node
         AddChild(ui);
         var box = ui.GetNode<VBoxContainer>("StageBox");
         var ch2 = box.FindChild("Chapter_2", true, false) as Button;
-        Check(ch2 != null && ch2.Disabled, "chapter 2 locked before clearing stage 10");
-        Check(box.GetChildren().OfType<Button>().Count() == 10 && box.FindChild("Stage_1", true, false) != null, "chapter 1 lists 10 stages");
+        Check(ch2 != null && ch2.Disabled, "chapter 2 locked before clearing stage 6");
+        Check(box.GetChildren().OfType<Button>().Count() == 6 && box.FindChild("Stage_1", true, false) != null, "chapter 1 lists 6 stages (2.41)");
         var sweep = ui.GetNode<Button>("SweepButton");
         Check(sweep.Disabled, "sweep disabled without 3 stars");
         Check(ui.GetNode<Label>("InfoLabel").Text.Contains("1.000 Bạc") || ui.GetNode<Label>("InfoLabel").Text.Contains("1,000 Bạc"),
@@ -221,7 +222,7 @@ public partial class TestPhase239 : Node
         var ui2 = scene.Instantiate<StageSelect>();
         AddChild(ui2);
         var box2 = ui2.GetNode<VBoxContainer>("StageBox");
-        Check(!((Button)box2.FindChild("Chapter_2", true, false)!).Disabled, "chapter 2 opens after stage 10");
+        Check(!((Button)box2.FindChild("Chapter_2", true, false)!).Disabled, "chapter 2 opens after stage 6");
         Check(box2.FindChild("Stage_12", true, false) is Button { ButtonPressed: true }, "opens on the chapter of the current stage");
         var sweep2 = ui2.GetNode<Button>("SweepButton");
         Check(!sweep2.Disabled, "sweep enabled on a 3-star stage");

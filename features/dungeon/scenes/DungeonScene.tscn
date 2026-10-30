@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/dungeon/scenes/DungeonScene.cs" id="1_dungeon"]
+
+[node name="DungeonScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dungeon")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 600.0
+offset_bottom = 46.0
+text = "Phó Bản Trang Bị"
+
+[node name="DungeonList" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 300.0
+offset_bottom = 580.0
+
+[node name="DifficultyRow" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 60.0
+offset_right = 900.0
+offset_bottom = 116.0
+
+[node name="InfoLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 128.0
+offset_right = 900.0
+offset_bottom = 470.0
+autowrap_mode = 3
+text = ""
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 478.0
+offset_right = 900.0
+offset_bottom = 520.0
+autowrap_mode = 3
+text = ""
+
+[node name="EnterButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 530.0
+offset_right = 560.0
+offset_bottom = 586.0
+text = "Vào trận"
+
+[connection signal="pressed" from="EnterButton" to="." method="OnEnterPressed"]

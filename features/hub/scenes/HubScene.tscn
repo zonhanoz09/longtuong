@@ -101,6 +101,15 @@ offset_right = 961.0
 offset_bottom = 95.0
 text = "Dang xuat"
 
+[node name="ActivityButton" type="Button" parent="TopBar"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 735.0
+offset_top = 30.0
+offset_right = 883.0
+offset_bottom = 111.0
+text = "Hoat Dong"
+
 [node name="TopSeparator" type="ColorRect" parent="."]
 layout_mode = 0
 offset_left = 0.0
@@ -249,6 +258,7 @@ text = "Chieu mo"
 
 [connection signal="pressed" from="TopBar/TopActions/StageButton" to="." method="OnStagePressed"]
 [connection signal="pressed" from="TopBar/TopActions/LogoutButton" to="." method="OnLogoutPressed"]
+[connection signal="pressed" from="TopBar/ActivityButton" to="." method="OnActivityPressed"]
 [connection signal="pressed" from="FunctionBar/HeroListButton" to="." method="OnHeroListPressed"]
 [connection signal="pressed" from="FunctionBar/BagButton" to="." method="OnBagPressed"]
 [connection signal="pressed" from="FunctionBar/FormationButton" to="." method="OnFormationPressed"]

@@ -71,7 +71,7 @@ public static class TavernService
 
     public static string DrawHero(SaveData save, TavernGrade grade, Random rng)
     {
-        var pool = TavernData.HeroesOfTier(DrawTier(save, grade, rng));
+        var pool = TavernData.HeroesOfTier(save, DrawTier(save, grade, rng));
         return pool[rng.Next(pool.Count)];
     }
 
@@ -119,6 +119,7 @@ public static class TavernService
     {
         ProgressionService.EnsureDefaults(save);
         if (save.OwnedHeroIds.Contains(heroId)) return false;
+        if (!TavernData.IsInPool(save, heroId)) return false; // Phase 2.43: chapter not cleared yet
         var tier = TavernData.TierOf(heroId);
         if (tier == null || tier == TavernTier.Do) return false;
         return TierSoulsOf(save, tier.Value) >= TavernData.RecruitCost(tier.Value);

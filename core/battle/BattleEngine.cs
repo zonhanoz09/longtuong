@@ -22,7 +22,12 @@ public class BattleEngine
     private int _orderIndex;
 
     public Fighter? Current => _orderIndex >= 0 && _orderIndex < _order.Count ? _order[_orderIndex] : null;
-    public bool IsOver => PlayerFighters.All(f => !f.Alive) || EnemyFighters.All(f => !f.Alive);
+    // Phase 2.50: optional turn cap (0 = none). Reaching it ends the battle
+    // with PlayerWon = false (enemies still standing) — used by Tổ Đội,
+    // where each team gets a fixed number of turns against the boss.
+    public int MaxTurns { get; }
+    public bool IsOver => PlayerFighters.All(f => !f.Alive) || EnemyFighters.All(f => !f.Alive)
+        || (MaxTurns > 0 && TurnCount >= MaxTurns);
     public bool PlayerWon => EnemyFighters.All(f => !f.Alive) && PlayerFighters.Any(f => f.Alive);
 
     public BattleEngine(List<string> playerIds, StageDef stage, int seed)
@@ -33,10 +38,15 @@ public class BattleEngine
 
     // playerPositions parallels playerDefs (None when absent); enemy
     // positions come from the stage (StageDef.EnemySlot).
-    public BattleEngine(List<HeroDef> playerDefs, List<FormationPosition>? playerPositions, StageDef stage, int seed)
+    // Phase 2.50: maxTurns (0 = no cap) and enemyStartHp (per enemy, clamped
+    // to its max HP) let a boss keep its HP between teams. Defaults keep the
+    // old behaviour and RNG sequence exactly.
+    public BattleEngine(List<HeroDef> playerDefs, List<FormationPosition>? playerPositions, StageDef stage, int seed,
+        int maxTurns = 0, IReadOnlyList<int>? enemyStartHp = null)
     {
         Stage = stage;
         Seed = seed;
+        MaxTurns = maxTurns;
         _rng = new Random(seed);
         for (int i = 0; i < playerDefs.Count; i++)
         {
@@ -45,12 +55,17 @@ public class BattleEngine
             PlayerFighters.Add(f);
         }
         // Phase 2.39: enemies stand on the stage's formation slots and get the
-        // same position rules as the player side.
+        // same position rules as the player side. Phase 2.40: ids resolve
+        // through GetCombatant (enemy-only soldiers/bosses) and the stage
+        // boss gets Scale x BossScale.
         for (int i = 0; i < stage.EnemyIds.Count; i++)
-            EnemyFighters.Add(new Fighter(HeroDatabase.Get(stage.EnemyIds[i]).WithScale(stage.Scale), false)
-            {
-                Position = FormationService.PositionOfSlot(stage.EnemySlot(i)),
-            });
+        {
+            var def = HeroDatabase.GetCombatant(stage.EnemyIds[i]).WithScale(stage.ScaleFor(stage.EnemyIds[i]));
+            if (stage.EnemyHpMultiplier != 1.0) def.Hp = (int)Math.Round(def.Hp * stage.EnemyHpMultiplier);
+            var enemy = new Fighter(def, false) { Position = FormationService.PositionOfSlot(stage.EnemySlot(i)) };
+            if (enemyStartHp != null && i < enemyStartHp.Count) enemy.Hp = Math.Clamp(enemyStartHp[i], 0, enemy.MaxHp);
+            EnemyFighters.Add(enemy);
+        }
         RebuildOrder();
     }
 

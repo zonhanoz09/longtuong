@@ -44,7 +44,7 @@ public partial class TestPhase24 : Node
         var tabButtons = heroList?.GetNodeOrNull<VBoxContainer>("TabButtons");
         var tabBtns = tabButtons?.GetChildren().OfType<Button>().ToList() ?? new System.Collections.Generic.List<Button>();
         // TabButtons is a VBoxContainer, so its buttons stack vertically by construction.
-        Check(tabButtons != null && tabBtns.Count == HeroDatabase.Heroes.Count, "hero tabs are a vertical button column, one per owned hero (legacy save owns all 8)");
+        Check(tabButtons != null && tabBtns.Count == HeroDatabase.LegacyHeroIds.Length, "hero tabs are a vertical button column, one per owned hero (legacy save owns the 8 original)");
         var grid = heroList?.GetNodeOrNull<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid != null && grid.Columns == 4, "equipment grid has 4 columns");
         Check(grid != null && grid.GetChildCount() == 28, "equipment grid has 28 cells (4x7) when bag is empty");

@@ -185,6 +185,9 @@ Giày Bạch Hổ 70), thay vì rèn món mới + kế thừa.
   tay). Tên trang bị = "{Tên set} {Tên ô}" (VD: Chu Tước Vũ khí).
 - Q3a: Chi phí Chế Tạo = quặng + Bạc như Đúc Lại.
 - Q4a: "Tinh Thiết" = Khoáng thạch hiện tại (không thêm nguyên liệu).
+  **Thay bởi chốt 2026-10-30 (Phase 2.44):** thêm "mảnh chế tạo" theo set —
+  Đúc Lại lên set X tốn thêm mảnh X (10/15/20/25/30), rơi từ Phó Bản /
+  Tổ Đội hoặc đổi bằng Chiến tích; xem `KE_HOACH_LONGTUONG.md` §Phase 2.40–2.52.
 - Q5a: Chi phí tẩy = 1 + số dòng khóa (đá); fallback Vàng
   200 x (1 + số dòng khóa).
 - Q6b: Cooldown chỉ hiển thị "Sẵn sàng" (không làm logic chờ).

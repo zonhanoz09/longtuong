@@ -80,3 +80,16 @@ jobs:
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase237.tscn
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase238.tscn
           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase239.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase240.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase241.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase242.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase243.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase244.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase245.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase246.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase247.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase248.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase249.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase250.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase251.tscn
+          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase252.tscn

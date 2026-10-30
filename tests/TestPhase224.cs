@@ -58,7 +58,7 @@ public partial class TestPhase224 : Node
         Check(!tav.GetNode<Control>("DrinkBox").Visible && !tav.GetNode<Button>("RockButton").Visible && !tav.GetNode<Button>("ToRecruitButton").Visible,
             "drink view hidden initially");
         var cards = tav.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
-        Check(cards.Count == 7, "recruit grid has 7 cards (2 Lam, 2 Tim, 3 Cam)");
+        Check(cards.Count == 15, "recruit grid has 15 cards (2.43: 4 Lam, 5 Tim, 6 Cam; new ones greyed until their chapter)");
         string CardName(Button b) => b.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "NameLabel")?.Text ?? "";
         string CardPrice(Button b) => b.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "PriceLabel")?.Text ?? "";
         Check(cards.Any(b => CardName(b).Contains("Lưu Bị") && CardPrice(b) == "100")

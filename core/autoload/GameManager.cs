@@ -29,6 +29,13 @@ public partial class GameManager : Node
         System.IO.Directory.CreateDirectory(DataDir);
     }
     public int CurrentStageId { get; set; } = 1;
+    // Phase 2.45: which mode the current battle belongs to. Campaign (default)
+    // uses CurrentStageId + HeroDatabase stages exactly as before; the other
+    // modes carry their own generated StageDef in CurrentStage and are
+    // settled by ModeRewardService (they never touch LastStage/StageStars).
+    public BattleMode CurrentMode { get; set; } = BattleMode.Campaign;
+    public StageDef? CurrentStage { get; set; }
+    public string CurrentModeKey { get; set; } = "";
     public int CurrentSeed { get; set; }
     public bool LastBattleWon { get; private set; }
     public int LastBattleStars { get; private set; }
@@ -101,6 +108,24 @@ public partial class GameManager : Node
     public void StartBattle(int stageId, List<string> teamIds, int seed)
     {
         CurrentStageId = stageId;
+        CurrentMode = BattleMode.Campaign;
+        CurrentStage = null;
+        CurrentModeKey = "";
+        SelectedTeamIds = new List<string>(teamIds);
+        CurrentSeed = seed;
+        LastBattleWon = false;
+        LastBattleStars = 0;
+        LastBattleReward = null;
+    }
+
+    /// Phase 2.45: start a non-campaign battle (dungeon, tower, party).
+    /// `key` identifies what is being fought (e.g. "co_mo:normal:0").
+    public void StartModeBattle(BattleMode mode, string key, StageDef stage, List<string> teamIds, int seed)
+    {
+        CurrentMode = mode;
+        CurrentModeKey = key;
+        CurrentStage = stage;
+        CurrentStageId = stage.Id;
         SelectedTeamIds = new List<string>(teamIds);
         CurrentSeed = seed;
         LastBattleWon = false;
@@ -120,8 +145,17 @@ public partial class GameManager : Node
         {
             StageId = CurrentStageId, Seed = CurrentSeed, Won = won, Stars = stars,
             TeamIds = new List<string>(SelectedTeamIds),
+            Mode = CurrentMode.ToString(), ModeKey = CurrentModeKey,
         };
         if (!won) { SaveGame(); return null; }
+        if (CurrentMode != BattleMode.Campaign)
+        {
+            Save.Wins++;
+            var modeReward = ModeRewardService.Apply(Save, CurrentMode, CurrentModeKey, SelectedTeamIds, CurrentSeed);
+            LastBattleReward = modeReward;
+            SaveGame();
+            return modeReward;
+        }
         bool firstClear = CurrentStageId > Save.LastStage;
         Save.Wins++;
         if (firstClear) Save.LastStage = CurrentStageId;

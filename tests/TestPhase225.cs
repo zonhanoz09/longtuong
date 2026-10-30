@@ -63,7 +63,7 @@ public partial class TestPhase225 : Node
             {
                 int roll = rep.Next(90); // High 60/30, Cam 0 below 70
                 var tier = roll < 60 ? TavernTier.Lam : TavernTier.Tim;
-                var pool = TavernData.HeroesOfTier(tier);
+                var pool = TavernData.HeroesOfTier(sWin, tier);
                 _ = pool[rep.Next(pool.Count)];
                 expected[tier] += rep.Next(1, 4);
             }

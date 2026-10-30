@@ -775,6 +775,7 @@ public partial class HeroScreen : Control
                 int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
                 bool hasBp = ForgeService.HasBlueprint(save, next);
                 int oreNeed = ForgeService.RecastOreCost(next), silverNeed = ForgeService.RecastSilverCost(next);
+                int fragNeed = ForgeService.RecastFragmentCost(next);
                 // Blueprint row with inline buy.
                 Button? buyBp = null;
                 if (!hasBp)
@@ -806,12 +807,17 @@ public partial class HeroScreen : Control
                             gm2.SaveGame();
                             RefreshRightPanel();
                         })));
+                // Phase 2.44: set fragments (dungeon drops / Chiến tích shop).
+                var fragRow = SmallResource(ForgeService.FragmentName(next), ForgeService.FragmentCount(save, next), fragNeed);
+                fragRow.Name = "FragmentRow";
+                box.AddChild(fragRow);
                 var hypRecast = EquipmentService.CopyState(eq);
                 hypRecast.SetId = next; hypRecast.Tier = target.Tier; hypRecast.Quality = target.Quality;
                 box.AddChild(SmallInfo("▸ " + ProjSummary(
                     EquipmentService.ProjectEquipChange(save, _selectedHero, _selectedSlot, hypRecast))));
                 bool canRecast = hasBp && mainLevel >= target.Tier
-                    && save.Silver >= silverNeed && ForgeService.OreCount(save) >= oreNeed;
+                    && save.Silver >= silverNeed && ForgeService.OreCount(save) >= oreNeed
+                    && ForgeService.FragmentCount(save, next) >= fragNeed;
                 actions.AddChild(MakeIconButton("ActionRecast", "Đúc lại", canRecast,
                     () =>
                     {
@@ -822,6 +828,7 @@ public partial class HeroScreen : Control
                             ForgeService.RecastResult.LowLevel => $"Cấp tướng chính chưa đủ (cần Lv{target.Tier})!",
                             ForgeService.RecastResult.NoBlueprint => $"Chưa học bản vẽ {target.Name}!",
                             ForgeService.RecastResult.NoOre => "Không đủ Khoáng thạch!",
+                            ForgeService.RecastResult.NoFragments => $"Không đủ {ForgeService.FragmentName(next)}!",
                             ForgeService.RecastResult.NoSilver => "Không đủ Bạc!",
                             _ => "Không đúc lại được!",
                         };

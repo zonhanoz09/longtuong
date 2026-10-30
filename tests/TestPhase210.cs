@@ -16,7 +16,7 @@ public partial class TestPhase210 : Node
 
     private void RunChecks()
     {
-        Check(HeroDatabase.Heroes.Count == 8, "8 heroes in roster");
+        Check(HeroDatabase.Heroes.Count == 16, "16 heroes in roster (2.43: +8 tavern heroes)");
         Check(HeroDatabase.Heroes[0].Id == "custom_hero", "custom hero is first in the roster");
         var custom = HeroDatabase.Get("custom_hero");
         Check(custom.Role == HeroRole.Vanguard, "custom hero is Vanguard (counter-neutral)");
@@ -30,7 +30,8 @@ public partial class TestPhase210 : Node
         Check(save.TeamIds.Count == 1 && save.TeamIds[0] == "custom_hero", "new account team is just the custom hero");
         // Not in the tavern pool.
         Check(!TavernData.PoolHeroIds.Contains("custom_hero"), "custom hero is not in the tavern pool");
-        Check(TavernData.PoolHeroIds.Count == 7, "tavern pool still covers 7 heroes");
+        Check(TavernData.PoolHeroIds.Count == 15 && TavernData.HeroesOfTier(save, TavernTier.Lam).Count + TavernData.HeroesOfTier(save, TavernTier.Tim).Count
+            + TavernData.HeroesOfTier(save, TavernTier.Cam).Count == 7, "tavern lists 15 heroes, a new account draws from the original 7 (2.43)");
         // GameManager path: seed then reload keeps the username as the hero name.
         var gm = GetNode<GameManager>("/root/GameManager");
         gm.CreateSeededSave("ten_moi");

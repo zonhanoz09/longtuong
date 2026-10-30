@@ -57,7 +57,7 @@ public partial class TestPhase22 : Node
         var save = new SaveData();
         save.OwnedHeroIds = new List<string>();
         ProgressionService.EnsureDefaults(save);
-        Check(save.OwnedHeroIds.Count == 8, "legacy save with empty owned list keeps all 8 heroes");
+        Check(save.OwnedHeroIds.Count == 8, "legacy save with empty owned list keeps the 8 original heroes (2.43: not the new tavern heroes)");
     }
 
     private void CheckOneHeroBattle()

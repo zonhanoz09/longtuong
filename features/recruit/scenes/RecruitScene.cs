@@ -240,10 +240,13 @@ public partial class RecruitScene : Control
         foreach (var (id, card) in _recruitCards)
         {
             bool owned = save.OwnedHeroIds.Contains(id);
-            card.Owned.Visible = owned;
-            card.Dot.Visible = !owned;
-            card.Price.Visible = !owned;
-            card.Btn.Disabled = owned || !TavernService.CanRecruit(save, id);
+            // Phase 2.43: heroes of a not-yet-cleared chapter are greyed out.
+            bool locked = !owned && !TavernData.IsInPool(save, id);
+            card.Owned.Text = locked ? $"Qua chương {TavernData.UnlockChapter[id]}" : "đã chiêu mộ";
+            card.Owned.Visible = owned || locked;
+            card.Dot.Visible = !owned && !locked;
+            card.Price.Visible = !owned && !locked;
+            card.Btn.Disabled = owned || locked || !TavernService.CanRecruit(save, id);
         }
         for (int i = 0; i < _drinkLabels.Count; i++)
         {

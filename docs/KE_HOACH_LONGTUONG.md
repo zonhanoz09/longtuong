@@ -1174,6 +1174,106 @@ Chương 2 cần đội khoảng Lv20–40.
 - Test: `tests/TestPhase239.tscn` mới; cập nhật 1/2/221/222; suite
   0–2.39: 42/42 pass; CI thêm 2.39.
 
+### Phase 2.40–2.52 — Chiến dịch 8 chương, Phó Bản, Vượt Tướng, Thí Luyện, Tổ Đội (2026-10-30)
+
+Chốt của Huynh (2026-10-30): làm cả 3 hệ thống trong 1 plan; chiến dịch
+thay 20 ải cũ bằng 8 chương, mỗi chương số ải riêng; Đúc Lại lên set X tốn
+thêm M mảnh X (bản vẽ vẫn mua Vàng); Tổ Đội = đội mình + 2 bot theo lực
+chiến; phó bản rơi mảnh set mốc kế tiếp; Cửa hàng Chiến tích (chân khí /
+thiên phú để sau); KHÔNG giới hạn lượt/ngày (quét ải vẫn 20); mở khóa cần
+CẢ chương + cấp; qua mỗi chương thêm 1 tướng vào Tửu Quán (hồn vẫn chỉ từ
+đối tửu); Vượt Tướng = chủ tướng 1v1, HP đầy mỗi tầng, tầng giữ vĩnh viễn;
+1 nút Hub "Hoạt Động"; phẩm set giữ remap 2.37. Mọi số = Pax setup.
+
+> Ghi chú: quyết định "mảnh chế tạo" đi ngược §8.0 Q4a của
+> `KE_HOACH_TRANG_BI.md` ("không thêm nguyên liệu") — Huynh chốt lại
+> 2026-10-30 (3 = b), Q4a coi như được thay.
+
+| Phase | Nội dung | Test |
+|---|---|---|
+| 2.40 | `EnemyDatabase`: 8 lính + 27 boss (ngoài roster, không vào save/Tửu Quán); `HeroDatabase.GetCombatant`; `StageDef.BossId/BossScale` (1,3) | 240 |
+| 2.41 | 8 chương 6/8/6/10/8/10/12/10 = 70 ải; `ChapterDef`, bỏ `StagesPerChapter`; id ải toàn cục (save cũ giữ nguyên `LastStage`/sao); tab chương 4×2 | 241 |
+| 2.42 | `FeatureUnlockService` (Phó Bản ch2+Lv30, Vượt Tướng ch3+Lv20, Thí Luyện ch4+Lv25, Tổ Đội ch5+Lv40); nút Hub "Hoạt Động" (thanh trên, trái Vào ải — thanh dưới đã kín 7 nút, vị trí bị test 2.14 khóa) + popup 4 thẻ 960×560 | 242 |
+| 2.43 | 8 tướng mới (Tôn Kiên, Điển Vi, Giả Hủ, Trương Liêu, Từ Thứ, Chu Du, Chúc Dung, Mã Siêu) — vào pool khi qua chương 1..8; save cũ trống chỉ nhận 8 tướng gốc (`LegacyHeroIds`) | 243 |
+| 2.44 | Mảnh set `Materials["frag_<set>"]`: Đúc Lại tốn 10/15/20/25/30 mảnh (Chu Tước → Kỳ Lân); loại rơi `material`; dòng mảnh ở tab Cường hóa (≤ 560px) | 244 |
+| 2.45 | `BattleMode` + `GameManager.StartModeBattle` (ải chiến dịch không đổi); `DungeonDatabase` 5 phó bản × 4 ải × Thường/Khó; `DungeonService`; `ModeRewardService` | 245 |
+| 2.46 | Màn Phó Bản 920×600 (khóa theo cấp, Thường/Khó, 4 ải + boss, mảnh đang có, Vào trận) | 246 |
+| 2.47 | Ải Vượt Tướng 100 tầng (`DuelTowerService`), `SaveData.Merit/DuelFloor`, popup 720×520 | 247 |
+| 2.48 | Cửa hàng Chiến tích (`MeritShopService`): quặng 20, đá 30, mảnh 50/80/120/180/250 | 248 |
+| 2.49 | Thí Luyện Tháp 60 tầng (`TrialTowerService`), chỉ rơi ngọc, popup 700×500 | 249 |
+| 2.50 | Engine: `maxTurns`, `enemyStartHp`, `StageDef.EnemyHpMultiplier`; `PowerService`; `PartyService` (4 boss mở lần lượt, bot 92–108% lực chiến, HP boss ×8, 30 lượt/đội) | 250 |
+| 2.51 | Trận 3 đội trong `BattleScene` (nhãn đội, HP boss, sát thương từng đội, "Rương chiến công"); màn Tổ Đội 860×540 | 251 |
+| 2.52 | Cân bằng bằng mô phỏng (bảng dưới) | 252 |
+
+**Phó bản** (mỗi ải +0,1 Scale, Khó ×1,5; rơi 1/1/1/3 mảnh, Khó ×2; +2.000 Bạc):
+
+| Phó bản | Cấp | Boss cuối | Mảnh | BaseScale (2.52) |
+|---|---|---|---|---|
+| Cổ Mộ Hán Trung | 30 | Trương Giác | Chu Tước | 4,1 |
+| Bắc Phạt Hung Nô | 50 | Thiền Vu | Bạch Hổ | 5,5 |
+| Trận Chiến Xích Bích | 70 | Tào Tháo | Thanh Long | 7,4 |
+| Quyết Chiến Xuyên Thục | 90 | Pháp Chính | Huyền Vũ | 9,7 |
+| Kinh Châu Tranh Đoạt | 100 | Quan Vũ (+ Lục Tốn, Lữ Mông) | Kỳ Lân | 12,2 |
+
+**Vượt Tướng:** Scale 0,8 + 0,13 × tầng; lần đầu qua tầng n: 500 × n Bạc +
+(10 + 2n) Chiến tích. **Thí Luyện:** 3/4/5 địch (tầng 1–20/21–40/41–60),
+Scale 1,0 + 0,22 × tầng, boss mỗi 10 tầng; thưởng 1 ngọc Lv 1 + (tầng − 1)/10
+(3 viên ở tầng chia hết cho 10). **Tổ Đội:** Trương Giác 5,6 · Lữ Bố 9,3 ·
+Viên Thiệu 8,1 · Tào Tháo 10,0; thắng 5.000 Bạc + 100 Chiến tích + 5 mảnh.
+
+**Cân bằng 2.52.** Mô hình: đội 5 tướng (chủ tướng, Trương Phi, Quan Vũ,
+Gia Cát Lượng, Điêu Thuyền) cùng cấp, đủ 6 món set của mốc cấp (Tân Thủ
+dưới Lv50), cường hóa +min(10, cấp/10), dòng tẩy mức thấp nhất (người chưa
+tẩy lại), 20 seed. Lần đo đầu với hệ số plan cho thấy nội dung sau ải 20
+quá dễ (đội Lv50 qua ải 70; Kinh Châu Thường thua đội Lv70; Trương Giác Tổ
+Đội thua đội Lv20). Ngưỡng Scale đội còn thắng ≥ 50%:
+
+| Mẫu | Lv20 | Lv35 | Lv45 | Lv55 | Lv70 | Lv85 | Lv100 | Lv160 |
+|---|---|---|---|---|---|---|---|---|
+| Ải 70 (5 địch) | 4,24 | 5,25 | 5,94 | 6,85 | 8,34 | 10,31 | 14,23 | 19,47 |
+| Boss phó bản | 4,24 | 5,26 | 5,93 | 6,93 | 8,64 | 10,53 | 14,43 | 19,79 |
+| Thí Luyện 25 (4 địch) | 6,31 | 7,68 | 8,67 | 10,11 | 12,35 | 14,79 | 20,70 | 28,24 |
+| Thí Luyện 50 (5 địch) | 4,69 | 5,70 | 6,47 | 7,48 | 9,61 | 11,20 | 15,87 | 21,21 |
+| Vượt Tướng (Lữ Bố) | 3,69 | 4,52 | 5,17 | 5,85 | 6,69 | 7,98 | 11,58 | 15,29 |
+| Tổ Đội Trương Giác | 4,93 | 6,07 | 6,83 | 7,98 | 9,77 | 12,00 | 17,55 | 23,89 |
+| Tổ Đội Tào Tháo | 4,41 | 5,38 | 6,06 | 7,07 | 8,68 | 10,67 | 15,62 | 21,05 |
+
+Từ đó: ải 1–20 giữ Scale 2.39; từ ải 20 Scale nội suy giữa các mốc
+(20: 2,56 · 30: 4,8 · 38: 5,7 · 48: 6,3 · 60: 8,6 · 70: 9,5) để cuối chương
+4/5/6/7/8 rơi vào khoảng Lv35/45/55/70/85. `TestPhase252` kiểm tra: ở cấp
+mục tiêu thắng ≥ 50%, thấp hơn 15 cấp (chiến dịch) / 20 cấp (phó bản, Tổ
+Đội) thắng ≤ 30%; Khó ở cấp phó bản ≤ 30%; ở cấp mở khóa (Thí Luyện Lv25,
+Vượt Tướng Lv20) qua được tầng 10 nhưng chưa qua tầng 30; Thí Luyện tầng 60
+(Lv100 / Lv70); Vượt Tướng tầng 100 (Lv180 / Lv100). Bước nhảy lớn ở Lv100
+là do set Kỳ Lân (Đỏ, 6 dòng tẩy).
+
+Lần chạy 1 với dữ liệu này (Huynh chạy): 5 FAIL — ải 38 Lv30 35%, ải 60
+Lv55 85% (chương 7 có lính Nam Man yếu đòn + Gia Cát Lượng, yếu hơn mẫu ải
+70), Lữ Bố Tổ Đội Lv35 100% (phòng thủ thấp nhất); 2 lỗi còn lại là ngưỡng
+Lv1 vô nghĩa cho chế độ chỉ mở từ Lv20/25. Đã chỉnh: mốc 38 → 5,7, mốc 60 →
+8,6, Lữ Bố 6,6 → 9,3, đổi kiểm tra tháp sang "cấp mở khóa: tầng 10 / tầng 30".
+
+Lần chạy 2 (Huynh chạy, 2026-10-30): **TestPhase252 ALL PASS**.
+
+| Nội dung | Cấp mục tiêu | Thắng | Cấp thấp | Thắng |
+|---|---|---|---|---|
+| Ải 30 / 38 / 48 / 60 / 70 | 35 / 45 / 55 / 70 / 85 | 100 / 100 / 100 / 100 / 95% | 20 / 30 / 40 / 55 / 70 | 15 / 15 / 0 / 10 / 5% |
+| Boss 5 phó bản Thường | 30 / 50 / 70 / 90 / 100 | 100% cả 5 | thấp hơn 20 | 0% cả 5 |
+| Boss 5 phó bản Khó | cấp phó bản | 0% cả 5 | — | — |
+| Thí Luyện | Lv25: tầng 10 | 100% | Lv25: tầng 30 | 0% |
+| Thí Luyện tầng 60 | 100 | 95% | 70 | 0% |
+| Vượt Tướng | Lv20: tầng 10 | 100% | Lv20: tầng 30 | 0% |
+| Vượt Tướng tầng 100 | 180 | 50% (sát ngưỡng) | 100 | 0% |
+| Tổ Đội Trương Giác / Lữ Bố / Viên Thiệu / Tào Tháo | 40 / 55 / 70 / 90 | 100 / 95 / 55 / 55% | 20 / 35 / 50 / 70 | 5 / 0 / 0 / 5% |
+
+Ghi chú cho Huynh: Khó ở đúng cấp phó bản là 0% — cần khoảng +20–30 cấp so
+với Thường; Viên Thiệu, Tào Tháo và Vượt Tướng tầng 100 đang sát 50% ở cấp
+mục tiêu.
+
+Lưu ý mô phỏng: đồ không có dòng tẩy sẽ bị migration roll dòng ngẫu nhiên
+không seed (`ProgressionService.MigrateEquipment`), nên test cấp sẵn dòng
+tẩy cố định để kết quả tất định.
+
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).
 - Quái Công Thành (boss theo giờ, đánh chung lấy mốc thưởng — phase này làm boss

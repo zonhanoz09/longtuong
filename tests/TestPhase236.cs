@@ -54,6 +54,9 @@ public partial class TestPhase236 : Node
         Check(ForgeService.TryRecast(gm.Save, "custom_hero", "weapon", rng) == ForgeService.RecastResult.NoOre,
             "needs ore");
         gm.Save.Materials[ForgeService.OreId] = 999;
+        Check(ForgeService.TryRecast(gm.Save, "custom_hero", "weapon", rng) == ForgeService.RecastResult.NoFragments,
+            "needs fragments (2.44)");
+        ForgeService.AddFragments(gm.Save, "chu_tuoc", ForgeService.RecastFragmentCost("chu_tuoc"));
         gm.Save.Silver = 0;
         Check(ForgeService.TryRecast(gm.Save, "custom_hero", "weapon", rng) == ForgeService.RecastResult.NoSilver,
             "needs silver");
@@ -81,6 +84,7 @@ public partial class TestPhase236 : Node
         foreach (var s in new[] { "bach_ho", "thanh_long", "huyen_vu", "ky_lan" })
         {
             gm.Save.Blueprints[s] = true;
+            ForgeService.AddFragments(gm.Save, s, ForgeService.RecastFragmentCost(s));
             Check(ForgeService.TryRecast(gm.Save, "custom_hero", "weapon", rng) == ForgeService.RecastResult.Success,
                 "recast to " + s);
         }
@@ -97,6 +101,7 @@ public partial class TestPhase236 : Node
         gm.Save.Silver = 100000;
         gm.Save.Blueprints["chu_tuoc"] = true;
         gm.Save.Materials[ForgeService.OreId] = 999;
+        ForgeService.AddFragments(gm.Save, "chu_tuoc", 10);
         var screenScene = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroScreen.tscn");
         var screen = screenScene.Instantiate<HeroScreen>();
         AddChild(screen);
