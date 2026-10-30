@@ -1,0 +1,2204 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 3f824b33e04b78c17bd96a2931dbc785e0ef3f00..81462731cedbe20032b564030d384b4a0a7d12de 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -78,3 +78,4 @@ jobs:
+           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase235.tscn
+           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase236.tscn
+           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase237.tscn
++          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase238.tscn
+diff --git a/.gitignore b/.gitignore
+index 4a11cc9e14b31c4f9eafaa808f87480cbed1e68c..d4613ae6baebd2eba9062c832b0280b6008c24d7 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -16,3 +16,6 @@ obj/
+ 
+ # Misc
+ *.tmp
++
++# Local source backups (not part of the repo)
++.backup/
+diff --git a/README.md b/README.md
+index 7567dc778c05ed87fc371a51893f5713c8a639b7..4c3b187d23065ba6c24ea0dcb7fb7f8218744ddb 100644
+--- a/README.md
++++ b/README.md
+@@ -15,6 +15,28 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự
+ Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
+ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
+ 
++## Phase 2.38 — đã làm (ổn định nền + công thức sát thương mới)
++
++- CI bắt lỗi thật: test 2.27–2.37 trước đây luôn exit 0 dù fail.
++- Test chạy trong thư mục dữ liệu riêng `user://.../tests` (xóa sạch mỗi
++  lần chạy), không còn ghi đè save thật.
++- Sửa bug: sa thải tướng mất set/dòng/ngọc của đồ; dòng tẩy Miễn thương
++  và %Thủ không có tác dụng; kế thừa vượt số dòng; tẩy luyện bù dòng
++  miễn phí/trừ phí khi khóa hết; cắt đội hình còn 3 thay vì 5; mất file
++  save thì được tặng cả 8 tướng; dự kiến Chế Tạo nhảy số ngẫu nhiên;
++  thông báo mở lỗ ghi nhầm Bạc.
++- Save/accounts ghi atomic + `.bak`; file hỏng không còn bị coi là rỗng.
++- Xóa code chết: popup Lò Rèn (`features/forge`), cụm Phase 0
++  (MainScene, BattlePlaceholder, PlaceholderBattle).
++- Công thức sát thương theo spec Huynh: Né − Chính xác (trần 85%),
++  Bạo − Kiên cường (trần 90%, ×1.5 + bonus), Đỡ − Phá kích (trần 80%,
++  ×0.5), Miễn thương trần 75%, base = max(5% Công, (Công − Thủ) × hệ
++  số), biến thiên ±5%, đánh trượt không cộng nộ. Bonus Huyền Vũ 4 món
++  "Đỡ đòn" đã có tác dụng.
++- Test: `tests/TestPhase238.tscn` mới; viết lại 0/234; suite 0–2.38
++  41/41 pass; CI thêm 2.38. Chi tiết + bảng ảnh hưởng cân bằng ở
++  `docs/KE_HOACH_LONGTUONG.md` §Phase 2.38. Kế tiếp: 2.39 vòng chơi ải.
++
+ ## Phase 2.37 — đã làm (tab Cường hóa: Chế Tạo / Đúc Lại)
+ 
+ - Tab Cường hóa làm lại theo sketch của Huynh: header item, khối
+diff --git a/core/auth/LocalAuth.cs b/core/auth/LocalAuth.cs
+index 2686498befcc5b7a4f628d65cc622e1669695f6b..62965c71e078828d0051b42c934213556ed2cdaa 100644
+--- a/core/auth/LocalAuth.cs
++++ b/core/auth/LocalAuth.cs
+@@ -1,6 +1,5 @@
+ using System;
+ using System.Collections.Generic;
+-using System.IO;
+ using System.Linq;
+ using System.Security.Cryptography;
+ using System.Text;
+@@ -40,19 +39,19 @@ public static class LocalAuth
+ 
+     public static bool IsValidPassword(string password) => password.Length >= 4;
+ 
+-    public static List<LocalAccount> LoadAccounts(string path)
+-    {
+-        if (!File.Exists(path)) return new List<LocalAccount>();
+-        try { return JsonSerializer.Deserialize<List<LocalAccount>>(File.ReadAllText(path)) ?? new List<LocalAccount>(); }
+-        catch { return new List<LocalAccount>(); }
+-    }
++    // Phase 2.38 (B8): a corrupt accounts file is no longer treated as
++    // "no accounts" (the next Register used to overwrite every account).
++    // ReadWithBackup falls back to accounts.json.bak, else throws.
++    public static List<LocalAccount> LoadAccounts(string path) =>
++        SaveManager.ReadWithBackup<List<LocalAccount>>(path) ?? new List<LocalAccount>();
+ 
+-    public static void SaveAccounts(string path, List<LocalAccount> accounts)
+-    {
+-        var dir = Path.GetDirectoryName(Path.GetFullPath(path));
+-        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+-        File.WriteAllText(path, JsonSerializer.Serialize(accounts, new JsonSerializerOptions { WriteIndented = true }));
+-    }
++    public static void SaveAccounts(string path, List<LocalAccount> accounts) =>
++        SaveManager.WriteAtomic(path, JsonSerializer.Serialize(accounts, new JsonSerializerOptions { WriteIndented = true }));
++
++    /// Phase 2.38 (B7): the stored spelling of a username (login is
++    /// case-insensitive; the save file and hero name use this spelling).
++    public static string? CanonicalUsername(string path, string username) =>
++        LoadAccounts(path).FirstOrDefault(a => a.Username.Equals(username, StringComparison.OrdinalIgnoreCase))?.Username;
+ 
+     public static bool Register(string path, string username, string password, out string error)
+     {
+diff --git a/core/autoload/GameManager.cs b/core/autoload/GameManager.cs
+index 6de75dcdc9c88ec052389b6f750896801fdc49d0..b5ddcb2b2ad4cc1b7ed56b594ce52129cea73cac 100644
+--- a/core/autoload/GameManager.cs
++++ b/core/autoload/GameManager.cs
+@@ -12,7 +12,22 @@ public partial class GameManager : Node
+     public List<string> SelectedTeamIds { get; set; } = new() { "quan_vu", "truong_phi", "gia_cat_luong" };
+     public string CurrentUsername { get; set; } = "";
+     public string SelectedHeroId { get; set; } = "";
+-    public string AccountsPath => OS.GetUserDataDir() + "/accounts.json";
++    public string AccountsPath => DataDir + "/accounts.json";
++
++    // Phase 2.38: test scenes (res://tests/...) get their own data folder so
++    // a test account ("nhan", "huynh", ...) can never overwrite a real save.
++    // The folder is wiped once per test process, so every run starts clean.
++    public static bool IsTestRun =>
++        OS.GetCmdlineArgs().Any(a => a.Contains("res://tests/"));
++    public static string DataDir =>
++        IsTestRun ? OS.GetUserDataDir() + "/tests" : OS.GetUserDataDir();
++
++    public override void _Ready()
++    {
++        if (!IsTestRun) return;
++        if (System.IO.Directory.Exists(DataDir)) System.IO.Directory.Delete(DataDir, true);
++        System.IO.Directory.CreateDirectory(DataDir);
++    }
+     public int CurrentStageId { get; set; } = 1;
+     public int CurrentSeed { get; set; }
+     public bool LastBattleWon { get; private set; }
+@@ -22,8 +37,8 @@ public partial class GameManager : Node
+     // Save tách theo tài khoản (Phase 2.1, vẫn local; server phase sau mới tách thật).
+     // Chưa đăng nhập thì dùng save.json cũ để không mất tiến trình Phase 0-2.
+     public string SavePath => string.IsNullOrEmpty(CurrentUsername)
+-        ? OS.GetUserDataDir() + "/save.json"
+-        : OS.GetUserDataDir() + "/save_" + SanitizeUsername(CurrentUsername) + ".json";
++        ? DataDir + "/save.json"
++        : DataDir + "/save_" + SanitizeUsername(CurrentUsername) + ".json";
+ 
+     public static string SanitizeUsername(string username) =>
+         new string(username.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' ? c : '_').ToArray());
+@@ -46,6 +61,14 @@ public partial class GameManager : Node
+ 
+     public void LoadGame()
+     {
++        // Phase 2.38 (B6): a logged-in account whose save file is missing
++        // gets a fresh seeded save — never the legacy "own every hero"
++        // migration that an empty SaveData would trigger.
++        if (!string.IsNullOrEmpty(CurrentUsername) && !System.IO.File.Exists(SavePath))
++        {
++            CreateSeededSave(CurrentUsername);
++            return;
++        }
+         Save = SaveManager.Load(SavePath);
+         ProgressionService.EnsureDefaults(Save);
+         if (!string.IsNullOrEmpty(CurrentUsername)) HeroDatabase.SetCustomHeroName(CurrentUsername);
+@@ -75,12 +98,6 @@ public partial class GameManager : Node
+         SaveGame();
+     }
+ 
+-    public void RecordWin()
+-    {
+-        Save.Wins++;
+-        Save.LastStage = System.Math.Max(Save.LastStage, 1);
+-    }
+-
+     public void StartBattle(int stageId, List<string> teamIds, int seed)
+     {
+         CurrentStageId = stageId;
+diff --git a/core/battle/BattleEngine.cs b/core/battle/BattleEngine.cs
+index 5ca62739d198fad5e24781f1e3d76aa1c8fbf38d..962221758844afa02c6efe220c1d87e569ec710e 100644
+--- a/core/battle/BattleEngine.cs
++++ b/core/battle/BattleEngine.cs
+@@ -48,14 +48,41 @@ public class BattleEngine
+         RebuildOrder();
+     }
+ 
+-    public static int CalculateDamage(Fighter attacker, Fighter defender, double power, bool critHit, bool dodged, double variance)
++    // Phase 2.38: combat formula per Huynh's spec (Long Tướng style).
++    // Caps pick a value inside each range Huynh gave (tune freely):
++    // né 80–85% -> 85% (always >= 15% hit), bạo 80–90% -> 90%,
++    // đỡ đòn 80%, miễn thương thuần 75–80% -> 75%.
++    public const double DodgeCap = 0.85;
++    public const double CritCap = 0.90;
++    public const double BlockCap = 0.80;
++    public const double DamageReductionCap = 0.75;
++    public const double BaseCritMultiplier = 1.5;
++    public const double BlockMultiplier = 0.5;
++    public const double MinDamageRatio = 0.05;   // chip damage = 5% of ATK
++    public const double VarianceMin = 0.95, VarianceMax = 1.05;
++    // Role counter (Võ > Mưu > Phụ > Võ) is this game's own rule, not part
++    // of the spec; it multiplies the base damage.
++    public const double CounterMultiplier = 1.25;
++
++    public static double DodgeChance(Fighter attacker, Fighter defender) =>
++        Math.Clamp(defender.Def.Dodge - attacker.Def.Hit, 0, DodgeCap);
++    public static double CritChance(Fighter attacker, Fighter defender) =>
++        Math.Clamp(attacker.Def.Crit - defender.Def.CritResist, 0, CritCap);
++    public static double BlockChance(Fighter attacker, Fighter defender) =>
++        Math.Clamp(defender.Def.Block - attacker.Def.Pierce, 0, BlockCap);
++
++    // Base = max(5% ATK, (ATK - DEF) x skill ratio) x counter x (1 - DR capped)
++    // Final = Base x crit (1.5 + bonus) x block (0.5) x variance [0.95, 1.05]
++    public static int CalculateDamage(Fighter attacker, Fighter defender, double power, bool critHit, bool dodged, double variance, bool blocked = false)
+     {
+         if (dodged) return 0;
+-        double dmg = attacker.EffectiveAtk * power * (100.0 / (100.0 + defender.EffectiveDef));
+-        if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= 1.25;
+-        if (critHit) dmg *= 1.5;
++        double atk = attacker.EffectiveAtk;
++        double dmg = Math.Max(MinDamageRatio * atk, (atk - defender.EffectiveDef) * power);
++        if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= CounterMultiplier;
++        dmg *= 1.0 - Math.Min(defender.Def.DamageReduction, DamageReductionCap);
++        if (critHit) dmg *= BaseCritMultiplier + attacker.Def.CritDamage;
++        if (blocked) dmg *= BlockMultiplier;
+         dmg *= variance;
+-        dmg *= 1.0 - defender.Def.DamageReduction;
+         return Math.Max(1, (int)Math.Round(dmg));
+     }
+ 
+@@ -191,24 +218,31 @@ public class BattleEngine
+         }
+         var foe = PickTarget(actor);
+         if (foe == null) return;
+-        Hit(actor, foe, power);
+-        actor.Rage = Math.Min(100, actor.Rage + 20);
++        // Phase 2.38 (spec): a missed (dodged) attack gives no rage.
++        if (Hit(actor, foe, power)) actor.Rage = Math.Min(100, actor.Rage + 20);
+     }
+ 
+-    private void Hit(Fighter actor, Fighter target, double power)
++    // Returns false when the attack was dodged.
++    private bool Hit(Fighter actor, Fighter target, double power)
+     {
+-        bool dodged = _rng.NextDouble() < target.Def.Dodge;
+-        bool crit = !dodged && _rng.NextDouble() < actor.Def.Crit;
+-        double variance = 0.9 + _rng.NextDouble() * 0.2;
+-        int dmg = CalculateDamage(actor, target, power, crit, dodged, variance);
++        // Roll order per spec: dodge -> crit -> block -> variance. The block
++        // roll is skipped when the chance is 0 so seeded battles without
++        // any Block stat keep their old RNG sequence.
++        bool dodged = _rng.NextDouble() < DodgeChance(actor, target);
++        bool crit = !dodged && _rng.NextDouble() < CritChance(actor, target);
++        double blockChance = BlockChance(actor, target);
++        bool blocked = !dodged && blockChance > 0 && _rng.NextDouble() < blockChance;
++        double variance = VarianceMin + _rng.NextDouble() * (VarianceMax - VarianceMin);
++        int dmg = CalculateDamage(actor, target, power, crit, dodged, variance, blocked);
+         if (dodged)
+         {
+             Log.Add($"{actor.Name} đánh {target.Name} nhưng bị NÉ!");
+-            return;
++            return false;
+         }
+         target.Hp = Math.Max(0, target.Hp - dmg);
+         if (target.Alive) target.Rage = Math.Min(100, target.Rage + 10);
+-        Log.Add($"{actor.Name} gây {dmg} sát thương cho {target.Name}{(crit ? " (BẠO KÍCH!)" : "")} — {target.Name} còn {target.Hp} HP.");
++        Log.Add($"{actor.Name} gây {dmg} sát thương cho {target.Name}{(crit ? " (BẠO KÍCH!)" : "")}{(blocked ? " (ĐỠ ĐÒN)" : "")} — {target.Name} còn {target.Hp} HP.");
+         if (!target.Alive) Log.Add($"{target.Name} đã gục ngã!");
++        return true;
+     }
+ }
+diff --git a/core/battle/PlaceholderBattle.cs b/core/battle/PlaceholderBattle.cs
+deleted file mode 100644
+index 246396bb2febd5ed6450a62bb1586b07c3d65d61..0000000000000000000000000000000000000000
+--- a/core/battle/PlaceholderBattle.cs
++++ /dev/null
+@@ -1,29 +0,0 @@
+-namespace LongTuong;
+-
+-/// <summary>Phase 0 placeholder battle logic: deterministic, no RNG yet (RNG with seed comes in Phase 1).</summary>
+-public class PlaceholderBattle
+-{
+-    public const int PlayerDamage = 25;
+-    public const int EnemyDamage = 10;
+-
+-    public int PlayerHp { get; private set; } = 100;
+-    public int EnemyHp { get; private set; } = 100;
+-    public int Turn { get; private set; } = 0;
+-    public bool IsOver => PlayerHp <= 0 || EnemyHp <= 0;
+-    public bool PlayerWon => EnemyHp <= 0 && PlayerHp > 0;
+-
+-    public void Attack()
+-    {
+-        if (IsOver) return;
+-        Turn++;
+-        EnemyHp = System.Math.Max(0, EnemyHp - PlayerDamage);
+-        if (EnemyHp > 0) PlayerHp = System.Math.Max(0, PlayerHp - EnemyDamage);
+-    }
+-
+-    public void Reset()
+-    {
+-        PlayerHp = 100;
+-        EnemyHp = 100;
+-        Turn = 0;
+-    }
+-}
+diff --git a/core/battle/PlaceholderBattle.cs.uid b/core/battle/PlaceholderBattle.cs.uid
+deleted file mode 100644
+index 29d474fa98cf11422ee0d1992c8c0f6ce7e6810c..0000000000000000000000000000000000000000
+--- a/core/battle/PlaceholderBattle.cs.uid
++++ /dev/null
+@@ -1 +0,0 @@
+-uid://2t67mm245i68
+diff --git a/core/data/HeroDatabase.cs b/core/data/HeroDatabase.cs
+index efac6dac99322c4f27770d68e9f3ce18b0f61d9c..1e4221eff3cdae44dac4d0f04ece7bc52fc81f6b 100644
+--- a/core/data/HeroDatabase.cs
++++ b/core/data/HeroDatabase.cs
+@@ -19,6 +19,14 @@ public class HeroDef
+     public double Crit { get; set; }
+     public double Dodge { get; set; }
+     public double DamageReduction { get; set; }
++    // Phase 2.38 (Huynh's combat spec): Chính xác vs Né, Kiên cường vs Bạo,
++    // Phá kích vs Đỡ đòn, + Sát thương bạo kích thêm. All 0 by default;
++    // sources (gems/refine/sets) come later — Huyền Vũ 4 món gives Block.
++    public double Hit { get; set; }
++    public double CritResist { get; set; }
++    public double Block { get; set; }
++    public double Pierce { get; set; }
++    public double CritDamage { get; set; }
+     public string NormalName { get; set; } = "";
+     public string UltName { get; set; } = "";
+     public double UltPower { get; set; } = 2.0;
+@@ -35,6 +43,7 @@ public class HeroDef
+             Atk = (int)Math.Round(Atk * scale),
+             Def = (int)Math.Round(Def * scale),
+             Speed = Speed, Crit = Crit, Dodge = Dodge, DamageReduction = DamageReduction,
++            Hit = Hit, CritResist = CritResist, Block = Block, Pierce = Pierce, CritDamage = CritDamage,
+             NormalName = NormalName, UltName = UltName, UltPower = UltPower, UltKind = UltKind,
+             PassiveName = PassiveName, PassiveDesc = PassiveDesc,
+         };
+diff --git a/core/progression/EquipmentService.cs b/core/progression/EquipmentService.cs
+index 61de4537f46aab0c5c02c136661e96099e3503bf..4a2e7e811a57055d797be629bfb22c3b13187f66 100644
+--- a/core/progression/EquipmentService.cs
++++ b/core/progression/EquipmentService.cs
+@@ -35,9 +35,21 @@ public static class EquipmentService
+         var before = ProgressionService.GetEffectiveHero(save, heroId);
+         var dict = save.HeroEquipment[heroId];
+         var original = dict[slotId];
+-        dict[slotId] = hypothetical;
+-        var after = ProgressionService.GetEffectiveHero(save, heroId);
+-        dict[slotId] = original;
++        HeroDef after;
++        // Phase 2.38 (B11): no migration on the swapped-in item (a preview
++        // with no refine lines used to get random lines, so the projection
++        // was wrong and changed on every refresh); always restore.
++        ProgressionService.SuppressEquipmentMigration = true;
++        try
++        {
++            dict[slotId] = hypothetical;
++            after = ProgressionService.GetEffectiveHero(save, heroId);
++        }
++        finally
++        {
++            dict[slotId] = original;
++            ProgressionService.SuppressEquipmentMigration = false;
++        }
+         var rows = new List<(string, double, double)>();
+         void Add(string name, double b, double a)
+         {
+@@ -179,7 +191,10 @@ public static class EquipmentService
+             }
+         eq.Level = src.Level;
+         eq.RefineIndex = src.RefineIndex;
++        // Phase 2.38 (B3): never exceed the target set's line count
++        // (6-line Kỳ Lân into 3-line Tân Thủ keeps the first 3 lines).
+         eq.RefineLines = src.RefineLines
++            .Take(EquipmentSets.LinesForSet(eq.SetId))
+             .Select(l => new RefineLine { StatId = l.StatId, Value = l.Value, Locked = l.Locked }).ToList();
+         foreach (var srcSock in src.Sockets)
+         {
+diff --git a/core/progression/EquipmentSets.cs b/core/progression/EquipmentSets.cs
+index 0289885660f226d9871e079590bb7f2280ce2980..2967352e645eeba55d22ac0a4bd6ca843002da37 100644
+--- a/core/progression/EquipmentSets.cs
++++ b/core/progression/EquipmentSets.cs
+@@ -9,8 +9,9 @@ namespace LongTuong;
+ /// Phase 2.30: equipment sets by level tier (Huynh's spec 2026-10-29).
+ /// StatId values: hp, hp_pct, atk, atk_pct, def, def_pct, speed, crit,
+ /// dodge, dmg_red (Miễn thương), starting_rage, cc_resist, block.
+-/// The last three are DATA-ONLY until the battle engine grows to support
+-/// them (see SetBonusService.IsEngineSupported).
++/// starting_rage and cc_resist are DATA-ONLY until the battle engine grows
++/// to support them (see SetBonusService.IsEngineSupported); block is live
++/// since Phase 2.38.
+ /// Set bonus numbers for Tân Thủ are Pax's setup (spec gives no numbers);
+ /// the rest follow Huynh's table exactly.
+ /// </summary>
+@@ -103,11 +104,12 @@ public static class EquipmentSets
+ 
+ public static class SetBonusService
+ {
+-    /// Stats the current engine can apply. starting_rage / cc_resist /
+-    /// block are kept as data until the battle engine supports them.
++    /// Stats the current engine can apply. starting_rage / cc_resist are
++    /// kept as data until the battle engine supports them. Phase 2.38:
++    /// block (Đỡ đòn) is live with the new combat formula.
+     public static bool IsEngineSupported(string statId) => statId is
+         "hp" or "hp_pct" or "atk" or "atk_pct" or "def" or "def_pct" or
+-        "speed" or "crit" or "dodge" or "dmg_red";
++        "speed" or "crit" or "dodge" or "dmg_red" or "block";
+ 
+     public static Dictionary<string, int> CountSets(SaveData save, string heroId)
+     {
+@@ -154,6 +156,7 @@ public static class SetBonusService
+                 case "crit": def.Crit += b.Value; break;
+                 case "dodge": def.Dodge += b.Value; break;
+                 case "dmg_red": def.DamageReduction += b.Value; break;
++                case "block": def.Block += b.Value; break;
+             }
+         }
+         return (atkMul, hpMul);
+diff --git a/core/progression/ForgeService.cs b/core/progression/ForgeService.cs
+index ac50474fe2e13af0f7b775e9626c8c6ba13b3788..70ef03fb89434d53746cfb5b8f8cb579c43c5406 100644
+--- a/core/progression/ForgeService.cs
++++ b/core/progression/ForgeService.cs
+@@ -4,18 +4,15 @@ using System.Collections.Generic;
+ namespace LongTuong;
+ 
+ /// <summary>
+-/// Phase 2.34: rèn (forge) — the main source of set equipment (Huynh's
+-/// decision 3). Blueprints + forge materials are sold for Vàng in the
+-/// forge UI (simple version; dungeon/boss drops arrive later).
++/// Phase 2.34: rèn (forge) — blueprints + Khoáng thạch (ore), both sold
++/// for Vàng (dungeon/boss drops arrive later).
+ /// - Blueprint per set (permanent unlock once bought; Tân Thủ is the
+-///   starter set and is not forgeable).
+-/// - Each forge consumes Khoáng thạch (ore); ore is bought with Vàng.
+-/// - Forging a set requires the main hero to reach the set's tier
+-///   (per the spec's level milestones).
+-/// - Forged items land in the bag (equip via the Võ tướng popup).
+-/// Nâng phẩm (upgrading a low-tier item while keeping its stats) is
+-/// covered by the 2.35 Kế thừa flow: forge the higher-tier item, then
+-/// inherit the old item into it.
++///   starter set and needs none).
++/// - Phase 2.37: Chế Tạo crafts Tân Thủ into an empty slot; Đúc Lại
++///   upgrades an equipped item to the next set (blueprint + ore + Bạc,
++///   main hero level >= target tier).
++/// - Phase 2.38: the 2.34 "forge into the bag" flow (TryForge + the
++///   Lò Rèn popup) was removed as dead code after 2.37b.
+ /// </summary>
+ public static class ForgeService
+ {
+@@ -33,8 +30,6 @@ public static class ForgeService
+         ["ky_lan"] = 800000,
+     };
+ 
+-    public static int OrePerForge(string setId) => EquipmentSets.Get(setId).Tier / 2;
+-
+     public static bool HasBlueprint(SaveData save, string setId)
+     {
+         ProgressionService.EnsureDefaults(save);
+@@ -157,33 +152,4 @@ public static class ForgeService
+         save.HeroEquipment[heroId][slotId] = fresh;
+         return CraftResult.Success;
+     }
+-
+-    public enum ForgeResult { Success, NoBlueprint, LowLevel, NoOre, BadSet }
+-
+-    public static ForgeResult TryForge(SaveData save, string setId, string slotId, Random rng)
+-    {
+-        ProgressionService.EnsureDefaults(save);
+-        var set = EquipmentSets.Get(setId);
+-        if (!BlueprintPrices.ContainsKey(setId)) return ForgeResult.BadSet;
+-        if (!HasBlueprint(save, setId)) return ForgeResult.NoBlueprint;
+-        int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
+-        if (mainLevel < set.Tier) return ForgeResult.LowLevel;
+-        int oreNeed = OrePerForge(setId);
+-        if (OreCount(save) < oreNeed) return ForgeResult.NoOre;
+-        save.Materials[OreId] = OreCount(save) - oreNeed;
+-        var item = new BagEquipmentItem
+-        {
+-            SlotId = slotId,
+-            Level = 0,
+-            RefineIndex = 0,
+-            Tier = set.Tier,
+-            Quality = set.Quality,
+-            SetId = setId,
+-        };
+-        // Fresh lines from the Middle pool (item is not equipped yet).
+-        while (item.RefineLines.Count < EquipmentSets.LinesForSet(setId))
+-            item.RefineLines.Add(ProgressionService.RollRefineLine(FormationPosition.Middle, rng));
+-        save.BagEquipment.Add(item);
+-        return ForgeResult.Success;
+-    }
+ }
+diff --git a/core/progression/FormationService.cs b/core/progression/FormationService.cs
+index a80d1b106bcb0f553640f83f3ade66593b154fb8..5bfb3861b065cdce3880eeedce9d63cdf11c3ea1 100644
+--- a/core/progression/FormationService.cs
++++ b/core/progression/FormationService.cs
+@@ -137,7 +137,10 @@ public static class FormationService
+             if (clean.TryGetValue(CenterSlotId, out var main) && main == MainHeroId) keep[CenterSlotId] = main;
+             foreach (var slot in GridOrder)
+             {
+-                if (slot == null || keep.Count >= MaxTeamSize) break;
++                if (keep.Count >= MaxTeamSize) break;
++                // Phase 2.38 (B5): null = placeholder cell, skip it (a break
++                // here kept at most 3 heroes when trimming).
++                if (slot == null) continue;
+                 if (clean.TryGetValue(slot, out var hero) && !keep.ContainsValue(hero)) keep[slot] = hero;
+             }
+             clean = keep;
+diff --git a/core/progression/ProgressionService.cs b/core/progression/ProgressionService.cs
+index e6e2f77192fcdaf6786abc9cd713ba6bd3c0d75d..376c391aba08154ceb01ddc075385cfae5f9698e 100644
+--- a/core/progression/ProgressionService.cs
++++ b/core/progression/ProgressionService.cs
+@@ -105,6 +105,9 @@ public static class ProgressionService
+         _ => 0.7,
+     };
+ 
++    // Phase 2.38: set only by EquipmentService.ProjectEquipChange.
++    internal static bool SuppressEquipmentMigration;
++
+     public static void EnsureDefaults(SaveData save)
+     {
+         save.Heroes ??= new Dictionary<string, HeroProgress>();
+@@ -152,6 +155,9 @@ public static class ProgressionService
+         }
+         // Phase 2.30: migrate old equipment (no set fields) to the Tân Thủ
+         // set; old RefineIndex becomes the first refine line.
++        // Phase 2.38 (B11): skipped while a stat projection has a
++        // hypothetical item swapped in (it would get random "legacy" lines).
++        if (SuppressEquipmentMigration) return;
+         foreach (var heroEq in save.HeroEquipment.Values)
+             foreach (var eq in heroEq.Values)
+                 MigrateEquipment(eq);
+@@ -222,7 +228,9 @@ public static class ProgressionService
+         return new RefineLine { StatId = stat, Value = val };
+     }
+ 
+-    public static void ApplyRefineLines(HeroDef def, List<RefineLine> lines, ref double atkMul, ref double hpMul)
++    // Phase 2.38 (B2): dmg_red and def_pct (rolled by the Tiền pool) now
++    // apply — before they were rolled but had no effect.
++    public static void ApplyRefineLines(HeroDef def, List<RefineLine> lines, ref double atkMul, ref double hpMul, ref double defMul)
+     {
+         if (lines == null) return;
+         foreach (var line in lines)
+@@ -237,6 +245,8 @@ public static class ProgressionService
+                 case "hp": def.Hp += (int)line.Value; break;
+                 case "atk_pct": atkMul *= 1 + line.Value; break;
+                 case "hp_pct": hpMul *= 1 + line.Value; break;
++                case "def_pct": defMul *= 1 + line.Value; break;
++                case "dmg_red": def.DamageReduction += line.Value; break;
+             }
+         }
+     }
+@@ -343,15 +353,20 @@ public static class ProgressionService
+         EnsureDefaults(save);
+         var eq = save.HeroEquipment[heroId][slotId];
+         if (eq.IsEmpty) return false;
+-        // Top up to the quality's line count (migrated/old items may be short).
+         var pos = FormationService.PositionOfHero(save, heroId);
+-        while (eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId))
+-            eq.RefineLines.Add(RollRefineLine(pos, rng));
++        // Phase 2.38 (B4): nothing to reroll (all lines locked, none
++        // missing) => refuse instead of charging for nothing.
++        bool missing = eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId);
++        if (!missing && eq.RefineLines.All(l => l.Locked)) return false;
+         int stoneCost = RefineCostStones(save, heroId, slotId);
+         bool useStone = save.RefineStones >= stoneCost;
+         if (!useStone && save.Gold < RefineCostGold(save, heroId, slotId)) return false;
+         if (useStone) save.RefineStones -= stoneCost;
+         else save.Gold -= RefineCostGold(save, heroId, slotId);
++        // Top up to the set's line count only AFTER paying (B4: short items
++        // used to receive free lines even when the refine was refused).
++        while (eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId))
++            eq.RefineLines.Add(RollRefineLine(pos, rng));
+         for (int i = 0; i < eq.RefineLines.Count; i++)
+             if (!eq.RefineLines[i].Locked)
+                 eq.RefineLines[i] = RollRefineLine(pos, rng);
+@@ -382,15 +397,11 @@ public static class ProgressionService
+         if (!save.OwnedHeroIds.Contains(heroId)) return false;
+         if (heroId == "custom_hero") return false;
+         if (save.OwnedHeroIds.Count <= 1) return false;
++        // Phase 2.38 (B1): return the FULL item (set, lines, sockets and
++        // socketed gems) — the old copy kept only slot/level/refine index,
++        // so a Kỳ Lân item came back as Tân Thủ and its gems were lost.
+         foreach (var slot in Slots)
+-        {
+-            var eq = save.HeroEquipment[heroId][slot.Id];
+-            if (!eq.IsEmpty)
+-            {
+-                save.BagEquipment.Add(new BagEquipmentItem { SlotId = slot.Id, Level = eq.Level, RefineIndex = eq.RefineIndex });
+-                eq.IsEmpty = true;
+-            }
+-        }
++            EquipmentService.Unequip(save, heroId, slot.Id);
+         save.OwnedHeroIds.Remove(heroId);
+         save.TeamIds.Remove(heroId);
+         // Phase 2.20: a dismissed hero also leaves the formation.
+@@ -428,6 +439,8 @@ public static class ProgressionService
+             Def = (int)Math.Round(baseDef.Def * statFactor * levelFactor),
+             Speed = baseDef.Speed, Crit = baseDef.Crit, Dodge = baseDef.Dodge,
+             DamageReduction = baseDef.DamageReduction,
++            Hit = baseDef.Hit, CritResist = baseDef.CritResist, Block = baseDef.Block,
++            Pierce = baseDef.Pierce, CritDamage = baseDef.CritDamage,
+             NormalName = baseDef.NormalName, UltName = baseDef.UltName,
+             UltPower = baseDef.UltPower, UltKind = baseDef.UltKind,
+             PassiveName = baseDef.PassiveName, PassiveDesc = baseDef.PassiveDesc,
+@@ -438,7 +451,7 @@ public static class ProgressionService
+     {
+         var p = ProgressOf(save, heroId);
+         var def = GetScaledBase(heroId, p.Level);
+-        double atkMul = 1.0, hpMul = 1.0;
++        double atkMul = 1.0, hpMul = 1.0, defMul = 1.0;
+         foreach (var slot in Slots)
+         {
+             var eq = save.HeroEquipment[heroId][slot.Id];
+@@ -447,7 +460,7 @@ public static class ProgressionService
+             def.Hp += slot.BaseHp + slot.HpPerLevel * eq.Level;
+             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;
+             def.Speed += slot.BaseSpeed + slot.SpeedPerLevel * eq.Level;
+-            ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul);
++            ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul, ref defMul);
+             GemService.ApplyGems(def, eq, ref atkMul, ref hpMul);
+         }
+         // Phase 2.30: set bonuses (2/4/6 pieces).
+@@ -456,6 +469,7 @@ public static class ProgressionService
+         hpMul *= setHpMul;
+         def.Atk = (int)Math.Round(def.Atk * atkMul);
+         def.Hp = (int)Math.Round(def.Hp * hpMul);
++        def.Def = (int)Math.Round(def.Def * defMul);
+         double chartMul = 1 + 0.03 * save.StarNodesUnlocked;
+         def.Atk = (int)Math.Round(def.Atk * chartMul);
+         def.Hp = (int)Math.Round(def.Hp * chartMul);
+diff --git a/core/progression/RecruitService.cs.uid b/core/progression/RecruitService.cs.uid
+deleted file mode 100644
+index 3e57ecece0b936117d5c96f712ce83ed0f35980e..0000000000000000000000000000000000000000
+--- a/core/progression/RecruitService.cs.uid
++++ /dev/null
+@@ -1 +0,0 @@
+-uid://dkhwlu2ihvbam
+diff --git a/core/save/SaveManager.cs b/core/save/SaveManager.cs
+index 6d53aa8f4808c68c221d3aa58bcbc576a45a37d5..8be2ff34788621eba01e5825dc3ea7910be6fed9 100644
+--- a/core/save/SaveManager.cs
++++ b/core/save/SaveManager.cs
+@@ -3,21 +3,48 @@ using System.Text.Json;
+ 
+ namespace LongTuong;
+ 
+-/// <summary>Pure C# local save/load (JSON). No Godot dependency, so it is unit-testable.</summary>
++/// <summary>Pure C# local save/load (JSON). No Godot dependency, so it is unit-testable.
++/// Phase 2.38: writes are atomic (temp file, then replace) and keep the
++/// previous good file as "{path}.bak". A corrupt file falls back to the
++/// backup; if both are unreadable the corrupt file is kept as
++/// "{path}.corrupt" and an InvalidDataException is thrown instead of
++/// silently returning an empty save that would overwrite the player's data.</summary>
+ public static class SaveManager
+ {
+     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+ 
+-    public static void Save(string path, SaveData data)
++    public static void Save(string path, SaveData data) =>
++        WriteAtomic(path, JsonSerializer.Serialize(data, Options));
++
++    public static SaveData Load(string path)
++    {
++        if (!File.Exists(path) && !File.Exists(path + ".bak")) return new SaveData();
++        return ReadWithBackup<SaveData>(path) ?? new SaveData();
++    }
++
++    public static void WriteAtomic(string path, string content)
+     {
+-        var dir = Path.GetDirectoryName(Path.GetFullPath(path));
++        var full = Path.GetFullPath(path);
++        var dir = Path.GetDirectoryName(full);
+         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+-        File.WriteAllText(path, JsonSerializer.Serialize(data, Options));
++        var tmp = full + ".tmp";
++        File.WriteAllText(tmp, content);
++        if (File.Exists(full)) File.Replace(tmp, full, full + ".bak");
++        else File.Move(tmp, full);
+     }
+ 
+-    public static SaveData Load(string path)
++    /// Reads JSON from path, falling back to path.bak. Returns default
++    /// only when neither file exists; throws when files exist but none parse.
++    public static T? ReadWithBackup<T>(string path)
+     {
+-        if (!File.Exists(path)) return new SaveData();
+-        return JsonSerializer.Deserialize<SaveData>(File.ReadAllText(path), Options) ?? new SaveData();
++        foreach (var candidate in new[] { path, path + ".bak" })
++        {
++            if (!File.Exists(candidate)) continue;
++            try { return JsonSerializer.Deserialize<T>(File.ReadAllText(candidate), Options); }
++            catch (JsonException) { }
++        }
++        if (!File.Exists(path) && !File.Exists(path + ".bak")) return default;
++        if (File.Exists(path)) File.Copy(path, path + ".corrupt", true);
++        throw new InvalidDataException($"File dữ liệu bị hỏng: {path} (đã giữ bản {path}.corrupt)");
+     }
+ }
+diff --git a/docs/KE_HOACH_LONGTUONG.md b/docs/KE_HOACH_LONGTUONG.md
+index ff662d60987a103214668c8cbc0f002fa17e0390..911b17cf43aff702d3b5dcd40b3607d56bf2053d 100644
+--- a/docs/KE_HOACH_LONGTUONG.md
++++ b/docs/KE_HOACH_LONGTUONG.md
+@@ -87,6 +87,16 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
+ > có nút Hub riêng + popup 520×400, chiêu mộ ở nút Hub Chiêu mộ);
+ > click hàng → panel phải thao tác.
+ >
++> Cập nhật 2026-10-30: **Phase 2.38 — ĐÃ HOÀN THÀNH** — ổn định nền
++> sau review source (xem §Phase 2.38 dưới đây): CI bắt lỗi thật (test
++> 2.27–2.37 trước đây luôn exit 0), sửa bug mất dữ liệu (sa thải tướng,
++> kế thừa, tẩy luyện, đội hình, save hỏng/thiếu), test không còn ghi đè
++> save thật, xóa code chết (Lò Rèn popup, cụm Phase 0), và công thức
++> sát thương mới theo spec của Huynh (Né−Chính xác, Bạo−Kiên cường,
++> Đỡ−Phá kích, các trần, sát thương (Công−Thủ), chip 5%, ±5%).
++> Huynh chốt cùng lúc: sau 2.38 làm **2.39 vòng chơi ải**; thưởng thắng
++> ải chuyển sang **Bạc**.
++>
+ > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
+ >
+ > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
+@@ -101,7 +111,8 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
+ >   dưỡng nhân vật, mua vật phẩm cơ bản. Đã dùng: đối tửu
+ >   150.000/300.000 Bạc. Các nguồn Bạc (Cây Rung Tiền, Thu Thuế,
+ >   Boss...) thuộc Phase 3/hoạt động ngày, chưa triển khai; thưởng
+->   thắng ải hiện vẫn là Vàng — chờ Huynh chốt có đổi/thêm Bạc không.
++>   thắng ải hiện vẫn là Vàng — Huynh chốt 2026-10-30: thưởng thắng ải
++>   chuyển sang **Bạc** (làm ở Phase 2.39).
+ 
+ > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
+ > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
+@@ -1006,6 +1017,91 @@ trong widget.
+ - Sprite chân dung final (chân dung vẫn là khối màu + tên như các phase trước).
+ - Thêm chỉ số mới kiểu ảnh gốc (chỉ làm khi engine combat thật sự dùng chúng).
+ 
++### Phase 2.38 — Ổn định nền + công thức sát thương mới (ĐÃ HOÀN THÀNH 2026-10-30)
++
++Chốt của Huynh sau review source (2026-10-30): (1) làm 2.38 trước khi mở
++tính năng mới, (2) sau 2.38 làm 2.39 vòng chơi ải, (3) thưởng thắng ải
++là Bạc, (4) xóa code chết (ForgeScene, cụm Phase 0), (5) công thức sát
++thương + trần chỉ số theo spec Long Tướng (bên dưới).
++
++**Test / CI**
++- TestPhase227–237 trước đây gọi `GetTree().Quit()` không exit code nên
++  luôn trả 0, CI không bắt được lỗi 11 phase. Nay `Quit(_fails == 0 ? 0 : 1)`;
++  đã kiểm chứng bằng cách cố tình làm 1 check fail → exit 1.
++- Cách ly dữ liệu test: chạy scene `res://tests/...` thì `GameManager.DataDir`
++  = `user://.../tests` (xóa sạch đầu mỗi lần chạy). Trước đây test tạo
++  `save_nhan.json`, `save_tester2xx.json`... ngay trong thư mục save thật.
++
++**Bug đã sửa (mã B theo bản review)**
++- B1 Sa thải tướng: đồ trả về túi giữ nguyên set, dòng tẩy, lỗ + ngọc
++  (trước đây Kỳ Lân về túi thành Tân Thủ và mất ngọc). Dùng lại `Unequip`.
++- B2 Dòng tẩy Tiền quân `dmg_red` (Miễn thương) và `def_pct` (%Thủ) nay có tác dụng.
++- B3 Kế thừa không còn vượt số dòng của set đích (cắt về N dòng đầu).
++- B4 Tẩy luyện: thu phí trước rồi mới bù dòng; khóa hết dòng thì từ chối, không trừ phí.
++- B5 Cắt đội hình quá 5 tướng giữ đủ 5 (trước đây dừng ở ô trống, còn 3).
++- B6 Đăng nhập mà mất file save → tạo save seed mới (trước đây coi là save
++  cũ và tặng cả 8 tướng + 1.000.000 Bạc).
++- B7 Đăng nhập dùng đúng cách viết tên đã đăng ký (`LocalAuth.CanonicalUsername`).
++- B8 Save và accounts ghi atomic (file tạm rồi replace) + giữ `.bak`;
++  file hỏng thì đọc `.bak`, hỏng cả hai thì giữ `.corrupt` và báo lỗi ở
++  màn đăng nhập (trước đây accounts hỏng bị coi là rỗng, lần đăng ký sau
++  ghi đè mất mọi tài khoản).
++- B11 Dự kiến chỉ số khi Chế Tạo không còn roll dòng tẩy ngẫu nhiên giả
++  (số "DỰ KIẾN" ổn định, đúng chỉ số gốc của món).
++- B14 Thông báo mở lỗ khảm: "Không đủ Vàng" (trước ghi nhầm Bạc).
++
++**Code chết đã xóa:** `features/forge/` (popup Lò Rèn) + `ForgeService.TryForge/
++OrePerForge/ForgeResult`; `features/main/` (MainScene), `BattlePlaceholder`,
++`core/battle/PlaceholderBattle.cs`, `GameManager.RecordWin`; file mồ côi
++`RecruitService.cs.uid`. TestPhase0 và TestPhase234 viết lại theo.
++
++**Công thức sát thương (spec Huynh, `BattleEngine`)**
++- Né thực = Né (mục tiêu) − Chính xác (người đánh), trần **85%** (luôn ≥ 15% trúng).
++- Bạo thực = Bạo kích − Kiên cường, trần **90%**; hệ số bạo = 1.5 + Sát thương bạo thêm.
++- Đỡ thực = Đỡ đòn − Phá kích, trần **80%**; đỡ được thì ×0.5 (bạo + đỡ = ×0.75).
++- Miễn thương thuần trần **75%**.
++- Base = max(5% Công, (Công − Thủ) × hệ số kỹ năng) × khắc hệ 1.25 × (1 − Miễn thương).
++- Final = Base × bạo × đỡ × ngẫu nhiên [0.95, 1.05]. Thứ tự roll: né → bạo → đỡ → biến thiên.
++- Đánh trượt (bị né) không cộng nộ cho người đánh.
++- Các trần lấy 1 số trong khoảng Huynh đưa (85/90/80/75), là hằng số
++  trong `BattleEngine`, chỉnh tùy ý.
++- Chỉ số mới trên `HeroDef`: `Hit`, `CritResist`, `Block`, `Pierce`,
++  `CritDamage` (mặc định 0). Nguồn duy nhất hiện có: bonus Huyền Vũ
++  4 món "Đỡ đòn +10%" (nay hết "(sắp mở)").
++- Khắc hệ 1.25× là luật riêng của game này (không có trong spec), giữ nguyên.
++- **Chưa làm (chờ Huynh):** tách Vật công/Vật phòng với Sách công/Sách phòng
++  cho Mưu sĩ — cần thêm cột chỉ số cho 8 tướng, trang bị, ngọc. Hiện mọi
++  sát thương đều tính là vật lý.
++
++**Ảnh hưởng cân bằng** (mô phỏng 60 seed/ải, không trang bị; % thắng ải 1→10):
++
++| Đội | Cấp | Trước (công thức tỉ lệ) | Sau (Công − Thủ) |
++|---|---|---|---|
++| Tướng tự tạo solo | 20 | 0 ở mọi ải | 100 100 70 0 … |
++| Tướng tự tạo solo | 40 | 100 96 83 6 0 … | 100 100 100 100 70 93 0 … |
++| Đội 3 | 1 | 100×4, 46, 5, 0… | 100×4, 65, 3, 0… |
++| Đội 5 | 1 | 100×7, 98, 98, 80 | 100×7, 96, 48, 0 |
++| Đội 3/5 | ≥ 20 | 100 mọi ải | 100 mọi ải |
++
++Cấp tướng có giá trị hơn (Công tăng theo cấp còn Thủ địch cố định theo
++ải), ải 9–10 khó hơn với đội cấp thấp. Trận ở cấp thấp dài hơn khoảng
++20–30% số lượt.
++
++- Test: `tests/TestPhase238.tscn` (bug B1–B8/B11, cách ly save, công thức,
++  trần, đánh trượt không cộng nộ, Huyền Vũ Đỡ đòn); suite 0–2.38: 41/41 pass.
++
++### Phase 2.39 — Vòng chơi ải (KẾ TIẾP, chưa làm)
++
++Mục tiêu: đồ 2.30–2.37 với tới được bằng chơi bình thường (hiện cần
++khoảng 455 trận thắng ải 10 mới đủ Lv50 để Đúc Lại lên Chu Tước).
++- Thưởng thắng ải: **Bạc** thay Vàng (chốt Huynh), số cụ thể chờ chốt.
++- Ải rơi đồ vào 5 ô thưởng đang trống: Khoáng thạch / Đá tẩy luyện /
++  ngọc Lv1.
++- Chương 2 (ải 11–20) + EXP theo chương, hoặc giảm đường cong EXP (chờ chốt).
++- Quét ải đã 3 sao.
++- Đội hình địch có vị trí Tiền/Trung/Hậu, tối đa 5 địch.
++- Lưu seed trận vào kết quả.
++
+ ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
+ - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).
+ - Quái Công Thành (boss theo giờ, đánh chung lấy mốc thưởng — phase này làm boss
+diff --git a/features/auth/scenes/AuthScene.cs b/features/auth/scenes/AuthScene.cs
+index cc34efa375fc7d82277b88f448202716fd37845e..75f6d4240884f2a43529dfdc85b6ef9e545cd2f4 100644
+--- a/features/auth/scenes/AuthScene.cs
++++ b/features/auth/scenes/AuthScene.cs
+@@ -23,7 +23,9 @@ public partial class AuthScene : Control
+ 
+     private void GoHub(GameManager gm)
+     {
+-        gm.CurrentUsername = Username;
++        // Phase 2.38 (B7): use the registered spelling so "Huynh" and
++        // "huynh" always map to the same save file and hero name.
++        gm.CurrentUsername = LocalAuth.CanonicalUsername(gm.AccountsPath, Username) ?? Username;
+         gm.LoadGame();
+         GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+     }
+@@ -37,14 +39,27 @@ public partial class AuthScene : Control
+     private void OnLoginPressed()
+     {
+         var gm = GetNode<GameManager>("/root/GameManager");
+-        if (LocalAuth.Login(gm.AccountsPath, Username, Password)) GoHub(gm);
+-        else if (_statusLabel != null) _statusLabel.Text = "Đăng nhập thất bại: sai tài khoản hoặc mật khẩu.";
++        try
++        {
++            if (LocalAuth.Login(gm.AccountsPath, Username, Password)) GoHub(gm);
++            else SetStatus("Đăng nhập thất bại: sai tài khoản hoặc mật khẩu.");
++        }
++        catch (System.IO.InvalidDataException e) { SetStatus(e.Message); }
+     }
+ 
+     private void OnRegisterPressed()
+     {
+         var gm = GetNode<GameManager>("/root/GameManager");
+-        if (LocalAuth.Register(gm.AccountsPath, Username, Password, out var error)) GoHubSeeded(gm);
+-        else if (_statusLabel != null) _statusLabel.Text = "Đăng ký thất bại: " + error;
++        try
++        {
++            if (LocalAuth.Register(gm.AccountsPath, Username, Password, out var error)) GoHubSeeded(gm);
++            else SetStatus("Đăng ký thất bại: " + error);
++        }
++        catch (System.IO.InvalidDataException e) { SetStatus(e.Message); }
++    }
++
++    private void SetStatus(string text)
++    {
++        if (_statusLabel != null) _statusLabel.Text = text;
+     }
+ }
+diff --git a/features/battle/scenes/BattlePlaceholder.cs b/features/battle/scenes/BattlePlaceholder.cs
+deleted file mode 100644
+index 882075b55dbb6a51095be4444854f60b87801302..0000000000000000000000000000000000000000
+--- a/features/battle/scenes/BattlePlaceholder.cs
++++ /dev/null
+@@ -1,43 +0,0 @@
+-using Godot;
+-
+-namespace LongTuong;
+-
+-[GlobalClass]
+-public partial class BattlePlaceholder : Control
+-{
+-    private readonly PlaceholderBattle _battle = new();
+-    private Label? _hpLabel;
+-    private Label? _resultLabel;
+-
+-    public override void _Ready()
+-    {
+-        _hpLabel = GetNode<Label>("HpLabel");
+-        _resultLabel = GetNode<Label>("ResultLabel");
+-        Refresh();
+-    }
+-
+-    private void Refresh()
+-    {
+-        if (_hpLabel != null)
+-            _hpLabel.Text = $"Ta: {_battle.PlayerHp} HP | Dich: {_battle.EnemyHp} HP | Luot: {_battle.Turn}";
+-        if (_resultLabel != null)
+-            _resultLabel.Text = _battle.IsOver ? (_battle.PlayerWon ? "THANG!" : "THUA!") : "Chua phan thang bai";
+-    }
+-
+-    private void OnAttackPressed()
+-    {
+-        _battle.Attack();
+-        if (_battle.IsOver && _battle.PlayerWon)
+-        {
+-            var gm = GetNode<GameManager>("/root/GameManager");
+-            gm.RecordWin();
+-            gm.SaveGame();
+-        }
+-        Refresh();
+-    }
+-
+-    private void OnBackPressed()
+-    {
+-        GetTree().ChangeSceneToFile("res://features/main/scenes/MainScene.tscn");
+-    }
+-}
+diff --git a/features/battle/scenes/BattlePlaceholder.cs.uid b/features/battle/scenes/BattlePlaceholder.cs.uid
+deleted file mode 100644
+index c6bba94ba1d137e2aab67140ea6766b45e0626b7..0000000000000000000000000000000000000000
+--- a/features/battle/scenes/BattlePlaceholder.cs.uid
++++ /dev/null
+@@ -1 +0,0 @@
+-uid://c5eaag33lwc6v
+diff --git a/features/battle/scenes/BattlePlaceholder.tscn b/features/battle/scenes/BattlePlaceholder.tscn
+deleted file mode 100644
+index cdf5a387aa9c0aefbed8c0776351324cbb2211e7..0000000000000000000000000000000000000000
+--- a/features/battle/scenes/BattlePlaceholder.tscn
++++ /dev/null
+@@ -1,105 +0,0 @@
+-[gd_scene load_steps=2 format=3]
+-
+-[ext_resource type="Script" path="res://features/battle/scenes/BattlePlaceholder.cs" id="1_battle"]
+-
+-[node name="BattlePlaceholder" type="Control"]
+-layout_mode = 3
+-anchors_preset = 15
+-anchor_right = 1.0
+-anchor_bottom = 1.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-script = ExtResource("1_battle")
+-
+-[node name="PlayerRect" type="ColorRect" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -280.0
+-offset_top = -80.0
+-offset_right = -160.0
+-offset_bottom = 40.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-color = Color(0.2, 0.6, 1, 1)
+-
+-[node name="EnemyRect" type="ColorRect" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = 160.0
+-offset_top = -80.0
+-offset_right = 280.0
+-offset_bottom = 40.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-color = Color(1, 0.25, 0.25, 1)
+-
+-[node name="HpLabel" type="Label" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -300.0
+-offset_top = 60.0
+-offset_right = 300.0
+-offset_bottom = 100.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "HP..."
+-
+-[node name="ResultLabel" type="Label" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -300.0
+-offset_top = 110.0
+-offset_right = 300.0
+-offset_bottom = 150.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Chua phan thang bai"
+-
+-[node name="AttackButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -120.0
+-offset_top = 170.0
+-offset_right = 120.0
+-offset_bottom = 210.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Danh 1 luot"
+-
+-[node name="BackButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -120.0
+-offset_top = 220.0
+-offset_right = 120.0
+-offset_bottom = 260.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Quay lai man hinh chinh"
+-
+-[connection signal="pressed" from="AttackButton" to="." method="OnAttackPressed"]
+-[connection signal="pressed" from="BackButton" to="." method="OnBackPressed"]
+diff --git a/features/forge/scenes/ForgeScene.cs b/features/forge/scenes/ForgeScene.cs
+deleted file mode 100644
+index 1edd58ca2c823fb258695cd13749be2c5670eb1e..0000000000000000000000000000000000000000
+--- a/features/forge/scenes/ForgeScene.cs
++++ /dev/null
+@@ -1,228 +0,0 @@
+-using Godot;
+-using System.Collections.Generic;
+-using System.Linq;
+-
+-namespace LongTuong;
+-
+-/// <summary>
+-/// Phase 2.34: Lò rèn (forge) — buy blueprints + ore with Vàng,
+-/// forge set equipment into the bag. Opened from the Trang bị popup.
+-/// </summary>
+-[GlobalClass]
+-public partial class ForgeScene : Control
+-{
+-    public static readonly Vector2 PopupSize = new(760, 600);
+-
+-    private string _selectedSet = "chu_tuoc";
+-    private string _selectedSlot = "weapon";
+-    private Label? _oreLabel;
+-    private Label? _infoLabel;
+-    private Label? _statusLabel;
+-    private VBoxContainer? _box;
+-
+-    public override void _Ready()
+-    {
+-        UiTheme.ApplyBackground(this);
+-        var gm = GetNode<GameManager>("/root/GameManager");
+-        ProgressionService.EnsureDefaults(gm.Save);
+-        var title = GetNode<Label>("TitleLabel");
+-        title.Text = "Lò Rèn";
+-        UiTheme.StyleTitle(title);
+-        if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
+-        var scroll = GetNode<ScrollContainer>("Scroll");
+-        _box = GetNode<VBoxContainer>("Scroll/Box");
+-        Refresh();
+-    }
+-
+-    private void Refresh()
+-    {
+-        var gm = GetNode<GameManager>("/root/GameManager");
+-        var save = gm.Save;
+-        if (_box == null) return;
+-        foreach (var child in _box.GetChildren()) { _box.RemoveChild(child); child.QueueFree(); }
+-
+-        _box.AddChild(SectionLabel("Bản vẽ:"));
+-        foreach (var setId in ForgeService.BlueprintPrices.Keys)
+-        {
+-            var set = EquipmentSets.Get(setId);
+-            bool learned = ForgeService.HasBlueprint(save, setId);
+-            var row = new HBoxContainer { Name = $"BlueprintRow_{setId}" };
+-            row.AddThemeConstantOverride("separation", 8);
+-            var info = new Label
+-            {
+-                Text = $"{set.Name} (Lv{set.Tier} · {EquipmentSets.QualityName(set.Quality)})",
+-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+-            };
+-            UiTheme.StyleBody(info, UiTheme.FontSmall);
+-            info.AddThemeColorOverride("font_color", EquipmentSets.QualityColor(set.Quality));
+-            row.AddChild(info);
+-            var buyBtn = new Button
+-            {
+-                Name = $"BlueprintBuy_{setId}",
+-                Text = learned ? "Đã học ✓" : $"Mua {ForgeService.BlueprintPrices[setId]} Vàng",
+-                CustomMinimumSize = new Vector2(190, 44),
+-                Disabled = learned || save.Gold < ForgeService.BlueprintPrices[setId],
+-            };
+-            buyBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+-            UiTheme.StyleButton(buyBtn, !learned);
+-            var sid = setId;
+-            buyBtn.Pressed += () =>
+-            {
+-                var gm2 = GetNode<GameManager>("/root/GameManager");
+-                SetStatus(ForgeService.TryBuyBlueprint(gm2.Save, sid)
+-                    ? $"Đã học bản vẽ {EquipmentSets.Get(sid).Name}!"
+-                    : "Không đủ Vàng mua bản vẽ!");
+-                gm2.SaveGame();
+-                Refresh();
+-            };
+-            row.AddChild(buyBtn);
+-            _box.AddChild(row);
+-        }
+-
+-        _box.AddChild(new HSeparator());
+-        var oreRow = new HBoxContainer();
+-        oreRow.AddThemeConstantOverride("separation", 8);
+-        _oreLabel = new Label
+-        {
+-            Name = "OreCountLabel",
+-            Text = $"{ForgeService.OreName}: {ForgeService.OreCount(save)}",
+-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+-        };
+-        UiTheme.StyleBody(_oreLabel, UiTheme.FontButton);
+-        oreRow.AddChild(_oreLabel);
+-        var oreBtn = new Button
+-        {
+-            Name = "OreBuyButton",
+-            Text = $"Mua +10 ({10 * ForgeService.OrePriceGold} Vàng)",
+-            CustomMinimumSize = new Vector2(220, 44),
+-            Disabled = save.Gold < 10 * ForgeService.OrePriceGold,
+-        };
+-        oreBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+-        UiTheme.StyleButton(oreBtn, false);
+-        oreBtn.Pressed += () =>
+-        {
+-            var gm2 = GetNode<GameManager>("/root/GameManager");
+-            SetStatus(ForgeService.TryBuyOre(gm2.Save, 10) ? "Đã mua 10 Khoáng thạch!" : "Không đủ Vàng!");
+-            gm2.SaveGame();
+-            Refresh();
+-        };
+-        oreRow.AddChild(oreBtn);
+-        _box.AddChild(oreRow);
+-
+-        _box.AddChild(new HSeparator());
+-        _box.AddChild(SectionLabel("Rèn trang bị:"));
+-        _box.AddChild(SmallLabel("Chọn bộ:"));
+-        var setRow = new HBoxContainer { Name = "ForgeSetRow" };
+-        setRow.AddThemeConstantOverride("separation", 8);
+-        foreach (var setId in ForgeService.BlueprintPrices.Keys)
+-        {
+-            bool learned = ForgeService.HasBlueprint(save, setId);
+-            var setBtn = new Button
+-            {
+-                Name = $"ForgeSet_{setId}",
+-                Text = EquipmentSets.Get(setId).Name,
+-                ToggleMode = true,
+-                ButtonPressed = setId == _selectedSet,
+-                Disabled = !learned,
+-                CustomMinimumSize = new Vector2(0, 44),
+-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+-            };
+-            UiTheme.StyleButton(setBtn, setId == _selectedSet);
+-            setBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+-            var sid = setId;
+-            setBtn.Pressed += () => { _selectedSet = sid; Refresh(); };
+-            setRow.AddChild(setBtn);
+-        }
+-        _box.AddChild(setRow);
+-
+-        _box.AddChild(SmallLabel("Chọn ô:"));
+-        var slotGrid = new GridContainer { Name = "ForgeSlotGrid", Columns = 3 };
+-        slotGrid.AddThemeConstantOverride("h_separation", 8);
+-        slotGrid.AddThemeConstantOverride("v_separation", 8);
+-        foreach (var slot in ProgressionService.Slots)
+-        {
+-            var slotBtn = new Button
+-            {
+-                Name = $"ForgeSlot_{slot.Id}",
+-                Text = slot.Name,
+-                ToggleMode = true,
+-                ButtonPressed = slot.Id == _selectedSlot,
+-                CustomMinimumSize = new Vector2(0, 44),
+-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+-            };
+-            UiTheme.StyleButton(slotBtn, slot.Id == _selectedSlot);
+-            slotBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+-            var sl = slot.Id;
+-            slotBtn.Pressed += () => { _selectedSlot = sl; Refresh(); };
+-            slotGrid.AddChild(slotBtn);
+-        }
+-        _box.AddChild(slotGrid);
+-
+-        var selSet = EquipmentSets.Get(_selectedSet);
+-        int mainLevel = ProgressionService.ProgressOf(save, "custom_hero").Level;
+-        _infoLabel = new Label
+-        {
+-            Name = "ForgeInfo",
+-            Text = $"Rèn: {selSet.Name} — {ProgressionService.Slots.Find(s => s.Id == _selectedSlot)?.Name}\n" +
+-                $"Cần: {ForgeService.OrePerForge(_selectedSet)} {ForgeService.OreName} · Yêu cầu cấp tướng chính {selSet.Tier} (hiện {mainLevel})",
+-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+-        };
+-        UiTheme.StyleBody(_infoLabel, UiTheme.FontSmall);
+-        _box.AddChild(_infoLabel);
+-        var forgeBtn = new Button
+-        {
+-            Name = "ForgeButton",
+-            Text = "Rèn",
+-            CustomMinimumSize = new Vector2(0, UiTheme.ButtonHeight),
+-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+-        };
+-        UiTheme.StyleButton(forgeBtn, true);
+-        forgeBtn.Pressed += OnForgePressed;
+-        _box.AddChild(forgeBtn);
+-        _statusLabel = new Label { Name = "ForgeStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = _lastStatus };
+-        UiTheme.StyleBody(_statusLabel, UiTheme.FontSmall);
+-        _statusLabel.AddThemeColorOverride("font_color", UiTheme.Muted);
+-        _box.AddChild(_statusLabel);
+-    }
+-
+-    private void OnForgePressed()
+-    {
+-        var gm = GetNode<GameManager>("/root/GameManager");
+-        var slotName = ProgressionService.Slots.Find(s => s.Id == _selectedSlot)?.Name ?? _selectedSlot;
+-        string msg = ForgeService.TryForge(gm.Save, _selectedSet, _selectedSlot, _rng) switch
+-        {
+-            ForgeService.ForgeResult.Success => $"Rèn thành công: {slotName} {EquipmentSets.Get(_selectedSet).Name}! (vào Túi)",
+-            ForgeService.ForgeResult.NoBlueprint => "Chưa học bản vẽ của bộ này!",
+-            ForgeService.ForgeResult.LowLevel => $"Cấp tướng chính chưa đủ (cần Lv{EquipmentSets.Get(_selectedSet).Tier})!",
+-            ForgeService.ForgeResult.NoOre => $"Không đủ {ForgeService.OreName}!",
+-            _ => "Không rèn được!",
+-        };
+-        SetStatus(msg);
+-        gm.SaveGame();
+-        Refresh();
+-    }
+-
+-    private static readonly System.Random _rng = new();
+-    private string _lastStatus = "";
+-
+-    private void SetStatus(string msg)
+-    {
+-        _lastStatus = msg;
+-        if (_statusLabel != null) _statusLabel.Text = msg;
+-    }
+-
+-    private static Label SectionLabel(string text)
+-    {
+-        var l = new Label { Text = text };
+-        UiTheme.StyleBody(l, UiTheme.FontButton);
+-        l.AddThemeColorOverride("font_color", UiTheme.Gold);
+-        return l;
+-    }
+-
+-    private static Label SmallLabel(string text)
+-    {
+-        var l = new Label { Text = text };
+-        UiTheme.StyleBody(l, UiTheme.FontSmall);
+-        return l;
+-    }
+-}
+diff --git a/features/forge/scenes/ForgeScene.tscn b/features/forge/scenes/ForgeScene.tscn
+deleted file mode 100644
+index acd412beead8fd70f501518184a891327c47ca23..0000000000000000000000000000000000000000
+--- a/features/forge/scenes/ForgeScene.tscn
++++ /dev/null
+@@ -1,31 +0,0 @@
+-[gd_scene load_steps=2 format=3 uid="uid://forge234"]
+-
+-[ext_resource type="Script" path="res://features/forge/scenes/ForgeScene.cs" id="1_forge"]
+-
+-[node name="ForgeScene" type="Control"]
+-layout_mode = 3
+-anchors_preset = 15
+-anchor_right = 1.0
+-anchor_bottom = 1.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-script = ExtResource("1_forge")
+-
+-[node name="TitleLabel" type="Label" parent="."]
+-layout_mode = 0
+-offset_right = 760.0
+-offset_bottom = 44.0
+-horizontal_alignment = 1
+-text = "Lò Rèn"
+-
+-[node name="Scroll" type="ScrollContainer" parent="."]
+-layout_mode = 0
+-offset_left = 24.0
+-offset_top = 56.0
+-offset_right = 736.0
+-offset_bottom = 588.0
+-
+-[node name="Box" type="VBoxContainer" parent="Scroll"]
+-layout_mode = 2
+-size_flags_horizontal = 3
+-theme_override_constants/separation = 10
+diff --git a/features/hero/scenes/HeroScreen.cs b/features/hero/scenes/HeroScreen.cs
+index f07b53a62a1473b06935745fff3157cc8a9d72d5..7bf2df5072bab0f71f4e7034e53378dcec04faf6 100644
+--- a/features/hero/scenes/HeroScreen.cs
++++ b/features/hero/scenes/HeroScreen.cs
+@@ -945,7 +945,7 @@ public partial class HeroScreen : Control
+         {
+             _status = GemService.TryUnlockSocket(save, _selectedHero, _selectedSlot, socketIndex)
+                 ? $"Đã mở lỗ khảm {socketIndex + 1}!"
+-                : "Không đủ Bạc để mở lỗ!";
++                : "Không đủ Vàng để mở lỗ!";
+             gm.SaveGame();
+         }
+         else if (string.IsNullOrEmpty(sock.GemId))
+diff --git a/features/main/scenes/MainScene.cs b/features/main/scenes/MainScene.cs
+deleted file mode 100644
+index fdb57cbfb113244831167093cbc6489cdb86d5ea..0000000000000000000000000000000000000000
+--- a/features/main/scenes/MainScene.cs
++++ /dev/null
+@@ -1,58 +0,0 @@
+-using Godot;
+-
+-namespace LongTuong;
+-
+-[GlobalClass]
+-public partial class MainScene : Control
+-{
+-    private Label? _statusLabel;
+-
+-    public override void _Ready()
+-    {
+-        UiTheme.ApplyBackground(this);
+-        UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+-        foreach (var n in new[] { "BattleButton", "SaveButton", "LoadButton", "HeroButton", "HubButton" })
+-        {
+-            var b = GetNodeOrNull<Button>(n);
+-            if (b != null) UiTheme.StyleButton(b);
+-        }
+-        _statusLabel = GetNode<Label>("StatusLabel");
+-        RefreshStatus();
+-    }
+-
+-    private void RefreshStatus()
+-    {
+-        var gm = GetNode<GameManager>("/root/GameManager");
+-        if (_statusLabel != null)
+-            _statusLabel.Text = $"longtuong Phase 0 — v{GameManager.Version} | Vang: {gm.Save.Gold} | Thang: {gm.Save.Wins}";
+-    }
+-
+-    private void OnHubPressed()
+-    {
+-        GetTree().ChangeSceneToFile("res://features/hub/scenes/HubScene.tscn");
+-    }
+-
+-    private void OnHeroPressed()
+-    {
+-        GetTree().ChangeSceneToFile("res://features/hero/scenes/HeroScreen.tscn");
+-    }
+-
+-    private void OnStagePressed()
+-    {
+-        GetTree().ChangeSceneToFile("res://features/stage/scenes/StageSelect.tscn");
+-    }
+-
+-    private void OnSavePressed()
+-    {
+-        var gm = GetNode<GameManager>("/root/GameManager");
+-        gm.SaveGame();
+-        RefreshStatus();
+-    }
+-
+-    private void OnLoadPressed()
+-    {
+-        var gm = GetNode<GameManager>("/root/GameManager");
+-        gm.LoadGame();
+-        RefreshStatus();
+-    }
+-}
+diff --git a/features/main/scenes/MainScene.cs.uid b/features/main/scenes/MainScene.cs.uid
+deleted file mode 100644
+index 5be8c2252b4899c046432aa755d6a4a8f5b67e5c..0000000000000000000000000000000000000000
+--- a/features/main/scenes/MainScene.cs.uid
++++ /dev/null
+@@ -1 +0,0 @@
+-uid://cscna2jupwwl2
+diff --git a/features/main/scenes/MainScene.tscn b/features/main/scenes/MainScene.tscn
+deleted file mode 100644
+index 16a60d37491c52866955f88ad6141eb2efdc8c50..0000000000000000000000000000000000000000
+--- a/features/main/scenes/MainScene.tscn
++++ /dev/null
+@@ -1,125 +0,0 @@
+-[gd_scene load_steps=2 format=3]
+-
+-[ext_resource type="Script" path="res://features/main/scenes/MainScene.cs" id="1_main"]
+-
+-[node name="MainScene" type="Control"]
+-layout_mode = 3
+-anchors_preset = 15
+-anchor_right = 1.0
+-anchor_bottom = 1.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-script = ExtResource("1_main")
+-
+-[node name="TitleLabel" type="Label" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -200.0
+-offset_top = -120.0
+-offset_right = 200.0
+-offset_bottom = -60.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "LONGTUONG — Phase 0"
+-
+-[node name="StatusLabel" type="Label" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -300.0
+-offset_top = -40.0
+-offset_right = 300.0
+-offset_bottom = 0.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Dang tai..."
+-
+-[node name="BattleButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -120.0
+-offset_top = 20.0
+-offset_right = 120.0
+-offset_bottom = 60.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Chon doi & ai"
+-
+-[node name="SaveButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -120.0
+-offset_top = 70.0
+-offset_right = -10.0
+-offset_bottom = 110.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Luu game"
+-
+-[node name="LoadButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = 10.0
+-offset_top = 70.0
+-offset_right = 120.0
+-offset_bottom = 110.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Tai game"
+-
+-[connection signal="pressed" from="BattleButton" to="." method="OnStagePressed"]
+-[connection signal="pressed" from="SaveButton" to="." method="OnSavePressed"]
+-[connection signal="pressed" from="LoadButton" to="." method="OnLoadPressed"]
+-
+-[node name="HeroButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -120.0
+-offset_top = 120.0
+-offset_right = 120.0
+-offset_bottom = 160.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Tuong & Trang bi"
+-
+-[connection signal="pressed" from="HeroButton" to="." method="OnHeroPressed"]
+-
+-[node name="HubButton" type="Button" parent="."]
+-layout_mode = 1
+-anchors_preset = 8
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-offset_left = -120.0
+-offset_top = 170.0
+-offset_right = 120.0
+-offset_bottom = 210.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-text = "Vao Hub"
+-
+-[connection signal="pressed" from="HubButton" to="." method="OnHubPressed"]
+diff --git a/tests/TestPhase0.cs b/tests/TestPhase0.cs
+index 171b1919b4a5e1891a41b3659a5f1aead0fa7af7..01bfcbe7ef5dc7106ece5740bc4342ea47b3e6a1 100644
+--- a/tests/TestPhase0.cs
++++ b/tests/TestPhase0.cs
+@@ -11,9 +11,7 @@ public partial class TestPhase0 : Node
+ 
+     public override void _Ready()
+     {
+-        CheckBattle();
+         CheckSaveRoundTrip();
+-        CheckBattleReset();
+         CheckScenesLoad();
+         GD.Print(_failures == 0 ? "TEST PHASE0: ALL PASS" : $"TEST PHASE0: {_failures} FAILURES");
+         GetTree().Quit(_failures == 0 ? 0 : 1);
+@@ -25,62 +23,40 @@ public partial class TestPhase0 : Node
+         else { GD.PrintErr($"FAIL: {name}"); _failures++; }
+     }
+ 
+-    private void CheckBattle()
+-    {
+-        var b = new PlaceholderBattle();
+-        Check(b.PlayerHp == 100 && b.EnemyHp == 100 && !b.IsOver, "battle starts 100/100");
+-        b.Attack();
+-        Check(b.EnemyHp == 75 && b.PlayerHp == 90 && b.Turn == 1, "battle turn 1: enemy 75, player 90");
+-        b.Attack(); b.Attack(); b.Attack();
+-        Check(b.IsOver && b.PlayerWon, "battle ends in player win after 4 attacks");
+-        var turns = b.Turn;
+-        b.Attack();
+-        Check(b.Turn == turns, "battle does not advance after over");
+-    }
+-
+-    private void CheckBattleReset()
+-    {
+-        var b = new PlaceholderBattle();
+-        b.Attack();
+-        b.Reset();
+-        Check(b.PlayerHp == 100 && b.EnemyHp == 100 && b.Turn == 0, "battle reset restores 100/100");
+-    }
+-
++    // Phase 2.38: the Phase 0 placeholder battle + main scene were removed
++    // as dead code; this test now only covers the scaffold that is still
++    // live (main scene setting, core scenes, save round trip).
+     private void CheckScenesLoad()
+     {
+-        var main = ResourceLoader.Load<PackedScene>("res://features/main/scenes/MainScene.tscn");
+-        Check(main != null, "main scene loads");
+-        var mainInst = main?.Instantiate<Control>();
+-        Check(mainInst != null && mainInst.GetNodeOrNull<Label>("StatusLabel") != null, "main scene instantiates with StatusLabel");
+-        mainInst?.QueueFree();
++        var mainPath = (string)ProjectSettings.GetSetting("application/run/main_scene");
++        Check(mainPath == "res://features/auth/scenes/AuthScene.tscn", "main scene is the auth screen");
++        Check(ResourceLoader.Load<PackedScene>(mainPath) != null, "main scene loads");
+         var stage = ResourceLoader.Load<PackedScene>("res://features/stage/scenes/StageSelect.tscn");
+         Check(stage != null, "stage select scene loads");
+         var battleScene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn");
+         Check(battleScene != null, "battle scene loads");
+         var heroScene = ResourceLoader.Load<PackedScene>("res://features/hero/scenes/HeroScreen.tscn");
+         Check(heroScene != null, "hero scene loads");
+-        var battle = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattlePlaceholder.tscn");
+-        Check(battle != null, "battle scene loads");
+-        var battleInst = battle?.Instantiate<Control>();
+-        Check(battleInst != null && battleInst.GetNodeOrNull<Label>("HpLabel") != null, "battle scene instantiates with HpLabel");
+-        battleInst?.QueueFree();
++        Check(!ResourceLoader.Exists("res://features/main/scenes/MainScene.tscn"), "Phase 0 MainScene removed");
++        Check(!ResourceLoader.Exists("res://features/battle/scenes/BattlePlaceholder.tscn"), "Phase 0 BattlePlaceholder removed");
+     }
+ 
+     private void CheckSaveRoundTrip()
+     {
+-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase0_save.json");
++        var path = Path.Combine(GameManager.DataDir, "test_phase0_save.json");
+         try
+         {
+             var data = new SaveData { Gold = 1234, PlayerLevel = 5, LastStage = 3, Wins = 2 };
+             SaveManager.Save(path, data);
+             var loaded = SaveManager.Load(path);
+             Check(loaded.Gold == 1234 && loaded.PlayerLevel == 5 && loaded.LastStage == 3 && loaded.Wins == 2, "save/load round trip preserves data");
+-            var missing = SaveManager.Load(Path.Combine(OS.GetUserDataDir(), "test_phase0_missing.json"));
++            var missing = SaveManager.Load(Path.Combine(GameManager.DataDir, "test_phase0_missing.json"));
+             Check(missing.Gold == 1000 && missing.Wins == 0, "load missing file returns defaults");
+         }
+         finally
+         {
+             if (File.Exists(path)) File.Delete(path);
++            if (File.Exists(path + ".bak")) File.Delete(path + ".bak");
+         }
+     }
+ }
+diff --git a/tests/TestPhase1.cs b/tests/TestPhase1.cs
+index 6e1bf979bad084e78a8bd7b5f613f69bf09c8bd2..c3e8a6d89547c4a56a4938420f86f3f0a427c207 100644
+--- a/tests/TestPhase1.cs
++++ b/tests/TestPhase1.cs
+@@ -122,7 +122,7 @@ public partial class TestPhase1 : Node
+ 
+     private void CheckSaveTeamAndStars()
+     {
+-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase1_save.json");
++        var path = Path.Combine(GameManager.DataDir, "test_phase1_save.json");
+         try
+         {
+             var data = new SaveData { Gold = 500, TeamIds = new List<string> { "lu_bo", "trieu_van", "dieu_thuyen" }, StageStars = new Dictionary<string, int> { ["1"] = 3, ["2"] = 2 } };
+diff --git a/tests/TestPhase2.cs b/tests/TestPhase2.cs
+index a8209792a1bff5d51c27e112266ee73bc302e56e..866196c721928445e0d428b1b59930fd642c007f 100644
+--- a/tests/TestPhase2.cs
++++ b/tests/TestPhase2.cs
+@@ -155,7 +155,7 @@ public partial class TestPhase2 : Node
+ 
+     private void CheckSaveProgression()
+     {
+-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase2_save.json");
++        var path = Path.Combine(GameManager.DataDir, "test_phase2_save.json");
+         try
+         {
+             var s = Fresh();
+diff --git a/tests/TestPhase21.cs b/tests/TestPhase21.cs
+index 736bde36614b2f092e2f3bf7b76d0504da6a155e..4d57b9e5f27cdae63237b92d252d1676ff30bacd 100644
+--- a/tests/TestPhase21.cs
++++ b/tests/TestPhase21.cs
+@@ -27,7 +27,7 @@ public partial class TestPhase21 : Node
+ 
+     private void CheckAuth()
+     {
+-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase21_accounts.json");
++        var path = Path.Combine(GameManager.DataDir, "test_phase21_accounts.json");
+         try
+         {
+             if (File.Exists(path)) File.Delete(path);
+diff --git a/tests/TestPhase222.cs b/tests/TestPhase222.cs
+index ecd5ddf83adae28598a15eacb2123892a7736e74..5d26761ee639cf2d850d83a440feb94b87f4b6b2 100644
+--- a/tests/TestPhase222.cs
++++ b/tests/TestPhase222.cs
+@@ -76,7 +76,7 @@ public partial class TestPhase222 : Node
+         Check(!gm.Save.OwnedHeroIds.Contains("luu_bi"), "battle win does NOT auto-unlock any locked hero");
+ 
+         // --- Old save JSON with a Shards field still loads (field ignored) ---
+-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase222_legacy.json");
++        var path = Path.Combine(GameManager.DataDir, "test_phase222_legacy.json");
+         try
+         {
+             File.WriteAllText(path, "{\"Gold\": 1234, \"Gems\": 56, \"Shards\": {\"quan_vu\": 99, \"luu_bi\": 10}, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");
+diff --git a/tests/TestPhase223.cs b/tests/TestPhase223.cs
+index 7368167bc2d159ee3e27dd3887519cf236bed7a0..63559fed076b4b1d82bc9099513323660fc6ec19 100644
+--- a/tests/TestPhase223.cs
++++ b/tests/TestPhase223.cs
+@@ -165,7 +165,7 @@ public partial class TestPhase223 : Node
+         Check(scaledCam.Atk > scaledLam.Atk, "Cam out-damages Lam at the same level");
+ 
+         // --- Old save with per-general souls (2.23 format) loads, souls discarded ---
+-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase223_legacy.json");
++        var path = Path.Combine(GameManager.DataDir, "test_phase223_legacy.json");
+         try
+         {
+             File.WriteAllText(path, "{\"Gold\": 4321, \"GeneralSouls\": {\"luu_bi\": 999}, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");
+diff --git a/tests/TestPhase227.cs b/tests/TestPhase227.cs
+index 009ca801956914ee8383cb91913163f63887e746..b9ce1837f3cb425e40ba95469d2def8ab66df7f9 100644
+--- a/tests/TestPhase227.cs
++++ b/tests/TestPhase227.cs
+@@ -30,7 +30,7 @@ public partial class TestPhase227 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 227: ALL PASS");
+         else GD.Print($"TEST PHASE 227: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase228.cs b/tests/TestPhase228.cs
+index 0480cbe4d2dca3f2426f9c9e93fae941f70fbe22..f0451b7af5fd24da327157f6057f9d659c918ee5 100644
+--- a/tests/TestPhase228.cs
++++ b/tests/TestPhase228.cs
+@@ -85,7 +85,7 @@ public partial class TestPhase228 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.28: ALL PASS");
+         else GD.Print($"TEST PHASE 2.28: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase229.cs b/tests/TestPhase229.cs
+index 4eba05df5ab9ffd4cd972da9c5637f32f2d7fa82..01d81db9e1fe01692d13891691857b69d9d26db0 100644
+--- a/tests/TestPhase229.cs
++++ b/tests/TestPhase229.cs
+@@ -95,7 +95,7 @@ public partial class TestPhase229 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.29: ALL PASS");
+         else GD.Print($"TEST PHASE 2.29: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase230.cs b/tests/TestPhase230.cs
+index 32700d45b937bd646ba520de8b0212fc5d1da99c..655f7e753e759c3a364402e9665ef1d787d4ed2c 100644
+--- a/tests/TestPhase230.cs
++++ b/tests/TestPhase230.cs
+@@ -115,7 +115,7 @@ public partial class TestPhase230 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.30: ALL PASS");
+         else GD.Print($"TEST PHASE 2.30: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void AddTestItem(SaveData save, string slotId, string setId, int tier, string quality)
+diff --git a/tests/TestPhase231.cs b/tests/TestPhase231.cs
+index 9e76b6ae14fd4ecc2950c5becd61c2618cb52fa9..940977782571660b23d455371e81c2097db9bc02 100644
+--- a/tests/TestPhase231.cs
++++ b/tests/TestPhase231.cs
+@@ -57,7 +57,7 @@ public partial class TestPhase231 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.31: ALL PASS");
+         else GD.Print($"TEST PHASE 2.31: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase232.cs b/tests/TestPhase232.cs
+index 777dff6ef2205ce5b58a16f925ee28b3571f9438..976c1e412bccf793d496f4706424fbb6d29262da 100644
+--- a/tests/TestPhase232.cs
++++ b/tests/TestPhase232.cs
+@@ -87,7 +87,7 @@ public partial class TestPhase232 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.32: ALL PASS");
+         else GD.Print($"TEST PHASE 2.32: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase233.cs b/tests/TestPhase233.cs
+index 65761bda882cf19d9eb68be9682e0905997df9de..1e68eb7edb5da0dc3dd8c047207200724b54d893 100644
+--- a/tests/TestPhase233.cs
++++ b/tests/TestPhase233.cs
+@@ -116,7 +116,7 @@ public partial class TestPhase233 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.33: ALL PASS");
+         else GD.Print($"TEST PHASE 2.33: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase234.cs b/tests/TestPhase234.cs
+index a7ac077e92bf020cb3e10ed1cfc97f03a4281a17..de81222e1530f0ff2f404d275533375f14dee17f 100644
+--- a/tests/TestPhase234.cs
++++ b/tests/TestPhase234.cs
+@@ -4,8 +4,8 @@ using System.Linq;
+ namespace LongTuong;
+ 
+ /// <summary>
+-/// Phase 2.34: rèn — blueprints, ore, forge gates, forged items,
+-/// and the forge popup flow from the Trang bị screen.
++/// Phase 2.34: rèn — blueprints and ore. Phase 2.38 removed the
++/// standalone forge popup (TryForge into the bag).
+ /// </summary>
+ public partial class TestPhase234 : Node
+ {
+@@ -19,7 +19,7 @@ public partial class TestPhase234 : Node
+         // Blueprint catalog.
+         Check(ForgeService.BlueprintPrices.Count == 5, "5 forgeable sets (no Tan Thu)");
+         Check(ForgeService.BlueprintPrices["chu_tuoc"] == 50000, "Chu Tuoc blueprint 50000 gold");
+-        Check(ForgeService.OrePerForge("chu_tuoc") == 25, "25 ore per Chu Tuoc forge");
++        Check(ForgeService.RecastOreCost("chu_tuoc") == 25, "25 ore for a Chu Tuoc recast");
+         Check(ForgeService.OrePriceGold == 100, "ore 100 gold each");
+ 
+         // Buy blueprint.
+@@ -37,28 +37,9 @@ public partial class TestPhase234 : Node
+         Check(ForgeService.OreCount(gm.Save) == 10, "10 ore in stock");
+         Check(!ForgeService.TryBuyOre(gm.Save, 0), "buy zero ore fails");
+ 
+-        // Forge gates (ordered: BadSet -> NoBlueprint -> LowLevel -> NoOre).
+-        var rng = new System.Random(1);
+-        Check(ForgeService.TryForge(gm.Save, "tan_thu", "weapon", rng) == ForgeService.ForgeResult.BadSet, "Tan Thu not forgeable");
+-        Check(ForgeService.TryForge(gm.Save, "bach_ho", "weapon", rng) == ForgeService.ForgeResult.NoBlueprint, "forge needs blueprint");
+-        Check(ForgeService.TryForge(gm.Save, "chu_tuoc", "weapon", rng) == ForgeService.ForgeResult.LowLevel, "forge needs main level 50");
+-        gm.Save.Heroes["custom_hero"].Level = 50;
+-        Check(ForgeService.TryForge(gm.Save, "chu_tuoc", "weapon", rng) == ForgeService.ForgeResult.NoOre, "forge needs ore (10 < 25)");
+-        ForgeService.TryBuyOre(gm.Save, 20);
+-
+-        // Successful forge.
+-        int bagBefore = gm.Save.BagEquipment.Count;
+-        int oreBefore = ForgeService.OreCount(gm.Save);
+-        Check(ForgeService.TryForge(gm.Save, "chu_tuoc", "weapon", rng) == ForgeService.ForgeResult.Success, "forge succeeds");
+-        Check(gm.Save.BagEquipment.Count == bagBefore + 1, "forged item lands in bag");
+-        var item = gm.Save.BagEquipment[^1];
+-        Check(item.SetId == "chu_tuoc" && item.Tier == 50 && item.Quality == "Luc" && item.SlotId == "weapon",
+-            "forged item has set fields");
+-        Check(item.RefineLines.Count == 4, "forged Luc item has 4 lines");
+-        Check(ForgeService.OreCount(gm.Save) == oreBefore - 25, "forge consumes ore");
+-
+-        // UI: Trang bị popup -> Lò rèn -> buy ore + forge.
+-        gm.Save.Gold = 200000;
++        // Phase 2.38: the standalone Lò Rèn popup (forge into the bag) was
++        // removed as dead code; blueprints/ore are bought inline in the
++        // Cường hóa tab and used by Đúc Lại (see TestPhase237).
+         var hubScene = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn");
+         var hub = hubScene.Instantiate<HubScene>();
+         AddChild(hub);
+@@ -66,28 +47,11 @@ public partial class TestPhase234 : Node
+         Check(hub.IsPopupOpen, "Trang bị popup opens");
+         var heroScreen = hub.GetNode("PopupFrame/PopupContent").GetChild(0);
+         Check(heroScreen.FindChild("ForgeOpenButton", true, false) == null, "Lo ren button removed (2.37b)");
+-        // Forge popup still works standalone (blueprint/ore shop).
+-        var forgeScene = ResourceLoader.Load<PackedScene>("res://features/forge/scenes/ForgeScene.tscn");
+-        var forgeWidget = forgeScene.Instantiate<ForgeScene>();
+-        AddChild(forgeWidget);
+-        Check(forgeWidget.FindChild("BlueprintRow_chu_tuoc", true, false) != null, "blueprint rows listed");
+-        var oreBtn = forgeWidget.FindChild("OreBuyButton", true, false) as Button;
+-        oreBtn.EmitSignal(BaseButton.SignalName.Pressed);
+-        oreBtn = forgeWidget.FindChild("OreBuyButton", true, false) as Button;
+-        oreBtn.EmitSignal(BaseButton.SignalName.Pressed);
+-        oreBtn = forgeWidget.FindChild("OreBuyButton", true, false) as Button;
+-        oreBtn.EmitSignal(BaseButton.SignalName.Pressed);
+-        Check(ForgeService.OreCount(gm.Save) >= 25, "UI ore purchase works");
+-        int bagBeforeUi = gm.Save.BagEquipment.Count;
+-        var forgeBtn = forgeWidget.FindChild("ForgeButton", true, false) as Button;
+-        forgeBtn.EmitSignal(BaseButton.SignalName.Pressed);
+-        Check(gm.Save.BagEquipment.Count == bagBeforeUi + 1, "UI forge adds an item to the bag");
+-        var status = forgeWidget.FindChild("ForgeStatus", true, false) as Label;
+-        Check(status != null && status.Text.Contains("thành công"), "UI forge reports success");
++        Check(!ResourceLoader.Exists("res://features/forge/scenes/ForgeScene.tscn"), "ForgeScene removed (2.38)");
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.34: ALL PASS");
+         else GD.Print($"TEST PHASE 2.34: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase235.cs b/tests/TestPhase235.cs
+index b56e6358c9ff9e1c5484f487f5395c450f32add5..dca7b688f6a1b1274d52387e42dbc77c828f34c6 100644
+--- a/tests/TestPhase235.cs
++++ b/tests/TestPhase235.cs
+@@ -112,7 +112,7 @@ public partial class TestPhase235 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.35: ALL PASS");
+         else GD.Print($"TEST PHASE 2.35: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase236.cs b/tests/TestPhase236.cs
+index 1f8ff16a02ea39d8fe5d210c2a249c99d056ca53..662bc219fc9e65d282801e2ecf599e692f81a370 100644
+--- a/tests/TestPhase236.cs
++++ b/tests/TestPhase236.cs
+@@ -116,7 +116,7 @@ public partial class TestPhase236 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.36: ALL PASS");
+         else GD.Print($"TEST PHASE 2.36: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase237.cs b/tests/TestPhase237.cs
+index aceb79a8a4506f1d6b3688d81233da2fbcaaa23e..c943850e10be2f20add6563a045e930cf0e4a515 100644
+--- a/tests/TestPhase237.cs
++++ b/tests/TestPhase237.cs
+@@ -126,7 +126,7 @@ public partial class TestPhase237 : Node
+ 
+         if (_fails == 0) GD.Print("TEST PHASE 2.37: ALL PASS");
+         else GD.Print($"TEST PHASE 2.37: {_fails} FAILURES");
+-        GetTree().Quit();
++        GetTree().Quit(_fails == 0 ? 0 : 1);
+     }
+ 
+     private void Check(bool ok, string name)
+diff --git a/tests/TestPhase238.cs b/tests/TestPhase238.cs
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e531ad20b44cd0e8ad14c513e236e2de9c78cef
+--- /dev/null
++++ b/tests/TestPhase238.cs
+@@ -0,0 +1,309 @@
++using Godot;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++
++namespace LongTuong;
++
++/// <summary>
++/// Phase 2.38 — ổn định nền: bug fixes B1–B8/B11, test data isolation,
++/// and the new combat formula (Huynh's spec: Né−Chính xác, Bạo−Kiên
++/// cường, Đỡ−Phá kích, caps, (Công−Thủ) base damage, 5% chip, ±5%).
++/// </summary>
++public partial class TestPhase238 : Node
++{
++    private int _fails;
++
++    public override void _Ready()
++    {
++        CheckIsolation();
++        CheckDismissKeepsItem();
++        CheckRefineStats();
++        CheckInheritTrim();
++        CheckRefineCharge();
++        CheckFormationTrim();
++        CheckMissingSave();
++        CheckSaveFiles();
++        CheckProjection();
++        CheckDamageFormula();
++        CheckChancesAndCaps();
++        CheckMissGivesNoRage();
++        CheckBlockSetBonus();
++
++        if (_fails == 0) GD.Print("TEST PHASE 2.38: ALL PASS");
++        else GD.Print($"TEST PHASE 2.38: {_fails} FAILURES");
++        GetTree().Quit(_fails == 0 ? 0 : 1);
++    }
++
++    private void Check(bool ok, string name)
++    {
++        if (!ok) { _fails++; GD.PrintErr("FAIL: " + name); }
++    }
++
++    private void CheckIsolation()
++    {
++        var gm = GetNode<GameManager>("/root/GameManager");
++        Check(GameManager.IsTestRun, "test run detected from command line");
++        Check(GameManager.DataDir.EndsWith("/tests"), "test data dir is user://.../tests");
++        gm.CurrentUsername = "nhan";
++        Check(gm.SavePath.StartsWith(GameManager.DataDir + "/"), "test saves never touch the real save folder");
++        Check(gm.AccountsPath.StartsWith(GameManager.DataDir + "/"), "test accounts file is isolated too");
++        gm.CurrentUsername = "";
++    }
++
++    // B1: dismissing a hero returns the FULL item (set, lines, gems).
++    private void CheckDismissKeepsItem()
++    {
++        var s = SeedService.CreateSeededSave("t238a");
++        s.OwnedHeroIds.Add("luu_bi");
++        ProgressionService.EnsureDefaults(s);
++        var gemId = GemService.MakeGemId("atk", 2);
++        var eq = new EquipmentState
++        {
++            IsEmpty = false, Level = 4, SetId = "ky_lan",
++            RefineLines = Enumerable.Range(0, 6).Select(i => new RefineLine { StatId = "atk", Value = 10 + i }).ToList(),
++        };
++        GemService.EnsureSockets(eq);
++        eq.Sockets[0].Unlocked = true;
++        eq.Sockets[0].GemId = gemId;
++        s.HeroEquipment["luu_bi"]["weapon"] = eq;
++        int bagBefore = s.BagEquipment.Count;
++        Check(ProgressionService.DismissHero(s, "luu_bi"), "B1: dismiss Luu Bi");
++        Check(s.BagEquipment.Count == bagBefore + 1, "B1: one item returned to the bag");
++        var back = s.BagEquipment[^1];
++        Check(back.SetId == "ky_lan" && back.Level == 4, "B1: set and level kept (was reset to Tan Thu)");
++        Check(back.RefineLines.Count == 6 && back.RefineLines[5].Value == 15, "B1: refine lines kept");
++        Check(back.Sockets.Count == 4 && back.Sockets[0].GemId == gemId, "B1: socketed gem kept on the item");
++        var slotAfter = s.HeroEquipment["luu_bi"]["weapon"];
++        Check(slotAfter.IsEmpty && slotAfter.Sockets.All(k => string.IsNullOrEmpty(k.GemId)),
++            "B1: hero slot cleared (no hidden gems left behind)");
++    }
++
++    // B2: dmg_red and def_pct refine lines (Tiền pool) now apply.
++    private void CheckRefineStats()
++    {
++        var s = SeedService.CreateSeededSave("t238b");
++        s.HeroEquipment["custom_hero"]["armor"] = new EquipmentState
++        {
++            IsEmpty = false, SetId = "tan_thu",
++            RefineLines = new List<RefineLine> { new() { StatId = "hp", Value = 1 } },
++        };
++        var before = ProgressionService.GetEffectiveHero(s, "custom_hero");
++        s.HeroEquipment["custom_hero"]["armor"].RefineLines = new List<RefineLine>
++        {
++            new() { StatId = "dmg_red", Value = 0.05 },
++            new() { StatId = "def_pct", Value = 0.10 },
++        };
++        var after = ProgressionService.GetEffectiveHero(s, "custom_hero");
++        Check(System.Math.Abs(after.DamageReduction - before.DamageReduction - 0.05) < 1e-9, "B2: dmg_red line adds Miễn thương");
++        Check(after.Def == (int)System.Math.Round(before.Def * 1.10), "B2: def_pct line multiplies Thủ");
++    }
++
++    // B3: inheriting never exceeds the target set's line count.
++    private void CheckInheritTrim()
++    {
++        var s = SeedService.CreateSeededSave("t238c");
++        s.Silver = 100000;
++        s.HeroEquipment["custom_hero"]["weapon"] = new EquipmentState
++        {
++            IsEmpty = false, SetId = "tan_thu",
++            RefineLines = new List<RefineLine> { new() { StatId = "atk", Value = 1 } },
++        };
++        s.BagEquipment.Add(new BagEquipmentItem
++        {
++            SlotId = "weapon", SetId = "ky_lan", Level = 5,
++            RefineLines = Enumerable.Range(0, 6).Select(i => new RefineLine { StatId = "atk", Value = 20 + i }).ToList(),
++        });
++        Check(EquipmentService.TryInherit(s, "custom_hero", "weapon", s.BagEquipment.Count - 1), "B3: inherit succeeds");
++        var eq = s.HeroEquipment["custom_hero"]["weapon"];
++        Check(eq.RefineLines.Count == EquipmentSets.LinesForSet("tan_thu"), "B3: lines trimmed to Tan Thu's 3");
++        Check(eq.RefineLines[0].Value == 20 && eq.Level == 5, "B3: first lines + level inherited");
++    }
++
++    // B4: no charge when nothing can be rerolled; no free top-up lines.
++    private void CheckRefineCharge()
++    {
++        var s = SeedService.CreateSeededSave("t238d");
++        var rng = new System.Random(3);
++        s.HeroEquipment["custom_hero"]["weapon"] = new EquipmentState
++        {
++            IsEmpty = false, SetId = "tan_thu",
++            RefineLines = Enumerable.Range(0, 3).Select(_ => new RefineLine { StatId = "atk", Value = 30, Locked = true }).ToList(),
++        };
++        int stones = s.RefineStones, gold = s.Gold;
++        Check(!ProgressionService.TryRefine(s, "custom_hero", "weapon", rng), "B4: all lines locked => refused");
++        Check(s.RefineStones == stones && s.Gold == gold, "B4: refused refine charges nothing");
++        s.HeroEquipment["custom_hero"]["weapon"].RefineLines = new List<RefineLine> { new() { StatId = "atk", Value = 30 } };
++        s.RefineStones = 0; s.Gold = 0;
++        Check(!ProgressionService.TryRefine(s, "custom_hero", "weapon", rng), "B4: cannot pay => refused");
++        Check(s.HeroEquipment["custom_hero"]["weapon"].RefineLines.Count == 1, "B4: no free lines when refused");
++        s.RefineStones = 5;
++        Check(ProgressionService.TryRefine(s, "custom_hero", "weapon", rng), "B4: paid refine succeeds");
++        Check(s.HeroEquipment["custom_hero"]["weapon"].RefineLines.Count == 3 && s.RefineStones == 4,
++            "B4: paid refine tops up to 3 lines for 1 stone");
++    }
++
++    // B5: trimming an oversized formation keeps 5 heroes, not 3.
++    private void CheckFormationTrim()
++    {
++        var s = SeedService.CreateSeededSave("t238e");
++        s.OwnedHeroIds = new List<string> { "custom_hero", "luu_bi", "quan_vu", "truong_phi", "trieu_van", "gia_cat_luong" };
++        s.Formation = new Dictionary<string, string>
++        {
++            ["trung_mid"] = "custom_hero", ["hau_top"] = "luu_bi", ["trung_top"] = "quan_vu",
++            ["hau_mid"] = "truong_phi", ["tien_mid"] = "trieu_van", ["hau_bot"] = "gia_cat_luong",
++        };
++        FormationService.EnsureFormation(s);
++        Check(s.Formation.Count == FormationService.MaxTeamSize, $"B5: trimmed to 5 (got {s.Formation.Count})");
++        Check(s.Formation.TryGetValue("trung_mid", out var main) && main == "custom_hero", "B5: main hero kept");
++    }
++
++    // B6/B7: missing save for a logged-in account => seeded save;
++    // canonical username spelling from the accounts file.
++    private void CheckMissingSave()
++    {
++        var gm = GetNode<GameManager>("/root/GameManager");
++        gm.CurrentUsername = "lost238";
++        if (File.Exists(gm.SavePath)) File.Delete(gm.SavePath);
++        gm.LoadGame();
++        Check(gm.Save.OwnedHeroIds.Count == 1 && gm.Save.OwnedHeroIds[0] == "custom_hero",
++            "B6: missing save => seeded (only the custom hero, not all 8)");
++        Check(gm.Save.Silver == SeedService.SeededSilver && gm.Save.Gold == SeedService.SeededGold, "B6: seeded currencies");
++        Check(File.Exists(gm.SavePath), "B6: seeded save written");
++        var accounts = Path.Combine(GameManager.DataDir, "t238_accounts.json");
++        Check(LocalAuth.Register(accounts, "Huynh238", "pass1234", out _), "B7: register mixed-case name");
++        Check(LocalAuth.Login(accounts, "huynh238", "pass1234"), "B7: login is case-insensitive");
++        Check(LocalAuth.CanonicalUsername(accounts, "HUYNH238") == "Huynh238", "B7: canonical spelling returned");
++        gm.Logout();
++    }
++
++    // B8: atomic writes with .bak; corrupt files never become "empty".
++    private void CheckSaveFiles()
++    {
++        var path = Path.Combine(GameManager.DataDir, "t238_save.json");
++        SaveManager.Save(path, new SaveData { Gold = 111 });
++        SaveManager.Save(path, new SaveData { Gold = 222 });
++        Check(SaveManager.Load(path).Gold == 222, "B8: latest save loads");
++        Check(File.Exists(path + ".bak") && !File.Exists(path + ".tmp"), "B8: previous save kept as .bak, no .tmp left");
++        File.WriteAllText(path, "{ broken");
++        Check(SaveManager.Load(path).Gold == 111, "B8: corrupt save falls back to .bak");
++        File.WriteAllText(path + ".bak", "also broken");
++        bool threw = false;
++        try { SaveManager.Load(path); } catch (InvalidDataException) { threw = true; }
++        Check(threw, "B8: both corrupt => InvalidDataException (no silent empty save)");
++        Check(File.Exists(path + ".corrupt"), "B8: corrupt file preserved as .corrupt");
++
++        var accounts = Path.Combine(GameManager.DataDir, "t238_accounts_bad.json");
++        File.WriteAllText(accounts, "[ not json");
++        threw = false;
++        try { LocalAuth.Register(accounts, "newbie238", "pass1234", out _); } catch (InvalidDataException) { threw = true; }
++        Check(threw, "B8: corrupt accounts file blocks register");
++        Check(File.ReadAllText(accounts) == "[ not json", "B8: corrupt accounts file not overwritten");
++    }
++
++    // B11: craft preview is deterministic and leaves the slot untouched.
++    private void CheckProjection()
++    {
++        var s = SeedService.CreateSeededSave("t238f");
++        var preview = new EquipmentState { IsEmpty = false, Level = 0, SetId = "tan_thu" };
++        var a = EquipmentService.ProjectEquipChange(s, "custom_hero", "weapon", preview);
++        var b = EquipmentService.ProjectEquipChange(s, "custom_hero", "weapon", preview);
++        Check(a.Count == b.Count && a.Zip(b).All(p => p.First == p.Second), "B11: projection is stable across refreshes");
++        Check(preview.RefineLines.Count == 0, "B11: preview item gets no random refine lines");
++        Check(!a.Any(r => r.Name == "Bạo kích" || r.Name == "Né tránh"), "B11: no phantom refine stats in the preview");
++        Check(a.Any(r => r.Name == "Vật công" && r.After - r.Before == 20), "B11: weapon base ATK +20 shown");
++        Check(s.HeroEquipment["custom_hero"]["weapon"].IsEmpty, "B11: slot restored after projection");
++    }
++
++    private static Fighter F(int atk, int def, HeroRole role = HeroRole.Vanguard) =>
++        new(new HeroDef { Id = "t", Name = "t", Role = role, Hp = 1000, Atk = atk, Def = def }, true);
++
++    private void CheckDamageFormula()
++    {
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 40), 1.0, false, false, 1.0) == 60,
++            "spec: base = (Công − Thủ) × hệ số = 60");
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 40), 2.0, false, false, 1.0) == 120,
++            "spec: skill ratio 2.0 doubles (Công − Thủ)");
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 200), 1.0, false, false, 1.0) == 5,
++            "spec: Thủ >= Công => chip 5% Công");
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 40), 1.0, false, true, 1.0) == 0, "spec: né => 0");
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 40), 1.0, true, false, 1.0) == 90, "spec: bạo ×1.5");
++        var critDmg = F(100, 0); critDmg.Def.CritDamage = 0.30;
++        Check(BattleEngine.CalculateDamage(critDmg, F(100, 40), 1.0, true, false, 1.0) == 108, "spec: bạo ×(1.5 + 30%)");
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 40), 1.0, false, false, 1.0, blocked: true) == 30, "spec: đỡ ×0.5");
++        Check(BattleEngine.CalculateDamage(F(100, 0), F(100, 40), 1.0, true, false, 1.0, blocked: true) == 45, "spec: bạo + đỡ = ×0.75");
++        var tank = F(100, 40); tank.Def.DamageReduction = 0.95;
++        var capped = F(100, 40); capped.Def.DamageReduction = BattleEngine.DamageReductionCap;
++        Check(BattleEngine.CalculateDamage(F(100, 0), tank, 1.0, false, false, 1.0)
++            == BattleEngine.CalculateDamage(F(100, 0), capped, 1.0, false, false, 1.0)
++            && BattleEngine.CalculateDamage(F(100, 0), tank, 1.0, false, false, 1.0) == 15, "spec: miễn thương capped at 75%");
++        Check(BattleEngine.VarianceMin == 0.95 && BattleEngine.VarianceMax == 1.05, "spec: variance ±5%");
++        Check(BattleEngine.CalculateDamage(F(100, 0, HeroRole.Warrior), F(100, 40, HeroRole.Strategist), 1.0, false, false, 1.0) == 75,
++            "counter ×1.25 on base (Võ > Mưu)");
++    }
++
++    private void CheckChancesAndCaps()
++    {
++        var atk = F(100, 0); var def = F(100, 0);
++        def.Def.Dodge = 0.30; atk.Def.Hit = 0.10;
++        Check(System.Math.Abs(BattleEngine.DodgeChance(atk, def) - 0.20) < 1e-9, "spec: né thực = Né − Chính xác");
++        atk.Def.Hit = 0.50;
++        Check(BattleEngine.DodgeChance(atk, def) == 0, "spec: Né <= Chính xác => luôn trúng");
++        def.Def.Dodge = 3.0; atk.Def.Hit = 0;
++        Check(BattleEngine.DodgeChance(atk, def) == BattleEngine.DodgeCap && BattleEngine.DodgeCap == 0.85, "cap: né tối đa 85%");
++        atk.Def.Crit = 0.40; def.Def.CritResist = 0.15;
++        Check(System.Math.Abs(BattleEngine.CritChance(atk, def) - 0.25) < 1e-9, "spec: bạo thực = Bạo − Kiên cường");
++        atk.Def.Crit = 2.0; def.Def.CritResist = 0;
++        Check(BattleEngine.CritChance(atk, def) == 0.90, "cap: bạo tối đa 90%");
++        def.Def.Block = 0.30; atk.Def.Pierce = 0.10;
++        Check(System.Math.Abs(BattleEngine.BlockChance(atk, def) - 0.20) < 1e-9, "spec: đỡ thực = Đỡ − Phá kích");
++        def.Def.Block = 2.0; atk.Def.Pierce = 0;
++        Check(BattleEngine.BlockChance(atk, def) == 0.80, "cap: đỡ tối đa 80%");
++    }
++
++    // Spec: a dodged attack gives the attacker no rage; dodge cap holds.
++    private void CheckMissGivesNoRage()
++    {
++        var players = new List<HeroDef> { ProgressionService.GetScaledBase("lu_bo", 1) };
++        var e = new BattleEngine(players, HeroDatabase.GetStage(1), 4242);
++        // Enemies: dodge 500% (capped to 85%), harmless, near-unkillable,
++        // so the player gets many attacks to sample.
++        foreach (var f in e.EnemyFighters) { f.Def.Dodge = 5.0; f.Def.Atk = 0; f.Hp = 1000000; }
++        int attacks = 0, misses = 0; bool rageOk = true;
++        for (int i = 0; i < 400 && !e.IsOver; i++)
++        {
++            var cur = e.Current;
++            if (cur == null) break;
++            if (cur.IsPlayer && cur.Rage < 100)
++            {
++                int rage = cur.Rage, logCount = e.Log.Count;
++                e.ActCurrentNormal();
++                attacks++;
++                bool missed = e.Log.Skip(logCount).Any(l => l.Contains("NÉ"));
++                if (missed) { misses++; if (cur.Rage != rage) rageOk = false; }
++                else if (cur.Rage != System.Math.Min(100, rage + 20)) rageOk = false;
++            }
++            else if (cur.Rage >= 100) e.ActCurrentUltimate();
++            else e.ActCurrentNormal();
++        }
++        Check(rageOk, "spec: miss => no rage, hit => +20 rage");
++        double rate = attacks == 0 ? 0 : misses / (double)attacks;
++        Check(attacks >= 30 && rate > 0.70 && rate < 0.95, $"cap: dodge 500% still lets ~15% hits land (miss rate {rate:P0} of {attacks})");
++    }
++
++    // Huyền Vũ 4 món: Đỡ đòn +10% is live (no longer "sắp mở").
++    private void CheckBlockSetBonus()
++    {
++        var s = SeedService.CreateSeededSave("t238g");
++        foreach (var slot in new[] { "weapon", "armor", "helmet", "boots" })
++            s.HeroEquipment["custom_hero"][slot] = new EquipmentState
++            {
++                IsEmpty = false, SetId = "huyen_vu",
++                RefineLines = new List<RefineLine> { new() { StatId = "hp", Value = 1 } },
++            };
++        var h = ProgressionService.GetEffectiveHero(s, "custom_hero");
++        Check(System.Math.Abs(h.Block - 0.10) < 1e-9, "Huyen Vu 4 pieces => Block 10%");
++        Check(!SetBonusService.DescribeBonus(new SetBonus { Pieces = 4, StatId = "block", Value = 0.10 }).Contains("sắp mở"),
++            "block bonus no longer marked sắp mở");
++    }
++}
+diff --git a/tests/TestPhase238.tscn b/tests/TestPhase238.tscn
+new file mode 100644
+index 0000000000000000000000000000000000000000..e8d575876bb7ab260cc761f6d6ba01008863896a
+--- /dev/null
++++ b/tests/TestPhase238.tscn
+@@ -0,0 +1,6 @@
++[gd_scene load_steps=2 format=3 uid="uid://testphase238"]
++
++[ext_resource type="Script" path="res://tests/TestPhase238.cs" id="1_test238"]
++
++[node name="TestPhase238" type="Node"]
++script = ExtResource("1_test238")
