@@ -15,6 +15,18 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.55 — đã làm (càn quét Phó Bản)
+
+- Nút "Càn quét ải X (50 Vàng)" cạnh "Vào trận" trong màn Phó Bản.
+- Trừ 50 Vàng, trả thưởng đầy đủ ải cao nhất đã từng qua tay
+  (mảnh + Bạc + EXP), không giới hạn số lần/ngày.
+- `DungeonService.TrySweep` + `HighestClearedIndex`; test `TestPhase255`.
+
+## Phase 2.54 — đã làm (fix vỡ layout shop thẻ EXP)
+
+- Roster lên 15 tướng (5 cột) làm shop ở nửa phải đè lên lưới.
+- RecruitBox giờ cuộn dọc; shop thẻ EXP chuyển xuống dưới lưới tướng.
+
 ## Phase 2.53 — đã làm (thẻ kinh nghiệm)
 
 - Tửu quán (view Chiêu mộ) bán 3 loại thẻ EXP bằng Vàng:

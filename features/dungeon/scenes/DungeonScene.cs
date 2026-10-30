@@ -19,6 +19,7 @@ public partial class DungeonScene : Control
     private Label? _info;
     private Label? _status;
     private Button? _enter;
+    private Button? _sweep;
     private HBoxContainer? _diffRow;
     private VBoxContainer? _list;
 
@@ -35,11 +36,13 @@ public partial class DungeonScene : Control
         _info = GetNode<Label>("InfoLabel");
         _status = GetNode<Label>("StatusLabel");
         _enter = GetNode<Button>("EnterButton");
+        _sweep = GetNode<Button>("SweepButton");
         _diffRow = GetNode<HBoxContainer>("DifficultyRow");
         _list = GetNode<VBoxContainer>("DungeonList");
         UiTheme.StyleBody(_info, UiTheme.FontBody);
         UiTheme.StyleBody(_status, UiTheme.FontBody);
         UiTheme.StyleButton(_enter, true);
+        UiTheme.StyleButton(_sweep, false);
         // Start on the first dungeon the player can enter.
         var first = DungeonDatabase.All.FirstOrDefault(d => DungeonService.CanEnter(gm.Save, d, DungeonDifficulty.Normal));
         if (first != null) _dungeonId = first.Id;
@@ -115,6 +118,14 @@ public partial class DungeonScene : Control
         _enter!.Text = $"Vào trận (ải {next + 1}/{dungeon.Stages.Count})";
         _enter.Disabled = !DungeonService.CanEnter(save, dungeon, _diff) || teamCount == 0;
         _enter.TooltipText = teamCount == 0 ? "Chưa có đội hình — hãy vào Bày trận trước." : "";
+        // Phase 2.55: Càn quét ải cao nhất đã qua (tốn Vàng).
+        int cleared = DungeonService.HighestClearedIndex(save, dungeon, _diff);
+        _sweep!.Text = cleared >= 0
+            ? $"Càn quét ải {cleared + 1} ({DungeonService.SweepGoldCost:N0} Vàng)"
+            : $"Càn quét ({DungeonService.SweepGoldCost:N0} Vàng)";
+        _sweep.Disabled = cleared < 0 || !DungeonService.CanEnter(save, dungeon, _diff)
+            || teamCount == 0 || save.Gold < DungeonService.SweepGoldCost;
+        _sweep.TooltipText = cleared < 0 ? "Chưa qua ải nào — hãy đánh tay trước." : "";
     }
 
     /// Select a dungeon / difficulty (used by tests and by the buttons).
@@ -152,5 +163,26 @@ public partial class DungeonScene : Control
     private void OnEnterPressed()
     {
         if (PrepareBattle()) GetTree().ChangeSceneToFile("res://features/battle/scenes/BattleScene.tscn");
+    }
+
+    // Phase 2.55: Càn quét — trừ Vàng, trả thưởng ngay, không vào trận.
+    private void OnSweepPressed()
+    {
+        var gm = GetNode<GameManager>("/root/GameManager");
+        var save = gm.Save;
+        var dungeon = DungeonDatabase.Get(_dungeonId);
+        var team = FormationService.FormationToTeam(save.Formation).Where(id => save.OwnedHeroIds.Contains(id)).ToList();
+        var (res, reward) = DungeonService.TrySweep(save, dungeon, _diff, team);
+        _status!.Text = res switch
+        {
+            DungeonService.SweepResult.Success =>
+                $"Càn quét thành công! -{DungeonService.SweepGoldCost:N0} Vàng. Thưởng: {StageRewardService.Describe(reward!)}",
+            DungeonService.SweepResult.NoGold => "Không đủ Vàng để càn quét!",
+            DungeonService.SweepResult.NoTeam => "Chưa có đội hình — hãy vào Bày trận trước!",
+            DungeonService.SweepResult.NotCleared => "Chưa qua ải nào — hãy đánh tay trước!",
+            _ => DungeonService.LockReason(save, dungeon, _diff),
+        };
+        gm.SaveGame();
+        Rebuild();
     }
 }

@@ -1342,7 +1342,7 @@ Sau khi chốt 5 dòng trên, bước tiếp theo là: tạo `project.godot` .NE
 repo `longtuong`, commit theo từng phase, CI headless xanh mới push (theo ủy quyền
 push tự động Huynh đã cho từ 2026-10-23).
 
-### Phase 2.55 (plan) — Càn quét Phó Bản tốn Vàng (theo yêu cầu Huynh, 2026-10-30)
+### Phase 2.55 — Càn quét Phó Bản tốn Vàng (2026-10-30)
 
 Nút **"Càn quét"** trong màn Phó Bản Trang Bị: đánh tự động ải hiện tại,
 trả thưởng ngay không cần vào trận, tốn Vàng mỗi lần.

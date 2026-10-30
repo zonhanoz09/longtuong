@@ -76,6 +76,41 @@ public static class DungeonService
         return reward;
     }
 
+    // Phase 2.55 (Huynh): Càn quét — đánh tự động ải cao nhất đã qua, tốn Vàng.
+    public const int SweepGoldCost = 50;
+
+    /// <summary>
+    /// Index ải cao nhất đã từng qua (để càn quét), -1 nếu chưa qua ải nào.
+    /// Đã phá đảo (":done") thì quét được ải boss.
+    /// </summary>
+    public static int HighestClearedIndex(SaveData save, DungeonDef d, DungeonDifficulty diff)
+    {
+        string key = Key(d, diff);
+        if (save.DungeonProgress.TryGetValue(key + ":done", out int done) && done == 1)
+            return DungeonDatabase.StageCount - 1;
+        int next = NextStageIndex(save, d, diff);
+        return next > 0 ? next - 1 : -1;
+    }
+
+    public enum SweepResult { Success, NoGold, NoTeam, NotCleared, Locked }
+
+    /// <summary>
+    /// Càn quét: trừ Vàng, trả thưởng đầy đủ ải cao nhất đã qua (không giới hạn/ngày).
+    /// </summary>
+    public static (SweepResult Result, BattleReward? Reward) TrySweep(
+        SaveData save, DungeonDef d, DungeonDifficulty diff, List<string> teamIds)
+    {
+        ProgressionService.EnsureDefaults(save);
+        if (!CanEnter(save, d, diff)) return (SweepResult.Locked, null);
+        if (teamIds.Count == 0) return (SweepResult.NoTeam, null);
+        int index = HighestClearedIndex(save, d, diff);
+        if (index < 0) return (SweepResult.NotCleared, null);
+        if (save.Gold < SweepGoldCost) return (SweepResult.NoGold, null);
+        save.Gold -= SweepGoldCost;
+        var reward = Apply(save, StageKey(d, diff, index), teamIds);
+        return (SweepResult.Success, reward);
+    }
+
     /// Settle a won dungeon battle. `modeKey` = "<dungeon>:<diff>:<stage index>".
     public static BattleReward? Apply(SaveData save, string modeKey, IEnumerable<string> teamIds)
     {
