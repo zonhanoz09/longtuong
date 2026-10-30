@@ -27,7 +27,7 @@ public partial class TestPhase21 : Node
 
     private void CheckAuth()
     {
-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase21_accounts.json");
+        var path = Path.Combine(GameManager.DataDir, "test_phase21_accounts.json");
         try
         {
             if (File.Exists(path)) File.Delete(path);

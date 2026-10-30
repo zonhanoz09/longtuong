@@ -137,7 +137,10 @@ public static class FormationService
             if (clean.TryGetValue(CenterSlotId, out var main) && main == MainHeroId) keep[CenterSlotId] = main;
             foreach (var slot in GridOrder)
             {
-                if (slot == null || keep.Count >= MaxTeamSize) break;
+                if (keep.Count >= MaxTeamSize) break;
+                // Phase 2.38 (B5): null = placeholder cell, skip it (a break
+                // here kept at most 3 heroes when trimming).
+                if (slot == null) continue;
                 if (clean.TryGetValue(slot, out var hero) && !keep.ContainsValue(hero)) keep[slot] = hero;
             }
             clean = keep;

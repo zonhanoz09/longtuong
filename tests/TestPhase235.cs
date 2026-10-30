@@ -112,7 +112,7 @@ public partial class TestPhase235 : Node
 
         if (_fails == 0) GD.Print("TEST PHASE 2.35: ALL PASS");
         else GD.Print($"TEST PHASE 2.35: {_fails} FAILURES");
-        GetTree().Quit();
+        GetTree().Quit(_fails == 0 ? 0 : 1);
     }
 
     private void Check(bool ok, string name)

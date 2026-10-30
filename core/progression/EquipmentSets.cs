@@ -9,8 +9,9 @@ namespace LongTuong;
 /// Phase 2.30: equipment sets by level tier (Huynh's spec 2026-10-29).
 /// StatId values: hp, hp_pct, atk, atk_pct, def, def_pct, speed, crit,
 /// dodge, dmg_red (Miễn thương), starting_rage, cc_resist, block.
-/// The last three are DATA-ONLY until the battle engine grows to support
-/// them (see SetBonusService.IsEngineSupported).
+/// starting_rage and cc_resist are DATA-ONLY until the battle engine grows
+/// to support them (see SetBonusService.IsEngineSupported); block is live
+/// since Phase 2.38.
 /// Set bonus numbers for Tân Thủ are Pax's setup (spec gives no numbers);
 /// the rest follow Huynh's table exactly.
 /// </summary>
@@ -103,11 +104,12 @@ public static class EquipmentSets
 
 public static class SetBonusService
 {
-    /// Stats the current engine can apply. starting_rage / cc_resist /
-    /// block are kept as data until the battle engine supports them.
+    /// Stats the current engine can apply. starting_rage / cc_resist are
+    /// kept as data until the battle engine supports them. Phase 2.38:
+    /// block (Đỡ đòn) is live with the new combat formula.
     public static bool IsEngineSupported(string statId) => statId is
         "hp" or "hp_pct" or "atk" or "atk_pct" or "def" or "def_pct" or
-        "speed" or "crit" or "dodge" or "dmg_red";
+        "speed" or "crit" or "dodge" or "dmg_red" or "block";
 
     public static Dictionary<string, int> CountSets(SaveData save, string heroId)
     {
@@ -154,6 +156,7 @@ public static class SetBonusService
                 case "crit": def.Crit += b.Value; break;
                 case "dodge": def.Dodge += b.Value; break;
                 case "dmg_red": def.DamageReduction += b.Value; break;
+                case "block": def.Block += b.Value; break;
             }
         }
         return (atkMul, hpMul);

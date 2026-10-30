@@ -12,7 +12,22 @@ public partial class GameManager : Node
     public List<string> SelectedTeamIds { get; set; } = new() { "quan_vu", "truong_phi", "gia_cat_luong" };
     public string CurrentUsername { get; set; } = "";
     public string SelectedHeroId { get; set; } = "";
-    public string AccountsPath => OS.GetUserDataDir() + "/accounts.json";
+    public string AccountsPath => DataDir + "/accounts.json";
+
+    // Phase 2.38: test scenes (res://tests/...) get their own data folder so
+    // a test account ("nhan", "huynh", ...) can never overwrite a real save.
+    // The folder is wiped once per test process, so every run starts clean.
+    public static bool IsTestRun =>
+        OS.GetCmdlineArgs().Any(a => a.Contains("res://tests/"));
+    public static string DataDir =>
+        IsTestRun ? OS.GetUserDataDir() + "/tests" : OS.GetUserDataDir();
+
+    public override void _Ready()
+    {
+        if (!IsTestRun) return;
+        if (System.IO.Directory.Exists(DataDir)) System.IO.Directory.Delete(DataDir, true);
+        System.IO.Directory.CreateDirectory(DataDir);
+    }
     public int CurrentStageId { get; set; } = 1;
     public int CurrentSeed { get; set; }
     public bool LastBattleWon { get; private set; }
@@ -22,8 +37,8 @@ public partial class GameManager : Node
     // Save tách theo tài khoản (Phase 2.1, vẫn local; server phase sau mới tách thật).
     // Chưa đăng nhập thì dùng save.json cũ để không mất tiến trình Phase 0-2.
     public string SavePath => string.IsNullOrEmpty(CurrentUsername)
-        ? OS.GetUserDataDir() + "/save.json"
-        : OS.GetUserDataDir() + "/save_" + SanitizeUsername(CurrentUsername) + ".json";
+        ? DataDir + "/save.json"
+        : DataDir + "/save_" + SanitizeUsername(CurrentUsername) + ".json";
 
     public static string SanitizeUsername(string username) =>
         new string(username.Select(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' ? c : '_').ToArray());
@@ -46,6 +61,14 @@ public partial class GameManager : Node
 
     public void LoadGame()
     {
+        // Phase 2.38 (B6): a logged-in account whose save file is missing
+        // gets a fresh seeded save — never the legacy "own every hero"
+        // migration that an empty SaveData would trigger.
+        if (!string.IsNullOrEmpty(CurrentUsername) && !System.IO.File.Exists(SavePath))
+        {
+            CreateSeededSave(CurrentUsername);
+            return;
+        }
         Save = SaveManager.Load(SavePath);
         ProgressionService.EnsureDefaults(Save);
         if (!string.IsNullOrEmpty(CurrentUsername)) HeroDatabase.SetCustomHeroName(CurrentUsername);
@@ -73,12 +96,6 @@ public partial class GameManager : Node
         SelectedTeamIds = new List<string>(Save.TeamIds);
         SelectedHeroId = Save.TeamIds[0];
         SaveGame();
-    }
-
-    public void RecordWin()
-    {
-        Save.Wins++;
-        Save.LastStage = System.Math.Max(Save.LastStage, 1);
     }
 
     public void StartBattle(int stageId, List<string> teamIds, int seed)

@@ -105,6 +105,9 @@ public static class ProgressionService
         _ => 0.7,
     };
 
+    // Phase 2.38: set only by EquipmentService.ProjectEquipChange.
+    internal static bool SuppressEquipmentMigration;
+
     public static void EnsureDefaults(SaveData save)
     {
         save.Heroes ??= new Dictionary<string, HeroProgress>();
@@ -152,6 +155,9 @@ public static class ProgressionService
         }
         // Phase 2.30: migrate old equipment (no set fields) to the Tân Thủ
         // set; old RefineIndex becomes the first refine line.
+        // Phase 2.38 (B11): skipped while a stat projection has a
+        // hypothetical item swapped in (it would get random "legacy" lines).
+        if (SuppressEquipmentMigration) return;
         foreach (var heroEq in save.HeroEquipment.Values)
             foreach (var eq in heroEq.Values)
                 MigrateEquipment(eq);
@@ -222,7 +228,9 @@ public static class ProgressionService
         return new RefineLine { StatId = stat, Value = val };
     }
 
-    public static void ApplyRefineLines(HeroDef def, List<RefineLine> lines, ref double atkMul, ref double hpMul)
+    // Phase 2.38 (B2): dmg_red and def_pct (rolled by the Tiền pool) now
+    // apply — before they were rolled but had no effect.
+    public static void ApplyRefineLines(HeroDef def, List<RefineLine> lines, ref double atkMul, ref double hpMul, ref double defMul)
     {
         if (lines == null) return;
         foreach (var line in lines)
@@ -237,6 +245,8 @@ public static class ProgressionService
                 case "hp": def.Hp += (int)line.Value; break;
                 case "atk_pct": atkMul *= 1 + line.Value; break;
                 case "hp_pct": hpMul *= 1 + line.Value; break;
+                case "def_pct": defMul *= 1 + line.Value; break;
+                case "dmg_red": def.DamageReduction += line.Value; break;
             }
         }
     }
@@ -343,15 +353,20 @@ public static class ProgressionService
         EnsureDefaults(save);
         var eq = save.HeroEquipment[heroId][slotId];
         if (eq.IsEmpty) return false;
-        // Top up to the quality's line count (migrated/old items may be short).
         var pos = FormationService.PositionOfHero(save, heroId);
-        while (eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId))
-            eq.RefineLines.Add(RollRefineLine(pos, rng));
+        // Phase 2.38 (B4): nothing to reroll (all lines locked, none
+        // missing) => refuse instead of charging for nothing.
+        bool missing = eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId);
+        if (!missing && eq.RefineLines.All(l => l.Locked)) return false;
         int stoneCost = RefineCostStones(save, heroId, slotId);
         bool useStone = save.RefineStones >= stoneCost;
         if (!useStone && save.Gold < RefineCostGold(save, heroId, slotId)) return false;
         if (useStone) save.RefineStones -= stoneCost;
         else save.Gold -= RefineCostGold(save, heroId, slotId);
+        // Top up to the set's line count only AFTER paying (B4: short items
+        // used to receive free lines even when the refine was refused).
+        while (eq.RefineLines.Count < EquipmentSets.LinesForSet(eq.SetId))
+            eq.RefineLines.Add(RollRefineLine(pos, rng));
         for (int i = 0; i < eq.RefineLines.Count; i++)
             if (!eq.RefineLines[i].Locked)
                 eq.RefineLines[i] = RollRefineLine(pos, rng);
@@ -382,15 +397,11 @@ public static class ProgressionService
         if (!save.OwnedHeroIds.Contains(heroId)) return false;
         if (heroId == "custom_hero") return false;
         if (save.OwnedHeroIds.Count <= 1) return false;
+        // Phase 2.38 (B1): return the FULL item (set, lines, sockets and
+        // socketed gems) — the old copy kept only slot/level/refine index,
+        // so a Kỳ Lân item came back as Tân Thủ and its gems were lost.
         foreach (var slot in Slots)
-        {
-            var eq = save.HeroEquipment[heroId][slot.Id];
-            if (!eq.IsEmpty)
-            {
-                save.BagEquipment.Add(new BagEquipmentItem { SlotId = slot.Id, Level = eq.Level, RefineIndex = eq.RefineIndex });
-                eq.IsEmpty = true;
-            }
-        }
+            EquipmentService.Unequip(save, heroId, slot.Id);
         save.OwnedHeroIds.Remove(heroId);
         save.TeamIds.Remove(heroId);
         // Phase 2.20: a dismissed hero also leaves the formation.
@@ -428,6 +439,8 @@ public static class ProgressionService
             Def = (int)Math.Round(baseDef.Def * statFactor * levelFactor),
             Speed = baseDef.Speed, Crit = baseDef.Crit, Dodge = baseDef.Dodge,
             DamageReduction = baseDef.DamageReduction,
+            Hit = baseDef.Hit, CritResist = baseDef.CritResist, Block = baseDef.Block,
+            Pierce = baseDef.Pierce, CritDamage = baseDef.CritDamage,
             NormalName = baseDef.NormalName, UltName = baseDef.UltName,
             UltPower = baseDef.UltPower, UltKind = baseDef.UltKind,
             PassiveName = baseDef.PassiveName, PassiveDesc = baseDef.PassiveDesc,
@@ -438,7 +451,7 @@ public static class ProgressionService
     {
         var p = ProgressOf(save, heroId);
         var def = GetScaledBase(heroId, p.Level);
-        double atkMul = 1.0, hpMul = 1.0;
+        double atkMul = 1.0, hpMul = 1.0, defMul = 1.0;
         foreach (var slot in Slots)
         {
             var eq = save.HeroEquipment[heroId][slot.Id];
@@ -447,7 +460,7 @@ public static class ProgressionService
             def.Hp += slot.BaseHp + slot.HpPerLevel * eq.Level;
             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;
             def.Speed += slot.BaseSpeed + slot.SpeedPerLevel * eq.Level;
-            ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul);
+            ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul, ref defMul);
             GemService.ApplyGems(def, eq, ref atkMul, ref hpMul);
         }
         // Phase 2.30: set bonuses (2/4/6 pieces).
@@ -456,6 +469,7 @@ public static class ProgressionService
         hpMul *= setHpMul;
         def.Atk = (int)Math.Round(def.Atk * atkMul);
         def.Hp = (int)Math.Round(def.Hp * hpMul);
+        def.Def = (int)Math.Round(def.Def * defMul);
         double chartMul = 1 + 0.03 * save.StarNodesUnlocked;
         def.Atk = (int)Math.Round(def.Atk * chartMul);
         def.Hp = (int)Math.Round(def.Hp * chartMul);

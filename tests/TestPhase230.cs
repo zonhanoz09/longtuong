@@ -115,7 +115,7 @@ public partial class TestPhase230 : Node
 
         if (_fails == 0) GD.Print("TEST PHASE 2.30: ALL PASS");
         else GD.Print($"TEST PHASE 2.30: {_fails} FAILURES");
-        GetTree().Quit();
+        GetTree().Quit(_fails == 0 ? 0 : 1);
     }
 
     private void AddTestItem(SaveData save, string slotId, string setId, int tier, string quality)

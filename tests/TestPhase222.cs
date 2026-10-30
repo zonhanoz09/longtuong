@@ -76,7 +76,7 @@ public partial class TestPhase222 : Node
         Check(!gm.Save.OwnedHeroIds.Contains("luu_bi"), "battle win does NOT auto-unlock any locked hero");
 
         // --- Old save JSON with a Shards field still loads (field ignored) ---
-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase222_legacy.json");
+        var path = Path.Combine(GameManager.DataDir, "test_phase222_legacy.json");
         try
         {
             File.WriteAllText(path, "{\"Gold\": 1234, \"Gems\": 56, \"Shards\": {\"quan_vu\": 99, \"luu_bi\": 10}, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");

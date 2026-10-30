@@ -945,7 +945,7 @@ public partial class HeroScreen : Control
         {
             _status = GemService.TryUnlockSocket(save, _selectedHero, _selectedSlot, socketIndex)
                 ? $"Đã mở lỗ khảm {socketIndex + 1}!"
-                : "Không đủ Bạc để mở lỗ!";
+                : "Không đủ Vàng để mở lỗ!";
             gm.SaveGame();
         }
         else if (string.IsNullOrEmpty(sock.GemId))

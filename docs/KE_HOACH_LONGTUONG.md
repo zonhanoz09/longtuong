@@ -87,6 +87,16 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 > có nút Hub riêng + popup 520×400, chiêu mộ ở nút Hub Chiêu mộ);
 > click hàng → panel phải thao tác.
 >
+> Cập nhật 2026-10-30: **Phase 2.38 — ĐÃ HOÀN THÀNH** — ổn định nền
+> sau review source (xem §Phase 2.38 dưới đây): CI bắt lỗi thật (test
+> 2.27–2.37 trước đây luôn exit 0), sửa bug mất dữ liệu (sa thải tướng,
+> kế thừa, tẩy luyện, đội hình, save hỏng/thiếu), test không còn ghi đè
+> save thật, xóa code chết (Lò Rèn popup, cụm Phase 0), và công thức
+> sát thương mới theo spec của Huynh (Né−Chính xác, Bạo−Kiên cường,
+> Đỡ−Phá kích, các trần, sát thương (Công−Thủ), chip 5%, ±5%).
+> Huynh chốt cùng lúc: sau 2.38 làm **2.39 vòng chơi ải**; thưởng thắng
+> ải chuyển sang **Bạc**.
+>
 > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
 >
 > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
@@ -101,7 +111,8 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
 >   dưỡng nhân vật, mua vật phẩm cơ bản. Đã dùng: đối tửu
 >   150.000/300.000 Bạc. Các nguồn Bạc (Cây Rung Tiền, Thu Thuế,
 >   Boss...) thuộc Phase 3/hoạt động ngày, chưa triển khai; thưởng
->   thắng ải hiện vẫn là Vàng — chờ Huynh chốt có đổi/thêm Bạc không.
+>   thắng ải hiện vẫn là Vàng — Huynh chốt 2026-10-30: thưởng thắng ải
+>   chuyển sang **Bạc** (làm ở Phase 2.39).
 
 > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
 > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
@@ -1005,6 +1016,91 @@ trong widget.
   đầy đủ trong màn tướng (túi đồ vẫn là widget riêng như hiện tại).
 - Sprite chân dung final (chân dung vẫn là khối màu + tên như các phase trước).
 - Thêm chỉ số mới kiểu ảnh gốc (chỉ làm khi engine combat thật sự dùng chúng).
+
+### Phase 2.38 — Ổn định nền + công thức sát thương mới (ĐÃ HOÀN THÀNH 2026-10-30)
+
+Chốt của Huynh sau review source (2026-10-30): (1) làm 2.38 trước khi mở
+tính năng mới, (2) sau 2.38 làm 2.39 vòng chơi ải, (3) thưởng thắng ải
+là Bạc, (4) xóa code chết (ForgeScene, cụm Phase 0), (5) công thức sát
+thương + trần chỉ số theo spec Long Tướng (bên dưới).
+
+**Test / CI**
+- TestPhase227–237 trước đây gọi `GetTree().Quit()` không exit code nên
+  luôn trả 0, CI không bắt được lỗi 11 phase. Nay `Quit(_fails == 0 ? 0 : 1)`;
+  đã kiểm chứng bằng cách cố tình làm 1 check fail → exit 1.
+- Cách ly dữ liệu test: chạy scene `res://tests/...` thì `GameManager.DataDir`
+  = `user://.../tests` (xóa sạch đầu mỗi lần chạy). Trước đây test tạo
+  `save_nhan.json`, `save_tester2xx.json`... ngay trong thư mục save thật.
+
+**Bug đã sửa (mã B theo bản review)**
+- B1 Sa thải tướng: đồ trả về túi giữ nguyên set, dòng tẩy, lỗ + ngọc
+  (trước đây Kỳ Lân về túi thành Tân Thủ và mất ngọc). Dùng lại `Unequip`.
+- B2 Dòng tẩy Tiền quân `dmg_red` (Miễn thương) và `def_pct` (%Thủ) nay có tác dụng.
+- B3 Kế thừa không còn vượt số dòng của set đích (cắt về N dòng đầu).
+- B4 Tẩy luyện: thu phí trước rồi mới bù dòng; khóa hết dòng thì từ chối, không trừ phí.
+- B5 Cắt đội hình quá 5 tướng giữ đủ 5 (trước đây dừng ở ô trống, còn 3).
+- B6 Đăng nhập mà mất file save → tạo save seed mới (trước đây coi là save
+  cũ và tặng cả 8 tướng + 1.000.000 Bạc).
+- B7 Đăng nhập dùng đúng cách viết tên đã đăng ký (`LocalAuth.CanonicalUsername`).
+- B8 Save và accounts ghi atomic (file tạm rồi replace) + giữ `.bak`;
+  file hỏng thì đọc `.bak`, hỏng cả hai thì giữ `.corrupt` và báo lỗi ở
+  màn đăng nhập (trước đây accounts hỏng bị coi là rỗng, lần đăng ký sau
+  ghi đè mất mọi tài khoản).
+- B11 Dự kiến chỉ số khi Chế Tạo không còn roll dòng tẩy ngẫu nhiên giả
+  (số "DỰ KIẾN" ổn định, đúng chỉ số gốc của món).
+- B14 Thông báo mở lỗ khảm: "Không đủ Vàng" (trước ghi nhầm Bạc).
+
+**Code chết đã xóa:** `features/forge/` (popup Lò Rèn) + `ForgeService.TryForge/
+OrePerForge/ForgeResult`; `features/main/` (MainScene), `BattlePlaceholder`,
+`core/battle/PlaceholderBattle.cs`, `GameManager.RecordWin`; file mồ côi
+`RecruitService.cs.uid`. TestPhase0 và TestPhase234 viết lại theo.
+
+**Công thức sát thương (spec Huynh, `BattleEngine`)**
+- Né thực = Né (mục tiêu) − Chính xác (người đánh), trần **85%** (luôn ≥ 15% trúng).
+- Bạo thực = Bạo kích − Kiên cường, trần **90%**; hệ số bạo = 1.5 + Sát thương bạo thêm.
+- Đỡ thực = Đỡ đòn − Phá kích, trần **80%**; đỡ được thì ×0.5 (bạo + đỡ = ×0.75).
+- Miễn thương thuần trần **75%**.
+- Base = max(5% Công, (Công − Thủ) × hệ số kỹ năng) × khắc hệ 1.25 × (1 − Miễn thương).
+- Final = Base × bạo × đỡ × ngẫu nhiên [0.95, 1.05]. Thứ tự roll: né → bạo → đỡ → biến thiên.
+- Đánh trượt (bị né) không cộng nộ cho người đánh.
+- Các trần lấy 1 số trong khoảng Huynh đưa (85/90/80/75), là hằng số
+  trong `BattleEngine`, chỉnh tùy ý.
+- Chỉ số mới trên `HeroDef`: `Hit`, `CritResist`, `Block`, `Pierce`,
+  `CritDamage` (mặc định 0). Nguồn duy nhất hiện có: bonus Huyền Vũ
+  4 món "Đỡ đòn +10%" (nay hết "(sắp mở)").
+- Khắc hệ 1.25× là luật riêng của game này (không có trong spec), giữ nguyên.
+- **Chưa làm (chờ Huynh):** tách Vật công/Vật phòng với Sách công/Sách phòng
+  cho Mưu sĩ — cần thêm cột chỉ số cho 8 tướng, trang bị, ngọc. Hiện mọi
+  sát thương đều tính là vật lý.
+
+**Ảnh hưởng cân bằng** (mô phỏng 60 seed/ải, không trang bị; % thắng ải 1→10):
+
+| Đội | Cấp | Trước (công thức tỉ lệ) | Sau (Công − Thủ) |
+|---|---|---|---|
+| Tướng tự tạo solo | 20 | 0 ở mọi ải | 100 100 70 0 … |
+| Tướng tự tạo solo | 40 | 100 96 83 6 0 … | 100 100 100 100 70 93 0 … |
+| Đội 3 | 1 | 100×4, 46, 5, 0… | 100×4, 65, 3, 0… |
+| Đội 5 | 1 | 100×7, 98, 98, 80 | 100×7, 96, 48, 0 |
+| Đội 3/5 | ≥ 20 | 100 mọi ải | 100 mọi ải |
+
+Cấp tướng có giá trị hơn (Công tăng theo cấp còn Thủ địch cố định theo
+ải), ải 9–10 khó hơn với đội cấp thấp. Trận ở cấp thấp dài hơn khoảng
+20–30% số lượt.
+
+- Test: `tests/TestPhase238.tscn` (bug B1–B8/B11, cách ly save, công thức,
+  trần, đánh trượt không cộng nộ, Huyền Vũ Đỡ đòn); suite 0–2.38: 41/41 pass.
+
+### Phase 2.39 — Vòng chơi ải (KẾ TIẾP, chưa làm)
+
+Mục tiêu: đồ 2.30–2.37 với tới được bằng chơi bình thường (hiện cần
+khoảng 455 trận thắng ải 10 mới đủ Lv50 để Đúc Lại lên Chu Tước).
+- Thưởng thắng ải: **Bạc** thay Vàng (chốt Huynh), số cụ thể chờ chốt.
+- Ải rơi đồ vào 5 ô thưởng đang trống: Khoáng thạch / Đá tẩy luyện /
+  ngọc Lv1.
+- Chương 2 (ải 11–20) + EXP theo chương, hoặc giảm đường cong EXP (chờ chốt).
+- Quét ải đã 3 sao.
+- Đội hình địch có vị trí Tiền/Trung/Hậu, tối đa 5 địch.
+- Lưu seed trận vào kết quả.
 
 ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
 - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).

@@ -16,3 +16,6 @@ obj/
 
 # Misc
 *.tmp
+
+# Local source backups (not part of the repo)
+.backup/

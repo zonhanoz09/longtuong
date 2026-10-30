@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://testphase238"]
+
+[ext_resource type="Script" path="res://tests/TestPhase238.cs" id="1_test238"]
+
+[node name="TestPhase238" type="Node"]
+script = ExtResource("1_test238")

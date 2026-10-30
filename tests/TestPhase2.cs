@@ -155,7 +155,7 @@ public partial class TestPhase2 : Node
 
     private void CheckSaveProgression()
     {
-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase2_save.json");
+        var path = Path.Combine(GameManager.DataDir, "test_phase2_save.json");
         try
         {
             var s = Fresh();

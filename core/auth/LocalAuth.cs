@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -40,19 +39,19 @@ public static class LocalAuth
 
     public static bool IsValidPassword(string password) => password.Length >= 4;
 
-    public static List<LocalAccount> LoadAccounts(string path)
-    {
-        if (!File.Exists(path)) return new List<LocalAccount>();
-        try { return JsonSerializer.Deserialize<List<LocalAccount>>(File.ReadAllText(path)) ?? new List<LocalAccount>(); }
-        catch { return new List<LocalAccount>(); }
-    }
+    // Phase 2.38 (B8): a corrupt accounts file is no longer treated as
+    // "no accounts" (the next Register used to overwrite every account).
+    // ReadWithBackup falls back to accounts.json.bak, else throws.
+    public static List<LocalAccount> LoadAccounts(string path) =>
+        SaveManager.ReadWithBackup<List<LocalAccount>>(path) ?? new List<LocalAccount>();
 
-    public static void SaveAccounts(string path, List<LocalAccount> accounts)
-    {
-        var dir = Path.GetDirectoryName(Path.GetFullPath(path));
-        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-        File.WriteAllText(path, JsonSerializer.Serialize(accounts, new JsonSerializerOptions { WriteIndented = true }));
-    }
+    public static void SaveAccounts(string path, List<LocalAccount> accounts) =>
+        SaveManager.WriteAtomic(path, JsonSerializer.Serialize(accounts, new JsonSerializerOptions { WriteIndented = true }));
+
+    /// Phase 2.38 (B7): the stored spelling of a username (login is
+    /// case-insensitive; the save file and hero name use this spelling).
+    public static string? CanonicalUsername(string path, string username) =>
+        LoadAccounts(path).FirstOrDefault(a => a.Username.Equals(username, StringComparison.OrdinalIgnoreCase))?.Username;
 
     public static bool Register(string path, string username, string password, out string error)
     {

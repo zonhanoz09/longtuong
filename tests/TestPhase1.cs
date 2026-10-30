@@ -122,7 +122,7 @@ public partial class TestPhase1 : Node
 
     private void CheckSaveTeamAndStars()
     {
-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase1_save.json");
+        var path = Path.Combine(GameManager.DataDir, "test_phase1_save.json");
         try
         {
             var data = new SaveData { Gold = 500, TeamIds = new List<string> { "lu_bo", "trieu_van", "dieu_thuyen" }, StageStars = new Dictionary<string, int> { ["1"] = 3, ["2"] = 2 } };

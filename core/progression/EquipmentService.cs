@@ -35,9 +35,21 @@ public static class EquipmentService
         var before = ProgressionService.GetEffectiveHero(save, heroId);
         var dict = save.HeroEquipment[heroId];
         var original = dict[slotId];
-        dict[slotId] = hypothetical;
-        var after = ProgressionService.GetEffectiveHero(save, heroId);
-        dict[slotId] = original;
+        HeroDef after;
+        // Phase 2.38 (B11): no migration on the swapped-in item (a preview
+        // with no refine lines used to get random lines, so the projection
+        // was wrong and changed on every refresh); always restore.
+        ProgressionService.SuppressEquipmentMigration = true;
+        try
+        {
+            dict[slotId] = hypothetical;
+            after = ProgressionService.GetEffectiveHero(save, heroId);
+        }
+        finally
+        {
+            dict[slotId] = original;
+            ProgressionService.SuppressEquipmentMigration = false;
+        }
         var rows = new List<(string, double, double)>();
         void Add(string name, double b, double a)
         {
@@ -179,7 +191,10 @@ public static class EquipmentService
             }
         eq.Level = src.Level;
         eq.RefineIndex = src.RefineIndex;
+        // Phase 2.38 (B3): never exceed the target set's line count
+        // (6-line Kỳ Lân into 3-line Tân Thủ keeps the first 3 lines).
         eq.RefineLines = src.RefineLines
+            .Take(EquipmentSets.LinesForSet(eq.SetId))
             .Select(l => new RefineLine { StatId = l.StatId, Value = l.Value, Locked = l.Locked }).ToList();
         foreach (var srcSock in src.Sockets)
         {

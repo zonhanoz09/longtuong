@@ -165,7 +165,7 @@ public partial class TestPhase223 : Node
         Check(scaledCam.Atk > scaledLam.Atk, "Cam out-damages Lam at the same level");
 
         // --- Old save with per-general souls (2.23 format) loads, souls discarded ---
-        var path = Path.Combine(OS.GetUserDataDir(), "test_phase223_legacy.json");
+        var path = Path.Combine(GameManager.DataDir, "test_phase223_legacy.json");
         try
         {
             File.WriteAllText(path, "{\"Gold\": 4321, \"GeneralSouls\": {\"luu_bi\": 999}, \"OwnedHeroIds\": [\"custom_hero\"], \"TeamIds\": [\"custom_hero\"]}");

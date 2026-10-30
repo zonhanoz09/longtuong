@@ -15,6 +15,28 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.38 — đã làm (ổn định nền + công thức sát thương mới)
+
+- CI bắt lỗi thật: test 2.27–2.37 trước đây luôn exit 0 dù fail.
+- Test chạy trong thư mục dữ liệu riêng `user://.../tests` (xóa sạch mỗi
+  lần chạy), không còn ghi đè save thật.
+- Sửa bug: sa thải tướng mất set/dòng/ngọc của đồ; dòng tẩy Miễn thương
+  và %Thủ không có tác dụng; kế thừa vượt số dòng; tẩy luyện bù dòng
+  miễn phí/trừ phí khi khóa hết; cắt đội hình còn 3 thay vì 5; mất file
+  save thì được tặng cả 8 tướng; dự kiến Chế Tạo nhảy số ngẫu nhiên;
+  thông báo mở lỗ ghi nhầm Bạc.
+- Save/accounts ghi atomic + `.bak`; file hỏng không còn bị coi là rỗng.
+- Xóa code chết: popup Lò Rèn (`features/forge`), cụm Phase 0
+  (MainScene, BattlePlaceholder, PlaceholderBattle).
+- Công thức sát thương theo spec Huynh: Né − Chính xác (trần 85%),
+  Bạo − Kiên cường (trần 90%, ×1.5 + bonus), Đỡ − Phá kích (trần 80%,
+  ×0.5), Miễn thương trần 75%, base = max(5% Công, (Công − Thủ) × hệ
+  số), biến thiên ±5%, đánh trượt không cộng nộ. Bonus Huyền Vũ 4 món
+  "Đỡ đòn" đã có tác dụng.
+- Test: `tests/TestPhase238.tscn` mới; viết lại 0/234; suite 0–2.38
+  41/41 pass; CI thêm 2.38. Chi tiết + bảng ảnh hưởng cân bằng ở
+  `docs/KE_HOACH_LONGTUONG.md` §Phase 2.38. Kế tiếp: 2.39 vòng chơi ải.
+
 ## Phase 2.37 — đã làm (tab Cường hóa: Chế Tạo / Đúc Lại)
 
 - Tab Cường hóa làm lại theo sketch của Huynh: header item, khối

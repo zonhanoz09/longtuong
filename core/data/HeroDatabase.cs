@@ -19,6 +19,14 @@ public class HeroDef
     public double Crit { get; set; }
     public double Dodge { get; set; }
     public double DamageReduction { get; set; }
+    // Phase 2.38 (Huynh's combat spec): Chính xác vs Né, Kiên cường vs Bạo,
+    // Phá kích vs Đỡ đòn, + Sát thương bạo kích thêm. All 0 by default;
+    // sources (gems/refine/sets) come later — Huyền Vũ 4 món gives Block.
+    public double Hit { get; set; }
+    public double CritResist { get; set; }
+    public double Block { get; set; }
+    public double Pierce { get; set; }
+    public double CritDamage { get; set; }
     public string NormalName { get; set; } = "";
     public string UltName { get; set; } = "";
     public double UltPower { get; set; } = 2.0;
@@ -35,6 +43,7 @@ public class HeroDef
             Atk = (int)Math.Round(Atk * scale),
             Def = (int)Math.Round(Def * scale),
             Speed = Speed, Crit = Crit, Dodge = Dodge, DamageReduction = DamageReduction,
+            Hit = Hit, CritResist = CritResist, Block = Block, Pierce = Pierce, CritDamage = CritDamage,
             NormalName = NormalName, UltName = UltName, UltPower = UltPower, UltKind = UltKind,
             PassiveName = PassiveName, PassiveDesc = PassiveDesc,
         };

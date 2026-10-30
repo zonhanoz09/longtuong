@@ -48,14 +48,41 @@ public class BattleEngine
         RebuildOrder();
     }
 
-    public static int CalculateDamage(Fighter attacker, Fighter defender, double power, bool critHit, bool dodged, double variance)
+    // Phase 2.38: combat formula per Huynh's spec (Long Tướng style).
+    // Caps pick a value inside each range Huynh gave (tune freely):
+    // né 80–85% -> 85% (always >= 15% hit), bạo 80–90% -> 90%,
+    // đỡ đòn 80%, miễn thương thuần 75–80% -> 75%.
+    public const double DodgeCap = 0.85;
+    public const double CritCap = 0.90;
+    public const double BlockCap = 0.80;
+    public const double DamageReductionCap = 0.75;
+    public const double BaseCritMultiplier = 1.5;
+    public const double BlockMultiplier = 0.5;
+    public const double MinDamageRatio = 0.05;   // chip damage = 5% of ATK
+    public const double VarianceMin = 0.95, VarianceMax = 1.05;
+    // Role counter (Võ > Mưu > Phụ > Võ) is this game's own rule, not part
+    // of the spec; it multiplies the base damage.
+    public const double CounterMultiplier = 1.25;
+
+    public static double DodgeChance(Fighter attacker, Fighter defender) =>
+        Math.Clamp(defender.Def.Dodge - attacker.Def.Hit, 0, DodgeCap);
+    public static double CritChance(Fighter attacker, Fighter defender) =>
+        Math.Clamp(attacker.Def.Crit - defender.Def.CritResist, 0, CritCap);
+    public static double BlockChance(Fighter attacker, Fighter defender) =>
+        Math.Clamp(defender.Def.Block - attacker.Def.Pierce, 0, BlockCap);
+
+    // Base = max(5% ATK, (ATK - DEF) x skill ratio) x counter x (1 - DR capped)
+    // Final = Base x crit (1.5 + bonus) x block (0.5) x variance [0.95, 1.05]
+    public static int CalculateDamage(Fighter attacker, Fighter defender, double power, bool critHit, bool dodged, double variance, bool blocked = false)
     {
         if (dodged) return 0;
-        double dmg = attacker.EffectiveAtk * power * (100.0 / (100.0 + defender.EffectiveDef));
-        if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= 1.25;
-        if (critHit) dmg *= 1.5;
+        double atk = attacker.EffectiveAtk;
+        double dmg = Math.Max(MinDamageRatio * atk, (atk - defender.EffectiveDef) * power);
+        if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= CounterMultiplier;
+        dmg *= 1.0 - Math.Min(defender.Def.DamageReduction, DamageReductionCap);
+        if (critHit) dmg *= BaseCritMultiplier + attacker.Def.CritDamage;
+        if (blocked) dmg *= BlockMultiplier;
         dmg *= variance;
-        dmg *= 1.0 - defender.Def.DamageReduction;
         return Math.Max(1, (int)Math.Round(dmg));
     }
 
@@ -191,24 +218,31 @@ public class BattleEngine
         }
         var foe = PickTarget(actor);
         if (foe == null) return;
-        Hit(actor, foe, power);
-        actor.Rage = Math.Min(100, actor.Rage + 20);
+        // Phase 2.38 (spec): a missed (dodged) attack gives no rage.
+        if (Hit(actor, foe, power)) actor.Rage = Math.Min(100, actor.Rage + 20);
     }
 
-    private void Hit(Fighter actor, Fighter target, double power)
+    // Returns false when the attack was dodged.
+    private bool Hit(Fighter actor, Fighter target, double power)
     {
-        bool dodged = _rng.NextDouble() < target.Def.Dodge;
-        bool crit = !dodged && _rng.NextDouble() < actor.Def.Crit;
-        double variance = 0.9 + _rng.NextDouble() * 0.2;
-        int dmg = CalculateDamage(actor, target, power, crit, dodged, variance);
+        // Roll order per spec: dodge -> crit -> block -> variance. The block
+        // roll is skipped when the chance is 0 so seeded battles without
+        // any Block stat keep their old RNG sequence.
+        bool dodged = _rng.NextDouble() < DodgeChance(actor, target);
+        bool crit = !dodged && _rng.NextDouble() < CritChance(actor, target);
+        double blockChance = BlockChance(actor, target);
+        bool blocked = !dodged && blockChance > 0 && _rng.NextDouble() < blockChance;
+        double variance = VarianceMin + _rng.NextDouble() * (VarianceMax - VarianceMin);
+        int dmg = CalculateDamage(actor, target, power, crit, dodged, variance, blocked);
         if (dodged)
         {
             Log.Add($"{actor.Name} đánh {target.Name} nhưng bị NÉ!");
-            return;
+            return false;
         }
         target.Hp = Math.Max(0, target.Hp - dmg);
         if (target.Alive) target.Rage = Math.Min(100, target.Rage + 10);
-        Log.Add($"{actor.Name} gây {dmg} sát thương cho {target.Name}{(crit ? " (BẠO KÍCH!)" : "")} — {target.Name} còn {target.Hp} HP.");
+        Log.Add($"{actor.Name} gây {dmg} sát thương cho {target.Name}{(crit ? " (BẠO KÍCH!)" : "")}{(blocked ? " (ĐỠ ĐÒN)" : "")} — {target.Name} còn {target.Hp} HP.");
         if (!target.Alive) Log.Add($"{target.Name} đã gục ngã!");
+        return true;
     }
 }
