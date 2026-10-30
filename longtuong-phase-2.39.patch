@@ -1,0 +1,1370 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 81462731cedbe20032b564030d384b4a0a7d12de..e90addfa4827cc8d01f206210aa02827f0b427f7 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -79,3 +79,4 @@ jobs:
+           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase236.tscn
+           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase237.tscn
+           timeout 120 "$GODOT" --headless --path . res://tests/TestPhase238.tscn
++          timeout 120 "$GODOT" --headless --path . res://tests/TestPhase239.tscn
+diff --git a/README.md b/README.md
+index 4c3b187d23065ba6c24ea0dcb7fb7f8218744ddb..0c3a8ed7d7b31f38de749bf12de047da6cb510e8 100644
+--- a/README.md
++++ b/README.md
+@@ -15,6 +15,22 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự
+ Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
+ chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
+ 
++## Phase 2.39 — đã làm (vòng chơi ải)
++
++- Thắng ải: **+1.000 Bạc** (bỏ thưởng Vàng) + EXP 40 + 10 × ải;
++  rơi đồ 3 lượt × 10%: Khoáng thạch, Đá tẩy luyện, ngọc Lv1 — hiện
++  trong 5 ô thưởng của popup thắng.
++- **Chương 2** (ải 11–20, 4–5 địch) + tab Chương trong màn chọn ải;
++  EXP lên cấp giảm còn `100 + 20 × (cấp − 1)` (Lv50: 28.420 thay 63.700).
++- **Tách Vật/Sách**: Mưu/Phụ đánh vào Sách phòng, còn lại vào Vật phòng;
++  chỉ số Sách phòng mới cho 8 tướng, Mũ/Choàng có Sách phòng.
++- Địch có vị trí đội hình thật; luật Tiền/Trung/Hậu áp dụng cả hai bên.
++- **Quét ải** đã 3 sao (20 lượt/ngày); lưu trận gần nhất (ải, seed,
++  đội, kết quả) trong save.
++- Test: `tests/TestPhase239.tscn` mới; cập nhật 1/2/221/222; suite
++  0–2.39 42/42 pass; CI thêm 2.39. Chi tiết + bảng cân bằng ở
++  `docs/KE_HOACH_LONGTUONG.md` §Phase 2.39.
++
+ ## Phase 2.38 — đã làm (ổn định nền + công thức sát thương mới)
+ 
+ - CI bắt lỗi thật: test 2.27–2.37 trước đây luôn exit 0 dù fail.
+diff --git a/core/autoload/GameManager.cs b/core/autoload/GameManager.cs
+index b5ddcb2b2ad4cc1b7ed56b594ce52129cea73cac..0dfaa953b081ad0050c8a9da51aa190f380ec238 100644
+--- a/core/autoload/GameManager.cs
++++ b/core/autoload/GameManager.cs
+@@ -32,7 +32,7 @@ public partial class GameManager : Node
+     public int CurrentSeed { get; set; }
+     public bool LastBattleWon { get; private set; }
+     public int LastBattleStars { get; private set; }
+-    public int LastBattleReward { get; private set; }
++    public BattleReward? LastBattleReward { get; private set; }
+ 
+     // Save tách theo tài khoản (Phase 2.1, vẫn local; server phase sau mới tách thật).
+     // Chưa đăng nhập thì dùng save.json cũ để không mất tiến trình Phase 0-2.
+@@ -50,7 +50,7 @@ public partial class GameManager : Node
+         SelectedHeroId = ""; // no account => no default hero
+         Save = new SaveData();
+         SelectedTeamIds = new List<string> { "quan_vu", "truong_phi", "gia_cat_luong" };
+-        LastBattleWon = false; LastBattleStars = 0; LastBattleReward = 0;
++        LastBattleWon = false; LastBattleStars = 0; LastBattleReward = null;
+     }
+ 
+     public void SaveGame()
+@@ -105,23 +105,32 @@ public partial class GameManager : Node
+         CurrentSeed = seed;
+         LastBattleWon = false;
+         LastBattleStars = 0;
+-        LastBattleReward = 0;
++        LastBattleReward = null;
+     }
+ 
+-    public void ApplyBattleResult(bool won, int stars, int rewardGold)
++    // Phase 2.39: wins give Bạc + EXP + 10% drops (StageRewardService), no
++    // Vàng. Drops come from the battle seed, and the battle (stage, seed,
++    // team, result) is recorded in the save so it can be replayed.
++    public BattleReward? ApplyBattleResult(bool won, int stars)
+     {
+         LastBattleWon = won;
+         LastBattleStars = stars;
+-        LastBattleReward = rewardGold;
+-        if (!won) return;
++        LastBattleReward = null;
++        Save.LastBattle = new BattleRecord
++        {
++            StageId = CurrentStageId, Seed = CurrentSeed, Won = won, Stars = stars,
++            TeamIds = new List<string>(SelectedTeamIds),
++        };
++        if (!won) { SaveGame(); return null; }
+         bool firstClear = CurrentStageId > Save.LastStage;
+         Save.Wins++;
+         if (firstClear) Save.LastStage = CurrentStageId;
+         var key = CurrentStageId.ToString();
+         if (!Save.StageStars.TryGetValue(key, out var old) || stars > old) Save.StageStars[key] = stars;
+-        Save.Gold += rewardGold;
+-        foreach (var heroId in SelectedTeamIds)
+-            ProgressionService.AddExp(Save, heroId, 40 + CurrentStageId * 10);
++        var reward = StageRewardService.Roll(CurrentStageId, StageRewardService.DropRng(CurrentSeed));
++        StageRewardService.Apply(Save, SelectedTeamIds, reward);
++        LastBattleReward = reward;
+         SaveGame();
++        return reward;
+     }
+ }
+diff --git a/core/battle/BattleEngine.cs b/core/battle/BattleEngine.cs
+index 962221758844afa02c6efe220c1d87e569ec710e..9b2b1af23474b76f0ae1ec4867d5427c6a3bedd8 100644
+--- a/core/battle/BattleEngine.cs
++++ b/core/battle/BattleEngine.cs
+@@ -5,7 +5,7 @@ using System.Linq;
+ namespace LongTuong;
+ 
+ /// <summary>
+-/// Pure C# 3v3 side-view battle engine. Deterministic for a given seed:
++/// Pure C# side-view battle engine (up to 5v5). Deterministic for a given seed:
+ /// same seed + same teams + same stage => same winner, turns and final HP.
+ /// </summary>
+ public class BattleEngine
+@@ -31,8 +31,8 @@ public class BattleEngine
+     public BattleEngine(List<HeroDef> playerDefs, StageDef stage, int seed)
+         : this(playerDefs, null, stage, seed) { }
+ 
+-    // playerPositions parallels playerDefs (None when absent); enemies have
+-    // no formation positions yet (their team grows in a later phase).
++    // playerPositions parallels playerDefs (None when absent); enemy
++    // positions come from the stage (StageDef.EnemySlot).
+     public BattleEngine(List<HeroDef> playerDefs, List<FormationPosition>? playerPositions, StageDef stage, int seed)
+     {
+         Stage = stage;
+@@ -44,7 +44,13 @@ public class BattleEngine
+             if (playerPositions != null && i < playerPositions.Count) f.Position = playerPositions[i];
+             PlayerFighters.Add(f);
+         }
+-        foreach (var id in stage.EnemyIds) EnemyFighters.Add(new Fighter(HeroDatabase.Get(id).WithScale(stage.Scale), false));
++        // Phase 2.39: enemies stand on the stage's formation slots and get the
++        // same position rules as the player side.
++        for (int i = 0; i < stage.EnemyIds.Count; i++)
++            EnemyFighters.Add(new Fighter(HeroDatabase.Get(stage.EnemyIds[i]).WithScale(stage.Scale), false)
++            {
++                Position = FormationService.PositionOfSlot(stage.EnemySlot(i)),
++            });
+         RebuildOrder();
+     }
+ 
+@@ -77,7 +83,9 @@ public class BattleEngine
+     {
+         if (dodged) return 0;
+         double atk = attacker.EffectiveAtk;
+-        double dmg = Math.Max(MinDamageRatio * atk, (atk - defender.EffectiveDef) * power);
++        // Phase 2.39: Mưu/Phụ hit Sách phòng, others hit Vật phòng.
++        double def = HeroDatabase.UsesStrategy(attacker.Def.Role) ? defender.EffectiveMagicDef : defender.EffectiveDef;
++        double dmg = Math.Max(MinDamageRatio * atk, (atk - def) * power);
+         if (HeroDatabase.Counters(attacker.Def.Role, defender.Def.Role)) dmg *= CounterMultiplier;
+         dmg *= 1.0 - Math.Min(defender.Def.DamageReduction, DamageReductionCap);
+         if (critHit) dmg *= BaseCritMultiplier + attacker.Def.CritDamage;
+@@ -105,12 +113,14 @@ public class BattleEngine
+     private void RebuildOrder()
+     {
+         var alive = PlayerFighters.Concat(EnemyFighters).Where(f => f.Alive).ToList();
+-        // Phase 2.20 — Hậu quân: each alive rear player hero has a 20% chance
++        // Phase 2.20 — Hậu quân: each alive rear hero has a 20% chance
+         // (seeded RNG, so a given seed still replays deterministically) to act
+         // first this round. First-movers go before everyone else, once each;
+-        // they do NOT get an extra action.
++        // they do NOT get an extra action. Phase 2.39: enemy rear heroes too
++        // (rolled after the player side, so stages without enemy Hậu keep
++        // the old RNG sequence).
+         var first = new List<Fighter>();
+-        foreach (var f in PlayerFighters.Where(f => f.Alive && f.Position == FormationPosition.Rear))
++        foreach (var f in PlayerFighters.Concat(EnemyFighters).Where(f => f.Alive && f.Position == FormationPosition.Rear))
+             if (_rng.NextDouble() < 0.20) first.Add(f);
+         first = first.OrderByDescending(f => f.Def.Speed).ToList();
+         var rest = alive.Where(f => !first.Contains(f))
+@@ -119,18 +129,15 @@ public class BattleEngine
+         _orderIndex = 0;
+     }
+ 
+-    // Single-target choice. Phase 2.20 — Tiền quân: an enemy attack targets
+-    // an alive front (Tiền) player hero first, instead of the lowest-HP foe.
+-    // Player attacks keep the old lowest-HP rule (enemies have no positions).
++    // Single-target choice. Phase 2.20 — Tiền quân: a single-target attack
++    // hits an alive front (Tiền) foe first, else the lowest-HP foe.
++    // Phase 2.39: applies to both sides (enemies now have positions).
+     private Fighter? PickTarget(Fighter actor)
+     {
+         var foes = EnemiesOf(actor).Where(f => f.Alive).ToList();
+         if (foes.Count == 0) return null;
+-        if (!actor.IsPlayer)
+-        {
+-            var front = foes.FirstOrDefault(f => f.Position == FormationPosition.Front);
+-            if (front != null) return front;
+-        }
++        var front = foes.FirstOrDefault(f => f.Position == FormationPosition.Front);
++        if (front != null) return front;
+         return foes.OrderBy(f => f.Hp).First();
+     }
+ 
+diff --git a/core/battle/Fighter.cs b/core/battle/Fighter.cs
+index 3990f8ae2b0e80d9d1da03b34ae79b3ea00b24cf..116f5a87847405dba99207399c845b516598139c 100644
+--- a/core/battle/Fighter.cs
++++ b/core/battle/Fighter.cs
+@@ -7,15 +7,18 @@ public class Fighter
+     public int Hp { get; set; }
+     public int MaxHp { get; }
+     public int Rage { get; set; }
+-    // Phase 2.20: formation position (player side only; enemies have None).
++    // Phase 2.20: formation position. Phase 2.39: enemies have positions
++    // too (from the stage's enemy slots), with the same bonuses.
+     // Bonuses are computed, never written back into the shared HeroDef.
+     public FormationPosition Position { get; set; } = FormationPosition.None;
+ 
+-    // Trung quân: +20% sức mạnh (ATK). Tiền quân: +20% thủ (DEF).
++    // Trung quân: +20% sức mạnh (ATK). Tiền quân: +20% thủ (Vật + Sách phòng).
+     public int EffectiveAtk => Position == FormationPosition.Middle
+         ? (int)System.Math.Round(Def.Atk * 1.20) : Def.Atk;
+     public int EffectiveDef => Position == FormationPosition.Front
+         ? (int)System.Math.Round(Def.Def * 1.20) : Def.Def;
++    public int EffectiveMagicDef => Position == FormationPosition.Front
++        ? (int)System.Math.Round(Def.MagicDef * 1.20) : Def.MagicDef;
+ 
+     public Fighter(HeroDef def, bool isPlayer)
+     {
+diff --git a/core/data/HeroDatabase.cs b/core/data/HeroDatabase.cs
+index 1e4221eff3cdae44dac4d0f04ece7bc52fc81f6b..630b4333d6a786865db154b03e77a1340d44dac1 100644
+--- a/core/data/HeroDatabase.cs
++++ b/core/data/HeroDatabase.cs
+@@ -14,7 +14,9 @@ public class HeroDef
+     public HeroRole Role { get; set; }
+     public int Hp { get; set; }
+     public int Atk { get; set; }
++    // Def = Vật phòng. Phase 2.39: MagicDef = Sách phòng (vs Mưu/Phụ attacks).
+     public int Def { get; set; }
++    public int MagicDef { get; set; }
+     public int Speed { get; set; }
+     public double Crit { get; set; }
+     public double Dodge { get; set; }
+@@ -42,6 +44,7 @@ public class HeroDef
+             Hp = (int)Math.Round(Hp * scale),
+             Atk = (int)Math.Round(Atk * scale),
+             Def = (int)Math.Round(Def * scale),
++            MagicDef = (int)Math.Round(MagicDef * scale),
+             Speed = Speed, Crit = Crit, Dodge = Dodge, DamageReduction = DamageReduction,
+             Hit = Hit, CritResist = CritResist, Block = Block, Pierce = Pierce, CritDamage = CritDamage,
+             NormalName = NormalName, UltName = UltName, UltPower = UltPower, UltKind = UltKind,
+@@ -56,28 +59,45 @@ public class StageDef
+     public string Name { get; set; } = "";
+     public List<string> EnemyIds { get; set; } = new();
+     public double Scale { get; set; } = 1.0;
+-    public int RewardGold => 100 + Id * 50;
++    // Phase 2.39: 10 stages per chapter.
++    public int Chapter => (Id - 1) / HeroDatabase.StagesPerChapter + 1;
++    // Phase 2.39: enemy i stands on DefaultEnemySlots[i] (Tiền giữa first).
++    public string EnemySlot(int index) => HeroDatabase.DefaultEnemySlots[index];
+ }
+ 
+ public static class HeroDatabase
+ {
++    public const int StagesPerChapter = 10;
++
++    // Phase 2.39: enemy formation slots by enemy index — the layout the
++    // battle screen already drew in 2.21 (Tiền giữa, Trung trên, Trung
++    // dưới), extended with Hậu giữa and Trung giữa for 4–5 enemy stages.
++    public static readonly string[] DefaultEnemySlots =
++        { "tien_mid", "trung_top", "trung_bot", "hau_mid", "trung_mid" };
++
++    // Phase 2.39: MagicDef (Sách phòng) values are Pax's setup — casters
++    // and supports resist strategy best, Lữ Bố worst.
+     public static readonly List<HeroDef> Heroes = new()
+     {
+         // Phase 2.10: custom hero for new accounts. Its Name is NOT fixed here:
+         // it is set to the account username on seed/login via SetCustomHeroName.
+         // Basic stats, no real skills yet (placeholder ult = plain 1.0x hit).
+         // It is intentionally NOT in the tavern pool (see TavernData.TierOfHero).
+-        new HeroDef { Id = "custom_hero", Name = "Tướng Tự Tạo", Role = HeroRole.Vanguard, Hp = 500, Atk = 60, Def = 30, Speed = 60, Crit = 0.10, Dodge = 0.05, NormalName = "Đánh thường", UltName = "Chưa có tuyệt kỹ", UltPower = 1.0, UltKind = UltKind.SingleDamage, PassiveName = "Chưa có bị động", PassiveDesc = "Tướng tự tạo theo tên đăng nhập — kỹ năng sẽ được cập nhật sau." },
++        new HeroDef { Id = "custom_hero", Name = "Tướng Tự Tạo", Role = HeroRole.Vanguard, Hp = 500, Atk = 60, Def = 30, MagicDef = 25, Speed = 60, Crit = 0.10, Dodge = 0.05, NormalName = "Đánh thường", UltName = "Chưa có tuyệt kỹ", UltPower = 1.0, UltKind = UltKind.SingleDamage, PassiveName = "Chưa có bị động", PassiveDesc = "Tướng tự tạo theo tên đăng nhập — kỹ năng sẽ được cập nhật sau." },
+         // Phase 2.9: former default starter, still a normal recruitable hero.
+-        new HeroDef { Id = "luu_bi", Name = "Lưu Bị", Role = HeroRole.Vanguard, Hp = 620, Atk = 72, Def = 42, Speed = 68, Crit = 0.12, Dodge = 0.08, NormalName = "Song Kiếm", UltName = "Song Cổ Kiếm", UltPower = 1.8, UltKind = UltKind.SingleDamage, PassiveName = "Nhân Nghĩa", PassiveDesc = "Được lòng người: tướng cân bằng, không bị khắc hệ (Tiên phong)." },
+-        new HeroDef { Id = "quan_vu", Name = "Quan Vũ", Role = HeroRole.Warrior, Hp = 520, Atk = 85, Def = 35, Speed = 70, Crit = 0.25, Dodge = 0.05, NormalName = "Thanh Long Trảm", UltName = "Thanh Long Yển Nguyệt", UltPower = 2.0, UltKind = UltKind.SingleDamage, PassiveName = "Võ Thánh", PassiveDesc = "Tỉ lệ bạo kích +15% so với tướng thường." },
+-        new HeroDef { Id = "truong_phi", Name = "Trương Phi", Role = HeroRole.Vanguard, Hp = 750, Atk = 60, Def = 55, Speed = 55, Crit = 0.10, Dodge = 0.05, DamageReduction = 0.15, NormalName = "Mâu Đâm", UltName = "Tiếng Thét Trường Bản", UltPower = 1.6, UltKind = UltKind.SingleDamage, PassiveName = "Thiết Bích", PassiveDesc = "Giảm 15% sát thương nhận vào." },
+-        new HeroDef { Id = "trieu_van", Name = "Triệu Vân", Role = HeroRole.Warrior, Hp = 480, Atk = 78, Def = 30, Speed = 95, Crit = 0.15, Dodge = 0.15, NormalName = "Thương Liên Kích", UltName = "Bạch Long Xuất Động", UltPower = 1.9, UltKind = UltKind.SingleDamage, PassiveName = "Thần Tốc", PassiveDesc = "Tốc độ cao nhất đội, né tránh +10%." },
+-        new HeroDef { Id = "gia_cat_luong", Name = "Gia Cát Lượng", Role = HeroRole.Strategist, Hp = 420, Atk = 90, Def = 25, Speed = 80, Crit = 0.10, Dodge = 0.05, NormalName = "Quạt Lông", UltName = "Bát Quái Trận", UltPower = 1.4, UltKind = UltKind.AoEDamage, PassiveName = "Bát Quái", PassiveDesc = "Tuyệt kỹ đánh toàn bộ địch." },
+-        new HeroDef { Id = "dieu_thuyen", Name = "Điêu Thuyền", Role = HeroRole.Support, Hp = 430, Atk = 50, Def = 28, Speed = 75, Crit = 0.10, Dodge = 0.10, NormalName = "Vũ Điệu", UltName = "Khuynh Quốc", UltPower = 0.30, UltKind = UltKind.Heal, PassiveName = "Khuynh Thành", PassiveDesc = "Tuyệt kỹ hồi máu cho đồng đội thấp máu nhất." },
+-        new HeroDef { Id = "lu_bo", Name = "Lữ Bố", Role = HeroRole.Warrior, Hp = 600, Atk = 105, Def = 20, Speed = 65, Crit = 0.20, Dodge = 0.05, NormalName = "Phương Thiên Kích", UltName = "Vô Song Kích", UltPower = 2.4, UltKind = UltKind.SingleDamage, PassiveName = "Vô Song", PassiveDesc = "Tấn công cao nhất, nhưng phòng thủ thấp." },
++        new HeroDef { Id = "luu_bi", Name = "Lưu Bị", Role = HeroRole.Vanguard, Hp = 620, Atk = 72, Def = 42, MagicDef = 35, Speed = 68, Crit = 0.12, Dodge = 0.08, NormalName = "Song Kiếm", UltName = "Song Cổ Kiếm", UltPower = 1.8, UltKind = UltKind.SingleDamage, PassiveName = "Nhân Nghĩa", PassiveDesc = "Được lòng người: tướng cân bằng, không bị khắc hệ (Tiên phong)." },
++        new HeroDef { Id = "quan_vu", Name = "Quan Vũ", Role = HeroRole.Warrior, Hp = 520, Atk = 85, Def = 35, MagicDef = 25, Speed = 70, Crit = 0.25, Dodge = 0.05, NormalName = "Thanh Long Trảm", UltName = "Thanh Long Yển Nguyệt", UltPower = 2.0, UltKind = UltKind.SingleDamage, PassiveName = "Võ Thánh", PassiveDesc = "Tỉ lệ bạo kích +15% so với tướng thường." },
++        new HeroDef { Id = "truong_phi", Name = "Trương Phi", Role = HeroRole.Vanguard, Hp = 750, Atk = 60, Def = 55, MagicDef = 35, Speed = 55, Crit = 0.10, Dodge = 0.05, DamageReduction = 0.15, NormalName = "Mâu Đâm", UltName = "Tiếng Thét Trường Bản", UltPower = 1.6, UltKind = UltKind.SingleDamage, PassiveName = "Thiết Bích", PassiveDesc = "Giảm 15% sát thương nhận vào." },
++        new HeroDef { Id = "trieu_van", Name = "Triệu Vân", Role = HeroRole.Warrior, Hp = 480, Atk = 78, Def = 30, MagicDef = 25, Speed = 95, Crit = 0.15, Dodge = 0.15, NormalName = "Thương Liên Kích", UltName = "Bạch Long Xuất Động", UltPower = 1.9, UltKind = UltKind.SingleDamage, PassiveName = "Thần Tốc", PassiveDesc = "Tốc độ cao nhất đội, né tránh +10%." },
++        new HeroDef { Id = "gia_cat_luong", Name = "Gia Cát Lượng", Role = HeroRole.Strategist, Hp = 420, Atk = 90, Def = 25, MagicDef = 45, Speed = 80, Crit = 0.10, Dodge = 0.05, NormalName = "Quạt Lông", UltName = "Bát Quái Trận", UltPower = 1.4, UltKind = UltKind.AoEDamage, PassiveName = "Bát Quái", PassiveDesc = "Tuyệt kỹ đánh toàn bộ địch." },
++        new HeroDef { Id = "dieu_thuyen", Name = "Điêu Thuyền", Role = HeroRole.Support, Hp = 430, Atk = 50, Def = 28, MagicDef = 40, Speed = 75, Crit = 0.10, Dodge = 0.10, NormalName = "Vũ Điệu", UltName = "Khuynh Quốc", UltPower = 0.30, UltKind = UltKind.Heal, PassiveName = "Khuynh Thành", PassiveDesc = "Tuyệt kỹ hồi máu cho đồng đội thấp máu nhất." },
++        new HeroDef { Id = "lu_bo", Name = "Lữ Bố", Role = HeroRole.Warrior, Hp = 600, Atk = 105, Def = 20, MagicDef = 15, Speed = 65, Crit = 0.20, Dodge = 0.05, NormalName = "Phương Thiên Kích", UltName = "Vô Song Kích", UltPower = 2.4, UltKind = UltKind.SingleDamage, PassiveName = "Vô Song", PassiveDesc = "Tấn công cao nhất, nhưng phòng thủ thấp." },
+     };
+ 
++    // Chapter 1: 3 enemies. Chapter 2 (Phase 2.39, Huynh 3c): 4 enemies on
++    // stages 11–15, 5 on 16–20; scale keeps the +0.09 per stage step.
++    // Enemy order = slot order (DefaultEnemySlots): tanks/fighters first
++    // (Tiền, Trung), casters/supports last (Hậu).
+     public static readonly List<StageDef> Stages = new()
+     {
+         new StageDef { Id = 1, Name = "Khởi Nghĩa Hoàng Cân", EnemyIds = new() { "dieu_thuyen", "truong_phi", "trieu_van" }, Scale = 0.85 },
+@@ -90,10 +110,26 @@ public static class HeroDatabase
+         new StageDef { Id = 8, Name = "Tam Phân Thiên Hạ", EnemyIds = new() { "lu_bo", "gia_cat_luong", "trieu_van" }, Scale = 1.48 },
+         new StageDef { Id = 9, Name = "Bạch Đế Thành", EnemyIds = new() { "lu_bo", "quan_vu", "gia_cat_luong" }, Scale = 1.57 },
+         new StageDef { Id = 10, Name = "Thống Nhất Thiên Hạ", EnemyIds = new() { "lu_bo", "quan_vu", "trieu_van" }, Scale = 1.66 },
++        new StageDef { Id = 11, Name = "Trường Bản Pha", EnemyIds = new() { "trieu_van", "truong_phi", "luu_bi", "dieu_thuyen" }, Scale = 1.75 },
++        new StageDef { Id = 12, Name = "Hợp Phì Chi Chiến", EnemyIds = new() { "truong_phi", "lu_bo", "quan_vu", "gia_cat_luong" }, Scale = 1.84 },
++        new StageDef { Id = 13, Name = "Kinh Châu Tranh Đoạt", EnemyIds = new() { "luu_bi", "quan_vu", "trieu_van", "dieu_thuyen" }, Scale = 1.93 },
++        new StageDef { Id = 14, Name = "Định Quân Sơn", EnemyIds = new() { "truong_phi", "lu_bo", "trieu_van", "gia_cat_luong" }, Scale = 2.02 },
++        new StageDef { Id = 15, Name = "Hán Trung Xưng Vương", EnemyIds = new() { "luu_bi", "quan_vu", "truong_phi", "gia_cat_luong" }, Scale = 2.11 },
++        new StageDef { Id = 16, Name = "Thủy Yêm Thất Quân", EnemyIds = new() { "truong_phi", "quan_vu", "trieu_van", "dieu_thuyen", "lu_bo" }, Scale = 2.20 },
++        new StageDef { Id = 17, Name = "Di Lăng Hỏa Thiêu", EnemyIds = new() { "luu_bi", "lu_bo", "quan_vu", "gia_cat_luong", "trieu_van" }, Scale = 2.29 },
++        new StageDef { Id = 18, Name = "Thất Cầm Mạnh Hoạch", EnemyIds = new() { "truong_phi", "trieu_van", "lu_bo", "dieu_thuyen", "luu_bi" }, Scale = 2.38 },
++        new StageDef { Id = 19, Name = "Lục Xuất Kỳ Sơn", EnemyIds = new() { "luu_bi", "lu_bo", "trieu_van", "gia_cat_luong", "quan_vu" }, Scale = 2.47 },
++        new StageDef { Id = 20, Name = "Ngũ Trượng Nguyên", EnemyIds = new() { "truong_phi", "lu_bo", "quan_vu", "gia_cat_luong", "trieu_van" }, Scale = 2.56 },
+     };
+ 
++    public static int ChapterCount => Stages.Max(s => s.Chapter);
++
+     public static HeroDef Get(string id) => Heroes.First(h => h.Id == id);
+ 
++    /// Phase 2.39: Mưu (Strategist) and Phụ (Support) deal Sách (strategy)
++    /// damage, checked against Sách phòng; everyone else deals Vật damage.
++    public static bool UsesStrategy(HeroRole role) => role is HeroRole.Strategist or HeroRole.Support;
++
+     /// <summary>Phase 2.10: the custom hero's display name is the username.</summary>
+     public static void SetCustomHeroName(string username)
+     {
+diff --git a/core/progression/EquipmentService.cs b/core/progression/EquipmentService.cs
+index 4a2e7e811a57055d797be629bfb22c3b13187f66..922a1016a662e48a58fae48f203b676dc4102519 100644
+--- a/core/progression/EquipmentService.cs
++++ b/core/progression/EquipmentService.cs
+@@ -58,6 +58,7 @@ public static class EquipmentService
+         Add("HP", before.Hp, after.Hp);
+         Add("Vật công", before.Atk, after.Atk);
+         Add("Vật phòng", before.Def, after.Def);
++        Add("Sách phòng", before.MagicDef, after.MagicDef);
+         Add("Tốc độ", before.Speed, after.Speed);
+         Add("Bạo kích", before.Crit, after.Crit);
+         Add("Né tránh", before.Dodge, after.Dodge);
+diff --git a/core/progression/ProgressionService.cs b/core/progression/ProgressionService.cs
+index 376c391aba08154ceb01ddc075385cfae5f9698e..df0c90ecd0d827883f4bb17f80721e10a47ad502 100644
+--- a/core/progression/ProgressionService.cs
++++ b/core/progression/ProgressionService.cs
+@@ -36,6 +36,9 @@ public class EquipmentSlotDef
+     public int BaseHp { get; set; }
+     public int BaseDef { get; set; }
+     public int BaseSpeed { get; set; }
++    // Phase 2.39: Sách phòng from Mũ / Choàng (same amount as their Vật phòng).
++    public int BaseMagicDef { get; set; }
++    public int MagicDefPerLevel { get; set; }
+     public int AtkPerLevel { get; set; }
+     public int HpPerLevel { get; set; }
+     public int DefPerLevel { get; set; }
+@@ -45,7 +48,7 @@ public class EquipmentSlotDef
+ /// <summary>
+ /// Phase 2 progression. All formulas are public and data-driven here so balance
+ /// can be tuned without touching combat code.
+-/// - EXP to next level: 100 + 50*(level-1). Max level 180 (raised from 60
++/// - EXP to next level: 100 + 20*(level-1) (2.39; was 50). Max level 180 (raised from 60
+ ///   in 2.23 so the tavern's Cam gate at custom-hero level 70 is reachable).
+ /// - Quality (2.23, TavernData): higher tier => higher base stats and faster
+ ///   per-level growth. Stat scale: base * qualityStat * (1 + 0.04 * qualityGrowth
+@@ -72,9 +75,9 @@ public static class ProgressionService
+     {
+         new EquipmentSlotDef { Id = "weapon", Name = "Vũ khí", BaseAtk = 20, AtkPerLevel = 5 },
+         new EquipmentSlotDef { Id = "armor", Name = "Giáp", BaseHp = 150, HpPerLevel = 30, BaseDef = 10, DefPerLevel = 2 },
+-        new EquipmentSlotDef { Id = "helmet", Name = "Mũ", BaseHp = 80, HpPerLevel = 15, BaseDef = 8, DefPerLevel = 1 },
++        new EquipmentSlotDef { Id = "helmet", Name = "Mũ", BaseHp = 80, HpPerLevel = 15, BaseDef = 8, DefPerLevel = 1, BaseMagicDef = 8, MagicDefPerLevel = 1 },
+         new EquipmentSlotDef { Id = "boots", Name = "Giày", BaseSpeed = 8, SpeedPerLevel = 1, BaseDef = 5, DefPerLevel = 1 },
+-        new EquipmentSlotDef { Id = "cloak", Name = "Choàng", BaseHp = 120, HpPerLevel = 25, BaseDef = 6, DefPerLevel = 1 },
++        new EquipmentSlotDef { Id = "cloak", Name = "Choàng", BaseHp = 120, HpPerLevel = 25, BaseDef = 6, DefPerLevel = 1, BaseMagicDef = 6, MagicDefPerLevel = 1 },
+         new EquipmentSlotDef { Id = "bracer", Name = "Uyển", BaseAtk = 12, AtkPerLevel = 3, BaseSpeed = 4, SpeedPerLevel = 1 },
+     };
+ 
+@@ -82,7 +85,9 @@ public static class ProgressionService
+     public static readonly string[] RefineNames =
+         { "Bạo kích +3%", "Né tránh +3%", "Tốc độ +5", "Tấn công +10%", "HP +10%" };
+ 
+-    public static int ExpToNext(int level) => 100 + 50 * (level - 1);
++    // Phase 2.39 (Huynh 3c): flatter curve, was 100 + 50*(level-1).
++    // Lv1 -> Lv50 now needs 28.420 EXP (was 63.700).
++    public static int ExpToNext(int level) => 100 + 20 * (level - 1);
+ 
+     // Phase 2.31b: enhance costs Bạc (Huynh's currency spec + decision 2a).
+     // Cost grows geometrically: 100 x 2^level. Max enhance follows the main
+@@ -437,6 +442,7 @@ public static class ProgressionService
+             Hp = (int)Math.Round(baseDef.Hp * statFactor * levelFactor),
+             Atk = (int)Math.Round(baseDef.Atk * statFactor * levelFactor),
+             Def = (int)Math.Round(baseDef.Def * statFactor * levelFactor),
++            MagicDef = (int)Math.Round(baseDef.MagicDef * statFactor * levelFactor),
+             Speed = baseDef.Speed, Crit = baseDef.Crit, Dodge = baseDef.Dodge,
+             DamageReduction = baseDef.DamageReduction,
+             Hit = baseDef.Hit, CritResist = baseDef.CritResist, Block = baseDef.Block,
+@@ -459,6 +465,7 @@ public static class ProgressionService
+             def.Atk += slot.BaseAtk + slot.AtkPerLevel * eq.Level;
+             def.Hp += slot.BaseHp + slot.HpPerLevel * eq.Level;
+             def.Def += slot.BaseDef + slot.DefPerLevel * eq.Level;
++            def.MagicDef += slot.BaseMagicDef + slot.MagicDefPerLevel * eq.Level;
+             def.Speed += slot.BaseSpeed + slot.SpeedPerLevel * eq.Level;
+             ApplyRefineLines(def, eq.RefineLines, ref atkMul, ref hpMul, ref defMul);
+             GemService.ApplyGems(def, eq, ref atkMul, ref hpMul);
+diff --git a/core/progression/StageRewardService.cs b/core/progression/StageRewardService.cs
+new file mode 100644
+index 0000000000000000000000000000000000000000..aef1ba5dbc0c4618181121819952e56c64abadf1
+--- /dev/null
++++ b/core/progression/StageRewardService.cs
+@@ -0,0 +1,117 @@
++using System;
++using System.Collections.Generic;
++using System.Linq;
++
++namespace LongTuong;
++
++public class RewardDrop
++{
++    public string Kind { get; set; } = "";   // "ore" / "stone" / "gem"
++    public string ItemId { get; set; } = ""; // gem id for gems
++    public int Count { get; set; } = 1;
++    public string Name { get; set; } = "";
++}
++
++public class BattleReward
++{
++    public int Silver { get; set; }
++    public int ExpPerHero { get; set; }
++    public List<RewardDrop> Drops { get; set; } = new();
++}
++
++/// <summary>
++/// Phase 2.39 — vòng chơi ải (Huynh's decisions 2026-10-30):
++/// - Every win (any stage, replays included) gives 1.000 Bạc; Vàng is no
++///   longer a battle reward.
++/// - EXP per hero = 40 + 10 × stage (unchanged formula; chapter 2 stages
++///   give more).
++/// - Drops: three independent 10% rolls — 1 Khoáng thạch, 1 Đá tẩy luyện,
++///   1 random Lv1 gem.
++/// - Quét ải: a 3-star stage can be swept for the same reward without
++///   fighting, SweepsPerDay times per local day (Pax's number — sweeps
++///   are instant, so without a cap Bạc would be unlimited; Huynh tunes).
++/// Drops are rolled from a Random derived from the battle seed, so a
++/// battle replayed with the same seed gives the same drops.
++/// </summary>
++public static class StageRewardService
++{
++    public const int SilverPerWin = 1000;
++    public const double DropChance = 0.10;
++    public const int SweepsPerDay = 20;
++    public const string OreKind = "ore", StoneKind = "stone", GemKind = "gem";
++
++    public static int ExpPerHero(int stageId) => 40 + 10 * stageId;
++
++    public static Random DropRng(int seed) => new(unchecked(seed * 31 + 17));
++
++    public static BattleReward Roll(int stageId, Random rng)
++    {
++        var reward = new BattleReward { Silver = SilverPerWin, ExpPerHero = ExpPerHero(stageId) };
++        // Fixed roll order (ore, stone, gem) keeps seeded drops reproducible.
++        if (rng.NextDouble() < DropChance)
++            reward.Drops.Add(new RewardDrop { Kind = OreKind, ItemId = ForgeService.OreId, Name = ForgeService.OreName });
++        if (rng.NextDouble() < DropChance)
++            reward.Drops.Add(new RewardDrop { Kind = StoneKind, ItemId = "refine_stone", Name = "Đá tẩy luyện" });
++        if (rng.NextDouble() < DropChance)
++        {
++            var gem = GemService.Defs[rng.Next(GemService.Defs.Count)];
++            var id = GemService.MakeGemId(gem.Type, 1);
++            reward.Drops.Add(new RewardDrop { Kind = GemKind, ItemId = id, Name = GemService.DescribeGem(id) });
++        }
++        return reward;
++    }
++
++    public static void Apply(SaveData save, IEnumerable<string> teamIds, BattleReward reward)
++    {
++        ProgressionService.EnsureDefaults(save);
++        save.Silver += reward.Silver;
++        foreach (var heroId in teamIds)
++            ProgressionService.AddExp(save, heroId, reward.ExpPerHero);
++        foreach (var d in reward.Drops)
++        {
++            switch (d.Kind)
++            {
++                case OreKind: save.Materials[ForgeService.OreId] = ForgeService.OreCount(save) + d.Count; break;
++                case StoneKind: save.RefineStones += d.Count; break;
++                case GemKind: GemService.AddGems(save, d.ItemId, d.Count); break;
++            }
++        }
++    }
++
++    public static int SweepsLeft(SaveData save)
++    {
++        ResetSweepIfNewDay(save);
++        return Math.Max(0, SweepsPerDay - save.SweepUsed);
++    }
++
++    public static bool CanSweep(SaveData save, int stageId) =>
++        save.StageStars != null && save.StageStars.TryGetValue(stageId.ToString(), out var stars) && stars >= 3;
++
++    public enum SweepResult { Success, NotThreeStars, NoSweepsLeft, NoTeam }
++
++    public static SweepResult TrySweep(SaveData save, List<string> teamIds, int stageId, Random rng, out BattleReward? reward)
++    {
++        reward = null;
++        ProgressionService.EnsureDefaults(save);
++        if (teamIds.Count == 0) return SweepResult.NoTeam;
++        if (!CanSweep(save, stageId)) return SweepResult.NotThreeStars;
++        if (SweepsLeft(save) <= 0) return SweepResult.NoSweepsLeft;
++        reward = Roll(stageId, rng);
++        Apply(save, teamIds, reward);
++        save.SweepUsed++;
++        return SweepResult.Success;
++    }
++
++    public static string Describe(BattleReward r)
++    {
++        var parts = new List<string> { $"+{r.Silver:N0} Bạc", $"+{r.ExpPerHero} EXP mỗi tướng" };
++        parts.AddRange(r.Drops.Select(d => $"+{d.Count} {d.Name}"));
++        return string.Join(", ", parts);
++    }
++
++    private static void ResetSweepIfNewDay(SaveData save)
++    {
++        string today = DateTime.Now.ToString("yyyy-MM-dd");
++        if (save.SweepDate != today) { save.SweepDate = today; save.SweepUsed = 0; }
++    }
++}
+diff --git a/core/save/SaveData.cs b/core/save/SaveData.cs
+index d5cce1f4bcc7fdc249c308453cc5c1be5b0609bc..1fc55c1c17486cb92dcdc5cb973fff1eaccd29df 100644
+--- a/core/save/SaveData.cs
++++ b/core/save/SaveData.cs
+@@ -38,6 +38,20 @@ public class SaveData
+     // Phase 2.34: forge — learned blueprints + materials.
+     public Dictionary<string, bool> Blueprints { get; set; } = new();
+     public Dictionary<string, int> Materials { get; set; } = new();
++    // Phase 2.39: last battle (stage + seed, so it can be replayed) and
++    // the daily sweep counter (Quét ải, reset by local date).
++    public BattleRecord? LastBattle { get; set; }
++    public string SweepDate { get; set; } = "";
++    public int SweepUsed { get; set; } = 0;
++}
++
++public class BattleRecord
++{
++    public int StageId { get; set; }
++    public int Seed { get; set; }
++    public bool Won { get; set; }
++    public int Stars { get; set; }
++    public List<string> TeamIds { get; set; } = new();
+ }
+ 
+ public class BagEquipmentItem
+diff --git a/docs/KE_HOACH_LONGTUONG.md b/docs/KE_HOACH_LONGTUONG.md
+index 911b17cf43aff702d3b5dcd40b3607d56bf2053d..102b97811221b5c6de4828feee9c96e46a7633f9 100644
+--- a/docs/KE_HOACH_LONGTUONG.md
++++ b/docs/KE_HOACH_LONGTUONG.md
+@@ -97,6 +97,12 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
+ > Huynh chốt cùng lúc: sau 2.38 làm **2.39 vòng chơi ải**; thưởng thắng
+ > ải chuyển sang **Bạc**.
+ >
++> Cập nhật 2026-10-30: **Phase 2.39 — ĐÃ HOÀN THÀNH** — vòng chơi ải:
++> thắng ải +1.000 Bạc (bỏ Vàng) + rơi đồ 10%, chương 2 (ải 11–20, 4–5
++> địch), EXP lên cấp giảm còn 100 + 20 × (cấp − 1), tách Vật/Sách, địch có
++> vị trí đội hình, quét ải 3 sao (20 lượt/ngày), lưu seed trận. Xem
++> §Phase 2.39.
++>
+ > ## Tiền tệ cốt lõi (đặc tả, chốt 2026-10-28 — triển khai dần)
+ >
+ > - **Vàng**: nạp tiền thật hoặc thưởng sự kiện đặc biệt, đền bù bảo
+@@ -111,8 +117,7 @@ và trang chủ `https://long.hly.com/` (đọc ngày 2026-10-26).
+ >   dưỡng nhân vật, mua vật phẩm cơ bản. Đã dùng: đối tửu
+ >   150.000/300.000 Bạc. Các nguồn Bạc (Cây Rung Tiền, Thu Thuế,
+ >   Boss...) thuộc Phase 3/hoạt động ngày, chưa triển khai; thưởng
+->   thắng ải hiện vẫn là Vàng — Huynh chốt 2026-10-30: thưởng thắng ải
+->   chuyển sang **Bạc** (làm ở Phase 2.39).
++>   thắng ải: từ Phase 2.39 là **1.000 Bạc** mỗi trận (không còn Vàng).
+ 
+ > Nguyên tắc bản quyền, đọc trước khi code: làm game **tương tự về thể loại và cơ chế**,
+ > KHÔNG copy code, art, nhạc, text, tên skill/item riêng của game gốc. Nhân vật Tam Quốc
+@@ -1090,17 +1095,84 @@ Cấp tướng có giá trị hơn (Công tăng theo cấp còn Thủ địch c
+ - Test: `tests/TestPhase238.tscn` (bug B1–B8/B11, cách ly save, công thức,
+   trần, đánh trượt không cộng nộ, Huyền Vũ Đỡ đòn); suite 0–2.38: 41/41 pass.
+ 
+-### Phase 2.39 — Vòng chơi ải (KẾ TIẾP, chưa làm)
++### Phase 2.39 — Vòng chơi ải (ĐÃ HOÀN THÀNH 2026-10-30)
+ 
+-Mục tiêu: đồ 2.30–2.37 với tới được bằng chơi bình thường (hiện cần
++Mục tiêu: đồ 2.30–2.37 với tới được bằng chơi bình thường (trước đây cần
+ khoảng 455 trận thắng ải 10 mới đủ Lv50 để Đúc Lại lên Chu Tước).
+-- Thưởng thắng ải: **Bạc** thay Vàng (chốt Huynh), số cụ thể chờ chốt.
+-- Ải rơi đồ vào 5 ô thưởng đang trống: Khoáng thạch / Đá tẩy luyện /
+-  ngọc Lv1.
+-- Chương 2 (ải 11–20) + EXP theo chương, hoặc giảm đường cong EXP (chờ chốt).
+-- Quét ải đã 3 sao.
+-- Đội hình địch có vị trí Tiền/Trung/Hậu, tối đa 5 địch.
+-- Lưu seed trận vào kết quả.
++
++Chốt của Huynh: (1) mỗi trận thắng 1.000 Bạc, (2) rơi đồ 10%, (3c) mở
++chương 2 **và** giảm đường cong EXP, (4) tách Vật/Sách ngay; "ok" cho các
++đề xuất chi tiết (thưởng cố định kể cả đánh lại, bỏ Vàng khỏi thưởng
++trận, 3 lượt roll rơi đồ riêng, cách tách Vật/Sách, làm luôn quét ải +
++đội hình địch + lưu seed).
++
++**Thưởng thắng ải** (`StageRewardService`)
++- Mọi trận thắng (kể cả đánh lại): **+1.000 Bạc** + EXP mỗi tướng
++  = 40 + 10 × ải (ải 20: 240). **Không còn thưởng Vàng.**
++- Rơi đồ: 3 lượt roll độc lập, mỗi lượt **10%**: 1 Khoáng thạch,
++  1 Đá tẩy luyện, 1 ngọc Lv1 (loại ngẫu nhiên). Roll từ seed trận nên
++  cùng seed thì rơi giống nhau. Đồ rơi hiện trong 5 ô thưởng của popup
++  thắng (viền vàng + tên).
++- Hệ quả cần biết: sau 100.000 Vàng khởi đầu không còn nguồn Vàng nào,
++  mà quặng (100 Vàng/viên) và bản vẽ (50.000–800.000 Vàng) vẫn mua bằng
++  Vàng. Đúc Lại lên Chu Tước cần 25 quặng ≈ 250 trận nếu chỉ chờ rơi.
++
++**Chương 2 + đường cong EXP**
++- Ải 11–20 (`StageDef.Chapter`, 10 ải/chương): ải 11–15 có 4 địch,
++  16–20 có 5 địch; hệ số khó tiếp tục +0.09/ải (1.75 → 2.56). Tên ải
++  tự đặt theo mạch Tam Quốc. Chương 2 mở khi qua ải 10.
++- EXP lên cấp: `100 + 20 × (cấp − 1)` (trước `100 + 50 × …`).
++  Lv1 → Lv50 cần 28.420 EXP (trước 63.700) ≈ 118 trận ải 20 hoặc
++  ≈ 203 trận ải 10.
++
++**Tách Vật / Sách**
++- `HeroDef.MagicDef` = Sách phòng. Tướng **Mưu (Gia Cát Lượng) và Phụ
++  (Điêu Thuyền)** đánh bằng Sách công (trừ Sách phòng); các hệ khác đánh
++  Vật công (trừ Vật phòng). Mỗi tướng vẫn một chỉ số Công.
++- Sách phòng gốc: Tự tạo 25, Lưu Bị 35, Quan Vũ 25, Trương Phi 35,
++  Triệu Vân 25, Gia Cát Lượng 45, Điêu Thuyền 40, Lữ Bố 15. Tăng theo cấp
++  và theo hệ số ải giống Vật phòng.
++- Mũ +8 (+1/cấp) và Choàng +6 (+1/cấp) Sách phòng. Tiền quân +20% cả
++  hai loại phòng. Màn Võ tướng hiện "Vật/Sách phòng: 35 / 25"; dự kiến
++  chỉ số ở tab Cường hóa có dòng Sách phòng.
++- Chưa có ngọc / dòng tẩy / bonus set Sách phòng.
++
++**Đội hình địch**
++- Địch đứng trên ô thật (`HeroDatabase.DefaultEnemySlots`): Tiền giữa,
++  Trung trên, Trung dưới, Hậu giữa, Trung giữa (theo thứ tự địch).
++- Luật vị trí áp dụng cho cả hai bên: Tiền +20% phòng và đòn đơn mục
++  tiêu đánh Tiền trước, Trung +20% Công, Hậu 20% cơ hội đánh trước
++  mỗi vòng. Trước đây chỉ phe ta có.
++
++**Quét ải + lưu seed**
++- Ải đã 3 sao quét được (nút "Quét ải" trong màn chọn ải), nhận thưởng
++  như thắng trận. Giới hạn **20 lượt/ngày** (số Pax đặt: quét là tức
++  thì, không giới hạn thì Bạc vô hạn; Huynh chỉnh `SweepsPerDay`).
++- `SaveData.LastBattle` lưu ải, seed, đội, thắng/thua, số sao của trận
++  gần nhất → có thể replay đúng trận đó.
++- Màn chọn ải có tab Chương 1 / Chương 2 và dòng thưởng.
++
++**Ảnh hưởng cân bằng** (mô phỏng 40 seed/ải, không trang bị; % thắng):
++
++| Đội | Cấp | Chương 1 (ải 1→10) | Chương 2 (ải 11→20) |
++|---|---|---|---|
++| Tự tạo solo | 30 | 100 100 100 10 0 … | 0 |
++| Tự tạo solo | 50 | 100 ×6, 0 … | 0 |
++| Đội 3 | 1 | 100 100 100 72 2 0 … | 0 |
++| Đội 3 | 10 | 100 ×7, 97 32 10 | 0 |
++| Đội 3 | 30 | 100 | 100 47 100 0 100 0 … |
++| Đội 3 | 50 | 100 | 100 ×8, 85, 0 |
++| Đội 5 | 1 | 100 ×6, 97 70 25 2 | 0 |
++| Đội 5 | 20 | 100 | 100 100 100 97 100 0 … |
++| Đội 5 | 30 | 100 | 100 ×7, 97 65 0 |
++| Đội 5 | 40 | 100 | 100 |
++
++Cuối chương 1 khó hơn 2.38 với đội cấp thấp (địch giờ có thưởng vị trí,
++Mưu/Phụ ta gặp Sách phòng). Ví dụ đội 3 Lv10 ở ải 9/10: 98/50% → 32/10%.
++Chương 2 cần đội khoảng Lv20–40.
++
++- Test: `tests/TestPhase239.tscn` mới; cập nhật 1/2/221/222; suite
++  0–2.39: 42/42 pass; CI thêm 2.39.
+ 
+ ### Phase 3 — Hoạt động ngày & chiều sâu (3 tuần)
+ - Qua Quan Trảm Tướng (leo tầng liên tiếp, càng sâu thưởng càng lớn, reset ngày).
+diff --git a/features/battle/scenes/BattleScene.cs b/features/battle/scenes/BattleScene.cs
+index 05757cbab8ad5a454e248005e0436753d86470b7..2db80acc62e2d4e26b403dafdde10258c9e4632d 100644
+--- a/features/battle/scenes/BattleScene.cs
++++ b/features/battle/scenes/BattleScene.cs
+@@ -82,8 +82,9 @@ public partial class BattleHeroCell : PanelContainer
+ /// button during battle is Tăng tốc (x1 → x2 → x3 → x1). No battle log.
+ /// Left: the player's formation grid (Hậu / Trung / Tiền columns, 7 slots,
+ /// empty slots blank); right: the enemy grid mirrored (Tiền closest to the
+-/// middle), with a temporary enemy layout (Tiền giữa + Trung trên +
+-/// Trung dưới) until enemy formations are updated in a later phase.
++/// middle). Phase 2.39: enemies are drawn on their real engine slots
++/// (StageDef.EnemySlot: Tiền giữa, Trung trên, Trung dưới, Hậu giữa,
++/// Trung giữa) and the win popup shows Bạc + drops in the reward squares.
+ /// A "Thú cưỡi" placeholder circle sits above each side (no mount system
+ /// yet). When the battle ends, a result popup appears (Thắng/Thua trận);
+ /// the win popup shows stars, the reward text and 5 empty reward-item
+@@ -102,12 +103,6 @@ public partial class BattleScene : Control
+     private bool _finished;
+     private Control? _resultPopup;
+ 
+-    // Temporary enemy layout (visual only; enemies have no engine positions
+-    // yet): first enemy to Tiền giữa, then Trung trên, Trung dưới, then any
+-    // extra enemies to the remaining slots in this order.
+-    private static readonly string[] EnemySlotOrder =
+-        { "tien_mid", "trung_top", "trung_bot", "trung_mid", "hau_mid", "hau_top", "hau_bot" };
+-
+     // Enemy grid cells in row-major order, columns = Tiền / Trung / Hậu
+     // (mirrored vs the player); null = no Tiền slot on top/bottom rows.
+     private static readonly string?[] EnemyGridOrder =
+@@ -177,8 +172,9 @@ public partial class BattleScene : Control
+     {
+         var grid = GetNode<GridContainer>("EnemyGrid");
+         var placed = new Dictionary<string, Fighter>();
+-        for (int i = 0; i < _engine!.EnemyFighters.Count && i < EnemySlotOrder.Length; i++)
+-            placed[EnemySlotOrder[i]] = _engine.EnemyFighters[i];
++        // Phase 2.39: enemies are drawn on their real engine slots.
++        for (int i = 0; i < _engine!.EnemyFighters.Count; i++)
++            placed[_engine.Stage.EnemySlot(i)] = _engine.EnemyFighters[i];
+         foreach (var cell in EnemyGridOrder)
+         {
+             if (cell == null || !placed.TryGetValue(cell, out var fighter))
+@@ -238,17 +234,14 @@ public partial class BattleScene : Control
+         _timer?.Stop();
+         if (_speedButton != null) _speedButton.Disabled = true;
+         var gm = GetNode<GameManager>("/root/GameManager");
+-        var stage = HeroDatabase.GetStage(gm.CurrentStageId);
+         int stars = _engine.Stars();
+-        int rewardGold = _engine.PlayerWon ? stage.RewardGold : 0;
+-        int expPerHero = 40 + gm.CurrentStageId * 10;
+         // Rewards are applied immediately on win; the popup is display-only.
+-        gm.ApplyBattleResult(_engine.PlayerWon, stars, rewardGold);
+-        ShowResultPopup(_engine.PlayerWon, stars, rewardGold, expPerHero);
++        var reward = gm.ApplyBattleResult(_engine.PlayerWon, stars);
++        ShowResultPopup(_engine.PlayerWon, stars, reward);
+         Refresh();
+     }
+ 
+-    private void ShowResultPopup(bool won, int stars, int gold, int expPerHero)
++    private void ShowResultPopup(bool won, int stars, BattleReward? reward)
+     {
+         bool win = won;
+         var popup = new Control { Name = "ResultPopup" };
+@@ -287,7 +280,7 @@ public partial class BattleScene : Control
+             vbox.AddChild(starsLabel);
+             var rewardLabel = new Label
+             {
+-                Text = $"Thưởng: +{gold} Vàng, +{expPerHero} EXP mỗi tướng",
++                Text = $"Thưởng: +{reward?.Silver ?? 0:N0} Bạc, +{reward?.ExpPerHero ?? 0} EXP mỗi tướng",
+                 HorizontalAlignment = HorizontalAlignment.Center,
+                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
+             };
+@@ -298,17 +291,35 @@ public partial class BattleScene : Control
+             vbox.AddChild(header);
+             var squares = new HBoxContainer { Name = "RewardSquares", Alignment = BoxContainer.AlignmentMode.Center };
+             squares.AddThemeConstantOverride("separation", 12);
++            // Phase 2.39: dropped items fill the first squares (gold border),
++            // the rest stay empty.
++            var drops = reward?.Drops ?? new List<RewardDrop>();
+             for (int i = 0; i < 5; i++)
+             {
++                var drop = i < drops.Count ? drops[i] : null;
+                 var square = new PanelContainer { CustomMinimumSize = new Vector2(64, 64) };
+                 square.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+                 {
+                     BgColor = UiTheme.SlotEmpty,
+-                    BorderColor = UiTheme.Muted,
++                    BorderColor = drop != null ? UiTheme.Gold : UiTheme.Muted,
+                     BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
+                     CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+                     CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+                 });
++                if (drop != null)
++                {
++                    square.TooltipText = $"{drop.Name} x{drop.Count}";
++                    var dropLabel = new Label
++                    {
++                        Name = "DropLabel",
++                        Text = drop.Name,
++                        HorizontalAlignment = HorizontalAlignment.Center,
++                        VerticalAlignment = VerticalAlignment.Center,
++                        AutowrapMode = TextServer.AutowrapMode.WordSmart,
++                    };
++                    UiTheme.StyleBody(dropLabel, UiTheme.FontSmall);
++                    square.AddChild(dropLabel);
++                }
+                 squares.AddChild(square);
+             }
+             vbox.AddChild(squares);
+diff --git a/features/hero/scenes/HeroListScene.cs b/features/hero/scenes/HeroListScene.cs
+index ee8d83f0c8cd98873921fc0988f4fd57eb888a98..9e297908198f595764d492ddaddca29c2525b5e2 100644
+--- a/features/hero/scenes/HeroListScene.cs
++++ b/features/hero/scenes/HeroListScene.cs
+@@ -339,7 +339,8 @@ public partial class HeroListScene : Control
+         _statValues["hp"].Text = $"{eff.Hp}";
+         _statValues["speed"].Text = $"{eff.Speed}";
+         _statValues["power"].Text = $"~{power}";
+-        _statValues["def"].Text = $"{eff.Def}";
++        // Phase 2.39: Vật phòng / Sách phòng.
++        _statValues["def"].Text = $"{eff.Def} / {eff.MagicDef}";
+         _statValues["crit"].Text = $"{eff.Crit:P0}";
+         _statValues["dodge"].Text = $"{eff.Dodge:P0}";
+         _statValues["role"].Text = HeroDatabase.RoleName(heroDef.Role);
+diff --git a/features/hero/scenes/HeroListScene.tscn b/features/hero/scenes/HeroListScene.tscn
+index e461ff8f7242e0932798312f79d746c0994f4fd8..23a775e310200ac93cf759b1d0249c600898dcc0 100644
+--- a/features/hero/scenes/HeroListScene.tscn
++++ b/features/hero/scenes/HeroListScene.tscn
+@@ -158,7 +158,7 @@ layout_mode = 2
+ custom_minimum_size = Vector2(130, 0)
+ theme_override_font_sizes/font_size = 15
+ theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
+-text = "Phòng thủ:"
++text = "Vật/Sách phòng:"
+ 
+ [node name="StatDefValue" type="Label" parent="DetailBox/DetailStatsGrid"]
+ layout_mode = 2
+diff --git a/features/stage/scenes/StageSelect.cs b/features/stage/scenes/StageSelect.cs
+index db0a1a8a3fb410caee869f155257c04d130ddfd5..2f2dd5f31c7708086927d3649f614f2a8a1ff270 100644
+--- a/features/stage/scenes/StageSelect.cs
++++ b/features/stage/scenes/StageSelect.cs
+@@ -10,13 +10,18 @@ namespace LongTuong;
+ /// trận như vậy"). This popup only picks the stage and shows the formation
+ /// team (with each hero's position) as read-only info. To change the team,
+ /// close this popup and open Bày trận.
++/// Phase 2.39: chapter tabs (10 stages each), reward line (1.000 Bạc + EXP
++/// + 10% drops) and Quét ải for 3-star stages (daily limit).
+ /// </summary>
+ [GlobalClass]
+ public partial class StageSelect : Control
+ {
+     private readonly List<string> _selected = new();
+     private int _selectedStage = 1;
++    private int _selectedChapter = 1;
+     private Label? _infoLabel;
++    private Button? _sweepButton;
++    private static readonly System.Random _sweepRng = new();
+ 
+     public override void _Ready()
+     {
+@@ -27,13 +32,18 @@ public partial class StageSelect : Control
+         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
+         if (!UiTheme.IsInHubPopup(this)) UiTheme.AddCurrencyBar(this, gm);
+         UiTheme.StyleButton(GetNode<Button>("StartButton"), true);
++        _sweepButton = GetNode<Button>("SweepButton");
++        UiTheme.StyleButton(_sweepButton, false);
+         // The battle team is the formation team (main hero always included).
+         _selected.AddRange(FormationService.FormationToTeam(gm.Save.Formation)
+             .Where(id => gm.Save.OwnedHeroIds.Contains(id)));
+         if (!_selected.Contains(FormationService.MainHeroId) && gm.Save.OwnedHeroIds.Contains(FormationService.MainHeroId))
+             _selected.Insert(0, FormationService.MainHeroId);
+         gm.SelectedTeamIds = new List<string>(_selected);
+-        _selectedStage = System.Math.Min(gm.CurrentStageId, 10);
++        // Default: the remembered stage if unlocked, else the next stage to clear.
++        int maxUnlocked = System.Math.Min(gm.Save.LastStage + 1, HeroDatabase.Stages.Count);
++        _selectedStage = System.Math.Clamp(gm.CurrentStageId, 1, maxUnlocked);
++        _selectedChapter = HeroDatabase.GetStage(_selectedStage).Chapter;
+         _infoLabel = GetNode<Label>("InfoLabel");
+         BuildTeamLabels();
+         BuildStageButtons();
+@@ -53,13 +63,13 @@ public partial class StageSelect : Control
+                 Text = $"{hero.Name} — {FormationService.PositionName(pos)}" +
+                        (FormationService.IsMain(heroId) ? " (Main)" : ""),
+             };
+-            UiTheme.StyleBody(label, 16);
++            UiTheme.StyleBody(label, UiTheme.FontBody);
+             box.AddChild(label);
+         }
+         if (_selected.Count == 0)
+         {
+             var label = new Label { Text = "Chưa có đội hình — hãy vào Bày trận trước." };
+-            UiTheme.StyleBody(label, 16);
++            UiTheme.StyleBody(label, UiTheme.FontBody);
+             box.AddChild(label);
+         }
+     }
+@@ -68,13 +78,35 @@ public partial class StageSelect : Control
+     {
+         var gm = GetNode<GameManager>("/root/GameManager");
+         var box = GetNode<VBoxContainer>("StageBox");
+-        foreach (var stage in HeroDatabase.Stages)
++        foreach (var child in box.GetChildren()) { box.RemoveChild(child); child.QueueFree(); }
++        // Chapter tabs.
++        var tabs = new HBoxContainer { Name = "ChapterTabs" };
++        tabs.AddThemeConstantOverride("separation", 8);
++        for (int ch = 1; ch <= HeroDatabase.ChapterCount; ch++)
++        {
++            int chapter = ch;
++            int firstStage = (chapter - 1) * HeroDatabase.StagesPerChapter + 1;
++            bool chapterOpen = firstStage <= gm.Save.LastStage + 1;
++            var tab = new Button
++            {
++                Name = $"Chapter_{chapter}",
++                Text = $"Chương {chapter}{(chapterOpen ? "" : " (KHÓA)")}",
++                Disabled = !chapterOpen,
++                SizeFlagsHorizontal = SizeFlags.ExpandFill,
++            };
++            UiTheme.StyleButton(tab, chapter == _selectedChapter);
++            tab.Pressed += () => { _selectedChapter = chapter; CallDeferred(nameof(BuildStageButtons)); };
++            tabs.AddChild(tab);
++        }
++        box.AddChild(tabs);
++        foreach (var stage in HeroDatabase.Stages.Where(s => s.Chapter == _selectedChapter))
+         {
+             bool unlocked = stage.Id <= gm.Save.LastStage + 1;
+             gm.Save.StageStars.TryGetValue(stage.Id.ToString(), out var stars);
+             var btn = new Button
+             {
+-                Text = $"Ải {stage.Id}: {stage.Name} — Thưởng {stage.RewardGold} Vàng — Sao: {stars}/3{(unlocked ? "" : " (KHÓA)")}",
++                Name = $"Stage_{stage.Id}",
++                Text = $"Ải {stage.Id}: {stage.Name} — {stage.EnemyIds.Count} địch — Sao: {stars}/3{(unlocked ? "" : " (KHÓA)")}",
+                 Disabled = !unlocked,
+                 ToggleMode = true,
+                 ButtonPressed = stage.Id == _selectedStage,
+@@ -83,20 +115,44 @@ public partial class StageSelect : Control
+             btn.Pressed += () =>
+             {
+                 if (!btn.ButtonPressed) { btn.ButtonPressed = true; return; }
+-                _selectedStage = sid;
++                SelectStage(sid);
+                 foreach (var child in box.GetChildren().OfType<Button>()) if (child != btn) child.ButtonPressed = false;
+-                RefreshInfo();
+             };
+             box.AddChild(btn);
+         }
+     }
+ 
++    public void SelectChapter(int chapter)
++    {
++        _selectedChapter = chapter;
++        BuildStageButtons();
++    }
++
++    public void SelectStage(int stageId)
++    {
++        _selectedStage = stageId;
++        RefreshInfo();
++    }
++
+     private void RefreshInfo(string? note = null)
+     {
++        var gm = GetNode<GameManager>("/root/GameManager");
+         var names = _selected.Select(id => HeroDatabase.Get(id).Name).ToList();
+         var stage = HeroDatabase.GetStage(_selectedStage);
++        int sweepsLeft = StageRewardService.SweepsLeft(gm.Save);
++        bool canSweep = StageRewardService.CanSweep(gm.Save, _selectedStage);
++        if (_sweepButton != null)
++        {
++            _sweepButton.Text = $"Quét ải ({sweepsLeft}/{StageRewardService.SweepsPerDay})";
++            _sweepButton.Disabled = !canSweep || sweepsLeft <= 0 || _selected.Count == 0;
++            _sweepButton.TooltipText = canSweep ? "" : "Cần 3 sao ở ải này để quét.";
++        }
+         if (_infoLabel != null)
+-            _infoLabel.Text = $"Đội hình từ Bày trận ({_selected.Count}/5): {string.Join(", ", names)} | Ải {_selectedStage}: {stage.Name}{(note != null ? $" | {note}" : "")}";
++            _infoLabel.Text =
++                $"Đội hình từ Bày trận ({_selected.Count}/5): {string.Join(", ", names)} | Ải {_selectedStage}: {stage.Name}" +
++                $" | Thưởng thắng: {StageRewardService.SilverPerWin:N0} Bạc + {StageRewardService.ExpPerHero(_selectedStage)} EXP mỗi tướng" +
++                $", {StageRewardService.DropChance:P0} rơi Khoáng thạch / Đá tẩy luyện / Ngọc Lv1" +
++                (note != null ? $" | {note}" : "");
+     }
+ 
+     private void OnStartPressed()
+@@ -113,4 +169,18 @@ public partial class StageSelect : Control
+         GetTree().ChangeSceneToFile("res://features/battle/scenes/BattleScene.tscn");
+     }
+ 
++    private void OnSweepPressed()
++    {
++        var gm = GetNode<GameManager>("/root/GameManager");
++        var result = StageRewardService.TrySweep(gm.Save, _selected, _selectedStage, _sweepRng, out var reward);
++        string note = result switch
++        {
++            StageRewardService.SweepResult.Success => $"Quét ải {_selectedStage}: {StageRewardService.Describe(reward!)}",
++            StageRewardService.SweepResult.NotThreeStars => "Cần 3 sao ở ải này để quét!",
++            StageRewardService.SweepResult.NoSweepsLeft => "Hết lượt quét hôm nay!",
++            _ => "Chưa có đội hình — hãy vào Bày trận trước!",
++        };
++        if (result == StageRewardService.SweepResult.Success) gm.SaveGame();
++        RefreshInfo(note);
++    }
+ }
+diff --git a/features/stage/scenes/StageSelect.tscn b/features/stage/scenes/StageSelect.tscn
+index 84546849719ad2a7e070c12402fbd1b8e51cb34a..f0f8e26bfb45f35e7c40c6b910636f590c302b44 100644
+--- a/features/stage/scenes/StageSelect.tscn
++++ b/features/stage/scenes/StageSelect.tscn
+@@ -36,9 +36,9 @@ offset_bottom = 560.0
+ [node name="InfoLabel" type="Label" parent="."]
+ layout_mode = 0
+ offset_left = 20.0
+-offset_top = 580.0
++offset_top = 565.0
+ offset_right = 1160.0
+-offset_bottom = 620.0
++offset_bottom = 625.0
+ autowrap_mode = 3
+ text = "Dang tai..."
+ 
+@@ -50,4 +50,13 @@ offset_right = 220.0
+ offset_bottom = 670.0
+ text = "VAO TRAN"
+ 
++[node name="SweepButton" type="Button" parent="."]
++layout_mode = 0
++offset_left = 240.0
++offset_top = 630.0
++offset_right = 480.0
++offset_bottom = 670.0
++text = "QUET AI"
++
+ [connection signal="pressed" from="StartButton" to="." method="OnStartPressed"]
++[connection signal="pressed" from="SweepButton" to="." method="OnSweepPressed"]
+diff --git a/tests/TestPhase1.cs b/tests/TestPhase1.cs
+index c3e8a6d89547c4a56a4938420f86f3f0a427c207..f294cb29ce8921fdf05700e8dd11124cd5adf84b 100644
+--- a/tests/TestPhase1.cs
++++ b/tests/TestPhase1.cs
+@@ -40,13 +40,14 @@ public partial class TestPhase1 : Node
+ 
+     private void CheckStages()
+     {
+-        Check(HeroDatabase.Stages.Count == 10, "10 stages");
+-        Check(HeroDatabase.Stages.All(s => s.EnemyIds.Count == 3), "every stage has 3 enemies");
++        // Phase 2.39: 2 chapters x 10 stages; chapter 1 keeps 3 enemies.
++        Check(HeroDatabase.Stages.Count == 20, "20 stages (2 chapters)");
++        Check(HeroDatabase.Stages.Where(s => s.Chapter == 1).All(s => s.EnemyIds.Count == 3), "every chapter 1 stage has 3 enemies");
+         bool scaleUp = true;
+         for (int i = 1; i < HeroDatabase.Stages.Count; i++)
+             if (HeroDatabase.Stages[i].Scale <= HeroDatabase.Stages[i - 1].Scale) scaleUp = false;
+         Check(scaleUp, "stage scale strictly increases");
+-        Check(HeroDatabase.GetStage(1).RewardGold == 150 && HeroDatabase.GetStage(10).RewardGold == 600, "reward 150 -> 600 by stage");
++        Check(StageRewardService.SilverPerWin == 1000, "2.39: every win rewards 1000 silver");
+     }
+ 
+     private BattleEngine NewEngine(int seed) => new(
+diff --git a/tests/TestPhase2.cs b/tests/TestPhase2.cs
+index 866196c721928445e0d428b1b59930fd642c007f..b2c2ebe7efe4f7851b6588aa6385794afaf8246d 100644
+--- a/tests/TestPhase2.cs
++++ b/tests/TestPhase2.cs
+@@ -40,10 +40,11 @@ public partial class TestPhase2 : Node
+ 
+     private void CheckExpAndLevel()
+     {
+-        Check(ProgressionService.ExpToNext(1) == 100 && ProgressionService.ExpToNext(2) == 150, "exp curve 100/150");
++        // Phase 2.39: flatter curve 100 + 20*(level-1).
++        Check(ProgressionService.ExpToNext(1) == 100 && ProgressionService.ExpToNext(2) == 120, "exp curve 100/120");
+         var s = Fresh();
+-        ProgressionService.AddExp(s, "quan_vu", 250);
+-        Check(s.Heroes["quan_vu"].Level == 3 && s.Heroes["quan_vu"].Exp == 0, "250 exp: level 1 -> 3, exp 0");
++        ProgressionService.AddExp(s, "quan_vu", 220);
++        Check(s.Heroes["quan_vu"].Level == 3 && s.Heroes["quan_vu"].Exp == 0, "220 exp: level 1 -> 3, exp 0");
+         var s2 = Fresh();
+         s2.Heroes["quan_vu"].Level = 180;
+         ProgressionService.AddExp(s2, "quan_vu", 99999);
+diff --git a/tests/TestPhase221.cs b/tests/TestPhase221.cs
+index 04a78c8be41ab457573147055136f445734b3529..1f8a8f2e69c318bbce0dc938277824ab594f7827 100644
+--- a/tests/TestPhase221.cs
++++ b/tests/TestPhase221.cs
+@@ -48,6 +48,7 @@ public partial class TestPhase221 : Node
+         var team = FormationService.FormationToTeam(gm.Save.Formation);
+         gm.SelectedTeamIds = new List<string>(team);
+         gm.StartBattle(1, new List<string>(team), 12345);
++        int silverBefore = gm.Save.Silver;
+         int goldBefore = gm.Save.Gold;
+ 
+         var scene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn").Instantiate<BattleScene>();
+@@ -101,14 +102,15 @@ public partial class TestPhase221 : Node
+             CollectLabels(popup, allLabels);
+             Check(allLabels.Any(l => l.Text.Contains("Thắng trận")), "2.21: win popup title");
+             Check(allLabels.Any(l => l.Text.Contains("Sao:")), "2.21: win popup shows stars");
+-            Check(allLabels.Any(l => l.Text.Contains("Vàng")), "2.21: win popup shows gold reward");
++            Check(allLabels.Any(l => l.Text.Contains("Bạc")), "2.21: win popup shows silver reward (2.39)");
+             var foundSquares = FindNode<HBoxContainer>(popup, "RewardSquares");
+             Check(foundSquares != null && foundSquares.GetChildCount() == 5,
+                 "2.21: win popup has 5 empty reward squares");
+             var exitButton = FindNode<Button>(popup, "");
+             Check(exitButton != null && exitButton.Text == "Thoát", "2.21: win popup has Thoat button");
+         }
+-        Check(gm.Save.Gold > goldBefore, "2.21: win rewards applied immediately (gold increased)");
++        Check(gm.Save.Silver > silverBefore && gm.Save.Gold == goldBefore,
++            "2.21: win rewards applied immediately (2.39: silver up, gold unchanged)");
+         scene.QueueFree();
+ 
+         // --- Loss case: custom hero alone vs stage 1 ---
+diff --git a/tests/TestPhase222.cs b/tests/TestPhase222.cs
+index 5d26761ee639cf2d850d83a440feb94b87f4b6b2..45334dc036c9e14731dd07d317fd2de10e861605 100644
+--- a/tests/TestPhase222.cs
++++ b/tests/TestPhase222.cs
+@@ -67,10 +67,10 @@ public partial class TestPhase222 : Node
+         gm.Save.OwnedHeroIds.Add("quan_vu");
+         gm.SelectedTeamIds = new List<string> { "custom_hero", "quan_vu" };
+         gm.CurrentStageId = 1;
+-        int goldBefore = gm.Save.Gold;
++        int silverBefore = gm.Save.Silver;
+         int expBefore = gm.Save.Heroes["custom_hero"].Exp;
+-        gm.ApplyBattleResult(true, 3, 150);
+-        Check(gm.Save.Gold == goldBefore + 150, "battle win still grants gold");
++        gm.ApplyBattleResult(true, 3);
++        Check(gm.Save.Silver == silverBefore + StageRewardService.SilverPerWin, "battle win grants silver (2.39: was gold)");
+         Check(gm.Save.Heroes["custom_hero"].Exp > expBefore || gm.Save.Heroes["custom_hero"].Level > 1,
+             "battle win still grants EXP");
+         Check(!gm.Save.OwnedHeroIds.Contains("luu_bi"), "battle win does NOT auto-unlock any locked hero");
+diff --git a/tests/TestPhase239.cs b/tests/TestPhase239.cs
+new file mode 100644
+index 0000000000000000000000000000000000000000..ad4fd72a952f855fef4b3dbce1c6c813c741aa4c
+--- /dev/null
++++ b/tests/TestPhase239.cs
+@@ -0,0 +1,272 @@
++using Godot;
++using System.Collections.Generic;
++using System.Linq;
++
++namespace LongTuong;
++
++/// <summary>
++/// Phase 2.39 — vòng chơi ải: Bạc reward, 10% drops, chapter 2 (ải 11–20),
++/// flatter EXP curve, Vật/Sách damage split, enemy formation positions,
++/// Quét ải (3 sao, daily cap) and the saved battle record (seed).
++/// </summary>
++public partial class TestPhase239 : Node
++{
++    private int _fails;
++
++    public override void _Ready()
++    {
++        CheckExpCurve();
++        CheckChapters();
++        CheckEnemyPositions();
++        CheckStrategySplit();
++        CheckRewards();
++        CheckBattleResult();
++        CheckSweep();
++        CheckStageSelectUi();
++        CheckBattlePopupDrops();
++
++        if (_fails == 0) GD.Print("TEST PHASE 2.39: ALL PASS");
++        else GD.Print($"TEST PHASE 2.39: {_fails} FAILURES");
++        GetTree().Quit(_fails == 0 ? 0 : 1);
++    }
++
++    private void Check(bool ok, string name)
++    {
++        if (!ok) { _fails++; GD.PrintErr("FAIL: " + name); }
++    }
++
++    private void CheckExpCurve()
++    {
++        Check(ProgressionService.ExpToNext(1) == 100 && ProgressionService.ExpToNext(50) == 1080, "exp curve 100 + 20*(lv-1)");
++        int total = Enumerable.Range(1, 49).Sum(ProgressionService.ExpToNext);
++        Check(total == 28420, $"Lv1 -> Lv50 needs 28420 EXP (got {total})");
++        Check(StageRewardService.ExpPerHero(20) == 240 && StageRewardService.ExpPerHero(10) == 140, "EXP per win 40 + 10*stage");
++    }
++
++    private void CheckChapters()
++    {
++        Check(HeroDatabase.ChapterCount == 2, "2 chapters");
++        Check(HeroDatabase.GetStage(10).Chapter == 1 && HeroDatabase.GetStage(11).Chapter == 2, "stage 11 opens chapter 2");
++        Check(Enumerable.Range(11, 5).All(id => HeroDatabase.GetStage(id).EnemyIds.Count == 4), "stages 11-15 have 4 enemies");
++        Check(Enumerable.Range(16, 5).All(id => HeroDatabase.GetStage(id).EnemyIds.Count == 5), "stages 16-20 have 5 enemies");
++        Check(HeroDatabase.GetStage(20).Scale > HeroDatabase.GetStage(10).Scale, "chapter 2 is harder");
++        Check(HeroDatabase.Stages.All(s => s.EnemyIds.All(id => id != "custom_hero")), "custom hero never an enemy");
++    }
++
++    private void CheckEnemyPositions()
++    {
++        var e = new BattleEngine(new List<string> { "quan_vu" }, HeroDatabase.GetStage(16), 1);
++        var pos = e.EnemyFighters.Select(f => f.Position).ToList();
++        Check(pos.SequenceEqual(new[] { FormationPosition.Front, FormationPosition.Middle, FormationPosition.Middle,
++            FormationPosition.Rear, FormationPosition.Middle }), "5 enemies on Tiền/Trung/Trung/Hậu/Trung");
++        var front = e.EnemyFighters[0];
++        Check(front.EffectiveDef == (int)System.Math.Round(front.Def.Def * 1.2)
++            && front.EffectiveMagicDef == (int)System.Math.Round(front.Def.MagicDef * 1.2), "enemy Tiền gets +20% Vật/Sách phòng");
++        var mid = e.EnemyFighters[1];
++        Check(mid.EffectiveAtk == (int)System.Math.Round(mid.Def.Atk * 1.2), "enemy Trung gets +20% Công");
++
++        // Player single-target attacks hit the enemy Tiền first, even when
++        // another enemy has lower HP.
++        var e2 = new BattleEngine(new List<string> { "quan_vu" }, HeroDatabase.GetStage(1), 99);
++        e2.EnemyFighters[1].Hp = 1;
++        string tienName = e2.EnemyFighters[0].Name;
++        string firstPlayerHit = "";
++        for (int i = 0; i < 30 && firstPlayerHit == "" && !e2.IsOver; i++)
++        {
++            var cur = e2.Current;
++            if (cur == null) break;
++            int before = e2.Log.Count;
++            e2.ActCurrentNormal();
++            if (cur.IsPlayer) firstPlayerHit = string.Join(" ", e2.Log.Skip(before));
++        }
++        Check(firstPlayerHit.Contains(tienName), $"player hits enemy Tiền ({tienName}) first: {firstPlayerHit}");
++
++        // Enemy Hậu can act first (20% per round, like the player's Hậu).
++        int rearFirst = 0;
++        for (int seed = 0; seed < 300; seed++)
++        {
++            var e3 = new BattleEngine(new List<string> { "truong_phi" }, HeroDatabase.GetStage(11), seed);
++            if (e3.Current != null && !e3.Current.IsPlayer && e3.Current.Position == FormationPosition.Rear) rearFirst++;
++        }
++        Check(rearFirst > 300 * 0.10 && rearFirst < 300 * 0.35, $"enemy Hậu first-strike near 20% (got {rearFirst}/300)");
++    }
++
++    private static Fighter F(HeroRole role, int atk, int def, int mdef) =>
++        new(new HeroDef { Id = "t", Name = "t", Role = role, Hp = 1000, Atk = atk, Def = def, MagicDef = mdef }, true);
++
++    private void CheckStrategySplit()
++    {
++        var target = F(HeroRole.Vanguard, 10, 30, 60);
++        Check(BattleEngine.CalculateDamage(F(HeroRole.Vanguard, 100, 0, 0), target, 1, false, false, 1) == 70, "Vật attack uses Vật phòng (100-30)");
++        Check(BattleEngine.CalculateDamage(F(HeroRole.Strategist, 100, 0, 0), target, 1, false, false, 1) == 40, "Mưu attack uses Sách phòng (100-60)");
++        Check(BattleEngine.CalculateDamage(F(HeroRole.Support, 100, 0, 0), target, 1, false, false, 1) == 40, "Phụ attack uses Sách phòng");
++        Check(BattleEngine.CalculateDamage(F(HeroRole.Warrior, 100, 0, 0), target, 1, false, false, 1) == 70, "Võ attack uses Vật phòng");
++        Check(HeroDatabase.Heroes.All(h => h.MagicDef > 0), "every hero has Sách phòng");
++        Check(HeroDatabase.Get("gia_cat_luong").WithScale(2.0).MagicDef == 90, "stage scale multiplies Sách phòng");
++        var lv11 = ProgressionService.GetScaledBase("custom_hero", 11);
++        Check(lv11.MagicDef == (int)System.Math.Round(25 * 1.4), "Sách phòng grows with level like Vật phòng");
++
++        var s = SeedService.CreateSeededSave("t239a");
++        var before = ProgressionService.GetEffectiveHero(s, "custom_hero");
++        s.HeroEquipment["custom_hero"]["helmet"] = new EquipmentState
++        {
++            IsEmpty = false, Level = 2, SetId = "tan_thu",
++            RefineLines = new List<RefineLine> { new() { StatId = "hp", Value = 1 } },
++        };
++        s.HeroEquipment["custom_hero"]["boots"] = new EquipmentState
++        {
++            IsEmpty = false, Level = 2, SetId = "tan_thu",
++            RefineLines = new List<RefineLine> { new() { StatId = "hp", Value = 1 } },
++        };
++        var after = ProgressionService.GetEffectiveHero(s, "custom_hero");
++        Check(after.MagicDef - before.MagicDef == 10, "Mũ +2 gives Sách phòng 8+2; Giày gives none");
++        var proj = EquipmentService.ProjectEquipChange(s, "custom_hero", "cloak",
++            new EquipmentState { IsEmpty = false, Level = 0, SetId = "tan_thu" });
++        Check(proj.Any(r => r.Name == "Sách phòng" && r.After - r.Before == 6), "projection shows Choàng Sách phòng +6");
++    }
++
++    private void CheckRewards()
++    {
++        var a = StageRewardService.Roll(5, StageRewardService.DropRng(1234));
++        var b = StageRewardService.Roll(5, StageRewardService.DropRng(1234));
++        Check(a.Silver == 1000 && a.ExpPerHero == 90, "reward: 1000 silver + stage EXP");
++        Check(a.Drops.Select(d => d.ItemId).SequenceEqual(b.Drops.Select(d => d.ItemId)), "same seed => same drops");
++        int ore = 0, stone = 0, gem = 0, n = 3000;
++        var rng = new System.Random(42);
++        bool gemsLv1 = true;
++        for (int i = 0; i < n; i++)
++        {
++            var r = StageRewardService.Roll(1, rng);
++            ore += r.Drops.Count(d => d.Kind == StageRewardService.OreKind);
++            stone += r.Drops.Count(d => d.Kind == StageRewardService.StoneKind);
++            foreach (var d in r.Drops.Where(d => d.Kind == StageRewardService.GemKind))
++            {
++                gem++;
++                if (GemService.ParseGemId(d.ItemId).Level != 1) gemsLv1 = false;
++            }
++        }
++        bool Near10(int c) => c > n * 0.08 && c < n * 0.12;
++        Check(Near10(ore) && Near10(stone) && Near10(gem), $"each drop ~10% (ore {ore}, stone {stone}, gem {gem} of {n})");
++        Check(gemsLv1, "dropped gems are Lv1");
++    }
++
++    private void CheckBattleResult()
++    {
++        var gm = GetNode<GameManager>("/root/GameManager");
++        gm.CreateSeededSave("t239b");
++        // A seed whose drops include all three kinds, to check inventory.
++        int seed = Enumerable.Range(0, 100000).First(x => StageRewardService.Roll(1, StageRewardService.DropRng(x)).Drops.Count == 3);
++        gm.StartBattle(1, new List<string> { "custom_hero" }, seed);
++        int gold = gm.Save.Gold, silver = gm.Save.Silver, stones = gm.Save.RefineStones;
++        int ore = ForgeService.OreCount(gm.Save), gems = gm.Save.GemInventory.Values.Sum();
++        var reward = gm.ApplyBattleResult(true, 3);
++        Check(reward != null && reward.Drops.Count == 3, "win returns the reward with drops");
++        Check(gm.Save.Silver == silver + 1000 && gm.Save.Gold == gold, "win: +1000 silver, gold unchanged");
++        Check(gm.Save.RefineStones == stones + 1 && ForgeService.OreCount(gm.Save) == ore + 1
++            && gm.Save.GemInventory.Values.Sum() == gems + 1, "drops land in the inventory");
++        var rec = gm.Save.LastBattle;
++        Check(rec != null && rec.StageId == 1 && rec.Seed == seed && rec.Won && rec.Stars == 3
++            && rec.TeamIds.SequenceEqual(new[] { "custom_hero" }), "battle record saved (stage, seed, team, result)");
++        var loaded = SaveManager.Load(gm.SavePath);
++        Check(loaded.LastBattle?.Seed == seed, "battle record persisted to the save file");
++        silver = gm.Save.Silver;
++        gm.StartBattle(2, new List<string> { "custom_hero" }, 7);
++        Check(gm.ApplyBattleResult(false, 0) == null && gm.Save.Silver == silver, "loss: no reward");
++        Check(gm.Save.LastBattle is { StageId: 2, Seed: 7, Won: false }, "loss is recorded too");
++    }
++
++    private void CheckSweep()
++    {
++        var s = SeedService.CreateSeededSave("t239c");
++        var team = new List<string> { "custom_hero" };
++        var rng = new System.Random(5);
++        Check(StageRewardService.TrySweep(s, team, 1, rng, out _) == StageRewardService.SweepResult.NotThreeStars, "sweep needs 3 stars");
++        s.StageStars["1"] = 2;
++        Check(StageRewardService.TrySweep(s, team, 1, rng, out _) == StageRewardService.SweepResult.NotThreeStars, "2 stars is not enough");
++        s.StageStars["1"] = 3;
++        int silver = s.Silver, exp = s.Heroes["custom_hero"].Exp;
++        Check(StageRewardService.TrySweep(s, team, 1, rng, out var r) == StageRewardService.SweepResult.Success && r != null, "sweep 3-star stage");
++        Check(s.Silver == silver + 1000 && s.Heroes["custom_hero"].Exp == exp + 50, "sweep gives the win reward");
++        Check(StageRewardService.SweepsLeft(s) == StageRewardService.SweepsPerDay - 1, "sweep uses one daily sweep");
++        Check(StageRewardService.TrySweep(s, new List<string>(), 1, rng, out _) == StageRewardService.SweepResult.NoTeam, "sweep needs a team");
++        while (StageRewardService.SweepsLeft(s) > 0) StageRewardService.TrySweep(s, team, 1, rng, out _);
++        silver = s.Silver;
++        Check(StageRewardService.TrySweep(s, team, 1, rng, out _) == StageRewardService.SweepResult.NoSweepsLeft && s.Silver == silver,
++            $"daily cap {StageRewardService.SweepsPerDay} sweeps, then refused");
++        s.SweepDate = "2000-01-01";
++        Check(StageRewardService.SweepsLeft(s) == StageRewardService.SweepsPerDay, "new day resets sweeps");
++    }
++
++    private void CheckStageSelectUi()
++    {
++        var gm = GetNode<GameManager>("/root/GameManager");
++        gm.CreateSeededSave("t239d");
++        gm.Save.LastStage = 0;
++        var scene = ResourceLoader.Load<PackedScene>("res://features/stage/scenes/StageSelect.tscn");
++        var ui = scene.Instantiate<StageSelect>();
++        AddChild(ui);
++        var box = ui.GetNode<VBoxContainer>("StageBox");
++        var ch2 = box.FindChild("Chapter_2", true, false) as Button;
++        Check(ch2 != null && ch2.Disabled, "chapter 2 locked before clearing stage 10");
++        Check(box.GetChildren().OfType<Button>().Count() == 10 && box.FindChild("Stage_1", true, false) != null, "chapter 1 lists 10 stages");
++        var sweep = ui.GetNode<Button>("SweepButton");
++        Check(sweep.Disabled, "sweep disabled without 3 stars");
++        Check(ui.GetNode<Label>("InfoLabel").Text.Contains("1.000 Bạc") || ui.GetNode<Label>("InfoLabel").Text.Contains("1,000 Bạc"),
++            "info shows the 1000 silver reward");
++        ui.QueueFree();
++
++        gm.Save.LastStage = 12;
++        gm.Save.StageStars["12"] = 3;
++        gm.CurrentStageId = 12;
++        var ui2 = scene.Instantiate<StageSelect>();
++        AddChild(ui2);
++        var box2 = ui2.GetNode<VBoxContainer>("StageBox");
++        Check(!((Button)box2.FindChild("Chapter_2", true, false)!).Disabled, "chapter 2 opens after stage 10");
++        Check(box2.FindChild("Stage_12", true, false) is Button { ButtonPressed: true }, "opens on the chapter of the current stage");
++        var sweep2 = ui2.GetNode<Button>("SweepButton");
++        Check(!sweep2.Disabled, "sweep enabled on a 3-star stage");
++        int silver = gm.Save.Silver;
++        sweep2.EmitSignal(BaseButton.SignalName.Pressed);
++        Check(gm.Save.Silver == silver + 1000 && ui2.GetNode<Label>("InfoLabel").Text.Contains("Quét ải 12"), "sweep button grants the reward");
++        ui2.SelectChapter(1);
++        Check(box2.GetChildren().OfType<Button>().Any(b => b.Name == "Stage_1") && box2.FindChild("Stage_12", true, false) == null,
++            "switching tab lists chapter 1 stages");
++        ui2.QueueFree();
++    }
++
++    private bool RunToEnd(BattleScene scene)
++    {
++        for (int i = 0; i < 600; i++)
++        {
++            scene.StepBattle();
++            if (scene.GetNodeOrNull<Control>("ResultPopup") != null) return true;
++        }
++        return false;
++    }
++
++    private void CheckBattlePopupDrops()
++    {
++        var gm = GetNode<GameManager>("/root/GameManager");
++        gm.CreateSeededSave("t239e");
++        gm.Save.OwnedHeroIds.AddRange(new[] { "quan_vu", "truong_phi", "trieu_van", "gia_cat_luong", "lu_bo" });
++        foreach (var id in gm.Save.OwnedHeroIds) gm.Save.Heroes[id].Level = 30;
++        FormationService.EnsureFormation(gm.Save);
++        FormationService.TryPlace(gm.Save, "quan_vu", "hau_top", null, out _);
++        FormationService.TryPlace(gm.Save, "trieu_van", "tien_mid", null, out _);
++        FormationService.TryPlace(gm.Save, "gia_cat_luong", "hau_mid", null, out _);
++        FormationService.TryPlace(gm.Save, "lu_bo", "trung_top", null, out _);
++        var team = FormationService.FormationToTeam(gm.Save.Formation);
++        gm.SelectedTeamIds = new List<string>(team);
++        int seed = Enumerable.Range(0, 100000).First(x => StageRewardService.Roll(1, StageRewardService.DropRng(x)).Drops.Count >= 2);
++        gm.StartBattle(1, new List<string>(team), seed);
++        var scene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn").Instantiate<BattleScene>();
++        AddChild(scene);
++        Check(scene.GetNode<GridContainer>("EnemyGrid").GetChildren()[3] is BattleHeroCell, "enemy Tiền drawn at Tiền giữa");
++        Check(RunToEnd(scene), "battle reaches the result popup");
++        var squares = scene.FindChild("RewardSquares", true, false) as HBoxContainer;
++        int filled = squares?.GetChildren().Count(c => ((Node)c).FindChild("DropLabel", true, false) != null) ?? -1;
++        Check(gm.LastBattleWon && squares != null && squares.GetChildCount() == 5, "win popup keeps 5 reward squares");
++        Check(filled == gm.LastBattleReward?.Drops.Count && filled >= 2, $"drops shown in the reward squares ({filled})");
++        scene.QueueFree();
++    }
++}
+diff --git a/tests/TestPhase239.tscn b/tests/TestPhase239.tscn
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a6988c65372494921b9901716467745fa46fb96
+--- /dev/null
++++ b/tests/TestPhase239.tscn
+@@ -0,0 +1,6 @@
++[gd_scene load_steps=2 format=3 uid="uid://testphase239"]
++
++[ext_resource type="Script" path="res://tests/TestPhase239.cs" id="1_test239"]
++
++[node name="TestPhase239" type="Node"]
++script = ExtResource("1_test239")
