@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LongTuong;
 
@@ -176,65 +177,74 @@ public partial class RecruitScene : Control
         }
     }
 
-    // Phase 2.53: shop thẻ EXP ở nửa phải RecruitBox (vùng trống).
-    // Bọc trong container riêng để không ảnh hưởng đếm Button của RecruitBox.
+    // Phase 2.54 (fix vỡ layout): RecruitBox cuộn dọc; shop thẻ EXP nằm
+    // DƯỚI lưới tướng (roster đã lên 15 tướng, 5 cột — nửa phải không còn trống).
     private void BuildExpShop()
     {
         var box = GetNode<Control>("RecruitBox");
-        var shop = new Control { Name = "ExpShopBox", MouseFilter = Control.MouseFilterEnum.Ignore };
-        shop.SetPosition(Vector2.Zero);
-        shop.SetSize(new Vector2(960, 356));
-        box.AddChild(shop);
-        var title = new Label { Text = "THẺ KINH NGHIỆM" };
-        title.SetPosition(new Vector2(540, 0));
-        title.SetSize(new Vector2(400, 28));
+        // Chuyển các card tướng có sẵn vào content cuộn được.
+        var content = new Control { Name = "RecruitContent", MouseFilter = Control.MouseFilterEnum.Ignore };
+        content.SetPosition(Vector2.Zero);
+        // Lưới 3 hàng (356px) + shop (tiêu đề 30 + 3 hàng x 100 + đệm).
+        content.CustomMinimumSize = new Vector2(960, 710);
+        foreach (var child in box.GetChildren().ToArray())
+        {
+            box.RemoveChild(child);
+            content.AddChild(child);
+        }
+        var scroll = new ScrollContainer { Name = "RecruitScroll" };
+        scroll.SetPosition(Vector2.Zero);
+        scroll.SetSize(new Vector2(960, 356));
+        scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        box.AddChild(scroll);
+        scroll.AddChild(content);
+
+        float y0 = 376;
+        var title = new Label { Text = "THẺ KINH NGHIỆM", MouseFilter = Control.MouseFilterEnum.Ignore };
+        title.Position = new Vector2(40, y0);
+        title.Size = new Vector2(400, 28);
         UiTheme.StyleBody(title, UiTheme.FontButton);
         title.AddThemeColorOverride("font_color", UiTheme.Gold);
-        title.MouseFilter = Control.MouseFilterEnum.Ignore;
-        shop.AddChild(title);
-        var hint = new Label { Text = "Ăn ở popup Võ tướng (click đúp ô thẻ)." };
-        hint.SetPosition(new Vector2(540, 28));
-        hint.SetSize(new Vector2(400, 20));
+        content.AddChild(title);
+        var hint = new Label { Text = "Ăn ở popup Võ tướng (click đúp ô thẻ).", MouseFilter = Control.MouseFilterEnum.Ignore };
+        hint.Position = new Vector2(40, y0 + 28);
+        hint.Size = new Vector2(400, 20);
         UiTheme.StyleBody(hint, UiTheme.FontSmall);
         hint.AddThemeColorOverride("font_color", UiTheme.Muted);
-        hint.MouseFilter = Control.MouseFilterEnum.Ignore;
-        shop.AddChild(hint);
+        content.AddChild(hint);
         for (int i = 0; i < ExpCardService.Cards.Count; i++)
         {
             var def = ExpCardService.Cards[i];
-            float y = 56 + i * 100;
-            var icon = new PanelContainer();
-            icon.SetPosition(new Vector2(540, y));
-            icon.SetSize(new Vector2(64, 64));
+            float y = y0 + 56 + i * 100;
+            var icon = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            icon.Position = new Vector2(40, y);
+            icon.Size = new Vector2(64, 64);
             icon.AddThemeStyleboxOverride("panel", new StyleBoxFlat
             {
                 BgColor = new Color(0.75f, 0.55f, 0.15f),
                 CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
                 CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
             });
-            var sym = new Label { Text = "EXP", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            var sym = new Label { Text = "EXP", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MouseFilter = Control.MouseFilterEnum.Ignore };
             sym.SetAnchorsPreset(Control.LayoutPreset.FullRect);
             UiTheme.StyleBody(sym, UiTheme.FontSmallButton);
             sym.AddThemeColorOverride("font_color", Colors.White);
-            sym.MouseFilter = Control.MouseFilterEnum.Ignore;
             icon.AddChild(sym);
-            shop.AddChild(icon);
-            var name = new Label { Text = $"{def.Name}\n+{def.Exp:N0} EXP" };
-            name.SetPosition(new Vector2(612, y));
-            name.SetSize(new Vector2(180, 64));
+            content.AddChild(icon);
+            var name = new Label { Text = $"{def.Name}\n+{def.Exp:N0} EXP", MouseFilter = Control.MouseFilterEnum.Ignore };
+            name.Position = new Vector2(112, y);
+            name.Size = new Vector2(180, 64);
             UiTheme.StyleBody(name, UiTheme.FontSmall);
-            name.MouseFilter = Control.MouseFilterEnum.Ignore;
-            shop.AddChild(name);
-            var count = new Label { Text = "" };
-            count.SetPosition(new Vector2(612, y + 64));
-            count.SetSize(new Vector2(180, 22));
+            content.AddChild(name);
+            var count = new Label { Text = "", MouseFilter = Control.MouseFilterEnum.Ignore };
+            count.Position = new Vector2(112, y + 64);
+            count.Size = new Vector2(180, 22);
             UiTheme.StyleBody(count, UiTheme.FontSmall);
             count.AddThemeColorOverride("font_color", UiTheme.Muted);
-            count.MouseFilter = Control.MouseFilterEnum.Ignore;
-            shop.AddChild(count);
-            var buy = new Button { Text = $"Mua ({def.PriceGold:N0} Vàng)" };
-            buy.SetPosition(new Vector2(800, y + 12));
-            buy.SetSize(new Vector2(150, 40));
+            content.AddChild(count);
+            var buy = new Button { Name = $"ExpShopBuy_{def.Id}", Text = $"Mua ({def.PriceGold:N0} Vàng)" };
+            buy.Position = new Vector2(300, y + 12);
+            buy.Size = new Vector2(170, 40);
             UiTheme.StyleButton(buy, false);
             buy.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
             var id = def.Id;
@@ -247,7 +257,7 @@ public partial class RecruitScene : Control
                 gm2.SaveGame();
                 Refresh();
             };
-            shop.AddChild(buy);
+            content.AddChild(buy);
             _expShopRows[def.Id] = (count, buy);
         }
     }

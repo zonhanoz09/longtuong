@@ -57,7 +57,9 @@ public partial class TestPhase224 : Node
         Check(tav.GetNode<Button>("NormalButton").Visible && tav.GetNode<Button>("HighButton").Visible && tav.GetNode<Button>("AllWinButton").Visible, "drink buttons visible in recruit view");
         Check(!tav.GetNode<Control>("DrinkBox").Visible && !tav.GetNode<Button>("RockButton").Visible && !tav.GetNode<Button>("ToRecruitButton").Visible,
             "drink view hidden initially");
-        var cards = tav.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
+        // 2.54: lọc card tướng (có NameLabel), bỏ nút Mua của shop thẻ EXP.
+        var cards = tav.GetNode<Control>("RecruitBox/RecruitScroll/RecruitContent").GetChildren().OfType<Button>()
+            .Where(b => b.GetNodeOrNull<Label>("NameLabel") != null).ToList();
         Check(cards.Count == 15, "recruit grid has 15 cards (2.43: 4 Lam, 5 Tim, 6 Cam; new ones greyed until their chapter)");
         string CardName(Button b) => b.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "NameLabel")?.Text ?? "";
         string CardPrice(Button b) => b.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "PriceLabel")?.Text ?? "";
@@ -74,7 +76,7 @@ public partial class TestPhase224 : Node
         gm.Save.OwnedHeroIds.Add("luu_bi");
         var tavOwned = tavernScene.Instantiate<RecruitScene>();
         AddChild(tavOwned);
-        var ownedCards = tavOwned.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
+        var ownedCards = tavOwned.GetNode<Control>("RecruitBox/RecruitScroll/RecruitContent").GetChildren().OfType<Button>().ToList();
         var luuBtn = ownedCards.FirstOrDefault(b => CardName(b).Contains("Lưu Bị"));
         var luuOwned = luuBtn?.GetChildren().OfType<Label>().FirstOrDefault(l => l.Name == "OwnedLabel");
         Check(luuBtn != null && luuOwned != null && luuOwned.Visible && luuOwned.Text.Contains("đã chiêu mộ") && luuBtn.Disabled, "owned card shows 'đã chiêu mộ' and is disabled");
@@ -117,7 +119,7 @@ public partial class TestPhase224 : Node
         gm.Save.TierSouls["Lam"] = 100;
         var tavClick = tavernScene.Instantiate<RecruitScene>();
         AddChild(tavClick);
-        var clickCards = tavClick.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
+        var clickCards = tavClick.GetNode<Control>("RecruitBox/RecruitScroll/RecruitContent").GetChildren().OfType<Button>().ToList();
         var clickBtn = clickCards.FirstOrDefault(b => CardName(b).Contains("Lưu Bị"));
         Check(clickBtn != null && !clickBtn.Disabled, "affordable card is enabled");
         clickBtn!.EmitSignal(Button.SignalName.Pressed);

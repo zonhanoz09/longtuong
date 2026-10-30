@@ -189,7 +189,7 @@ public partial class TestPhase223 : Node
             Check(tav.GetNode<Button>("NormalButton").Text.Contains("150.000"), "tavern normal button shows 150.000 silver (2.25)");
             Check(tav.GetNode<Button>("HighButton").Text.Contains("300.000"), "tavern high button shows 300.000 silver (2.25)");
             Check(tav.GetNode<Button>("RockButton").Disabled, "RPS disabled before any drink");
-            var recruitBtns = tav.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
+            var recruitBtns = tav.GetNode<Control>("RecruitBox/RecruitScroll/RecruitContent").GetChildren().OfType<Button>().ToList();
             var luuBtn = recruitBtns.FirstOrDefault(b => b.GetChildren().OfType<Label>().Any(l => l.Name == "NameLabel" && l.Text.Contains("Lưu Bị")));
             Check(luuBtn != null && !luuBtn.Disabled, "recruit button enabled for Luu Bi at 100 souls");
             tav.QueueFree();

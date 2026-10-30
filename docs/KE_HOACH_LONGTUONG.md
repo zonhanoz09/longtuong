@@ -1341,3 +1341,25 @@ bán bằng Vàng; UI mua trong view Chiêu mộ; ăn ở popup Võ tướng
 Sau khi chốt 5 dòng trên, bước tiếp theo là: tạo `project.godot` .NET + Phase 0 trong
 repo `longtuong`, commit theo từng phase, CI headless xanh mới push (theo ủy quyền
 push tự động Huynh đã cho từ 2026-10-23).
+
+### Phase 2.55 (plan) — Càn quét Phó Bản tốn Vàng (theo yêu cầu Huynh, 2026-10-30)
+
+Nút **"Càn quét"** trong màn Phó Bản Trang Bị: đánh tự động ải hiện tại,
+trả thưởng ngay không cần vào trận, tốn Vàng mỗi lần.
+
+#### Thiết kế
+- `DungeonService.TrySweep(save, dungeon, diff, teamIds)` mới:
+  - Trừ Vàng (giá mỗi lần quét).
+  - Lấy thưởng `Roll(dungeon, diff, index)` của ải `NextStageIndex` hiện tại,
+    apply qua `Apply` (tiến độ ải + mảnh + Bạc + EXP như thắng tay).
+  - Kết quả: `SweepResult { Success, NoGold, NoTeam, Locked }`.
+- UI (`DungeonScene`): nút "Càn quét (X Vàng)" cạnh nút "Vào trận";
+  bấm → trừ Vàng, hiện popup tóm tắt thưởng (dùng `StageRewardService.Describe`).
+- Không dùng lượt quét ải chiến dịch (20/ngày miễn phí) — đây là hệ Vàng riêng.
+
+#### Câu hỏi chờ Huynh chốt
+1. Giá mỗi lần càn quét? (đề xuất: 50 Vàng)
+2. Càn quét ải nào? (a) ải hiện tại (cùng ải với nút Vào trận) / (b) ải cao nhất đã qua?
+3. Thưởng: (a) đầy đủ như đánh tay / (b) giảm (bao nhiêu %)?
+4. Giới hạn mỗi ngày? (a) không / (b) có (mấy lần)?
+5. Có yêu cầu đã từng qua ải đó bằng tay trước không? (a) có / (b) không?

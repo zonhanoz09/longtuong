@@ -146,15 +146,17 @@ public partial class TestPhase243 : Node
         var ui = ResourceLoader.Load<PackedScene>("res://features/recruit/scenes/RecruitScene.tscn").Instantiate<RecruitScene>();
         AddChild(ui);
         var box = ui.GetNode<Control>("RecruitBox");
-        Button? Card(string heroName) => box.GetChildren().OfType<Button>().FirstOrDefault(b => b.GetNodeOrNull<Label>("NameLabel")?.Text == heroName);
-        Check(box.GetChildren().OfType<Button>().Count() == 15, "tavern grid lists all 15 heroes");
+        // 2.54: RecruitBox cuộn được, card tướng nằm trong RecruitScroll/RecruitContent.
+        var content = box.GetNode<Control>("RecruitScroll/RecruitContent");
+        Button? Card(string heroName) => content.GetChildren().OfType<Button>().FirstOrDefault(b => b.GetNodeOrNull<Label>("NameLabel")?.Text == heroName);
+        Check(content.GetChildren().OfType<Button>().Count(b => b.GetNodeOrNull<Label>("NameLabel") != null) == 15, "tavern grid lists all 15 heroes");
         var tk = Card("Tôn Kiên");
         var dv = Card("Điển Vi");
         Check(tk != null && !tk.Disabled && tk.GetNode<Label>("OwnedLabel").Visible == false && tk.GetNode<Label>("PriceLabel").Visible,
             "unlocked Tôn Kiên card is pressable and shows its price");
         Check(dv != null && dv.Disabled && dv.GetNode<Label>("OwnedLabel") is { Visible: true, Text: "Qua chương 2" }
             && !dv.GetNode<Label>("PriceLabel").Visible, "locked Điển Vi card is grey with 'Qua chương 2'");
-        var maxX = box.GetChildren().OfType<Button>().Max(b => b.Position.X + b.Size.X);
+        var maxX = content.GetChildren().OfType<Button>().Max(b => b.Position.X + b.Size.X);
         Check(maxX <= 980, $"cards fit the grid width (right edge {maxX})");
         tk!.EmitSignal(BaseButton.SignalName.Pressed);
         Check(gm.Save.OwnedHeroIds.Contains("ton_kien"), "pressing Tôn Kiên recruits him");

@@ -97,7 +97,9 @@ public partial class TestPhase225 : Node
             var tav = tavernScene.Instantiate<RecruitScene>();
             AddChild(tav);
             Check(tav.GetNode<Label>("TitleLabel").HorizontalAlignment == HorizontalAlignment.Center, "title is centered");
-            var cards = tav.GetNode<Control>("RecruitBox").GetChildren().OfType<Button>().ToList();
+            // 2.54: chỉ card tướng (có NameLabel), bỏ nút Mua của shop thẻ EXP.
+            var cards = tav.GetNode<Control>("RecruitBox/RecruitScroll/RecruitContent").GetChildren().OfType<Button>()
+                .Where(b => b.GetNodeOrNull<Label>("NameLabel") != null).ToList();
             var lamCards = cards.Where(b => b.GetChildren().OfType<Label>().First(l => l.Name == "NameLabel").Text is "Lưu Bị" or "Trương Phi").ToList();
             Check(lamCards.Count == 2 && lamCards[1].Position.X - lamCards[0].Position.X == 152 && lamCards[0].Position.Y == lamCards[1].Position.Y,
                 "Lam row: 2 cards, pitch exactly 152, same row");
