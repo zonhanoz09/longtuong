@@ -43,6 +43,8 @@ public partial class RecruitScene : Control
     private Button? _scissorsBtn;
     private Button? _paperBtn;
     private readonly Dictionary<string, CardWidgets> _recruitCards = new();
+    // Phase 2.38: shop thẻ EXP (nửa phải RecruitBox).
+    private readonly Dictionary<string, (Label Count, Button Buy)> _expShopRows = new();
     private readonly Dictionary<TavernTier, Label> _balanceNums = new();
     private readonly List<Label> _drinkLabels = new();
 
@@ -93,6 +95,7 @@ public partial class RecruitScene : Control
         _recruitStatus = "Bấm vào tướng để chiêu mộ (trừ hồn theo phẩm).";
         BuildBalanceLine();
         BuildRecruitCards();
+        BuildExpShop();
         BuildDrinkLabels();
         ShowRecruitView();
         Refresh();
@@ -170,6 +173,82 @@ public partial class RecruitScene : Control
             box.AddChild(btn);
             _recruitCards[heroId] = new CardWidgets { Btn = btn, Name = name, Dot = dot, Price = price, Owned = owned };
             col[tier]++;
+        }
+    }
+
+    // Phase 2.53: shop thẻ EXP ở nửa phải RecruitBox (vùng trống).
+    // Bọc trong container riêng để không ảnh hưởng đếm Button của RecruitBox.
+    private void BuildExpShop()
+    {
+        var box = GetNode<Control>("RecruitBox");
+        var shop = new Control { Name = "ExpShopBox", MouseFilter = Control.MouseFilterEnum.Ignore };
+        shop.SetPosition(Vector2.Zero);
+        shop.SetSize(new Vector2(960, 356));
+        box.AddChild(shop);
+        var title = new Label { Text = "THẺ KINH NGHIỆM" };
+        title.SetPosition(new Vector2(540, 0));
+        title.SetSize(new Vector2(400, 28));
+        UiTheme.StyleBody(title, UiTheme.FontButton);
+        title.AddThemeColorOverride("font_color", UiTheme.Gold);
+        title.MouseFilter = Control.MouseFilterEnum.Ignore;
+        shop.AddChild(title);
+        var hint = new Label { Text = "Ăn ở popup Võ tướng (click đúp ô thẻ)." };
+        hint.SetPosition(new Vector2(540, 28));
+        hint.SetSize(new Vector2(400, 20));
+        UiTheme.StyleBody(hint, UiTheme.FontSmall);
+        hint.AddThemeColorOverride("font_color", UiTheme.Muted);
+        hint.MouseFilter = Control.MouseFilterEnum.Ignore;
+        shop.AddChild(hint);
+        for (int i = 0; i < ExpCardService.Cards.Count; i++)
+        {
+            var def = ExpCardService.Cards[i];
+            float y = 56 + i * 100;
+            var icon = new PanelContainer();
+            icon.SetPosition(new Vector2(540, y));
+            icon.SetSize(new Vector2(64, 64));
+            icon.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+            {
+                BgColor = new Color(0.75f, 0.55f, 0.15f),
+                CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+                CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+            });
+            var sym = new Label { Text = "EXP", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            sym.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            UiTheme.StyleBody(sym, UiTheme.FontSmallButton);
+            sym.AddThemeColorOverride("font_color", Colors.White);
+            sym.MouseFilter = Control.MouseFilterEnum.Ignore;
+            icon.AddChild(sym);
+            shop.AddChild(icon);
+            var name = new Label { Text = $"{def.Name}\n+{def.Exp:N0} EXP" };
+            name.SetPosition(new Vector2(612, y));
+            name.SetSize(new Vector2(180, 64));
+            UiTheme.StyleBody(name, UiTheme.FontSmall);
+            name.MouseFilter = Control.MouseFilterEnum.Ignore;
+            shop.AddChild(name);
+            var count = new Label { Text = "" };
+            count.SetPosition(new Vector2(612, y + 64));
+            count.SetSize(new Vector2(180, 22));
+            UiTheme.StyleBody(count, UiTheme.FontSmall);
+            count.AddThemeColorOverride("font_color", UiTheme.Muted);
+            count.MouseFilter = Control.MouseFilterEnum.Ignore;
+            shop.AddChild(count);
+            var buy = new Button { Text = $"Mua ({def.PriceGold:N0} Vàng)" };
+            buy.SetPosition(new Vector2(800, y + 12));
+            buy.SetSize(new Vector2(150, 40));
+            UiTheme.StyleButton(buy, false);
+            buy.AddThemeFontSizeOverride("font_size", UiTheme.FontSmallButton);
+            var id = def.Id;
+            buy.Pressed += () =>
+            {
+                var gm2 = GetNode<GameManager>("/root/GameManager");
+                _recruitStatus = ExpCardService.TryBuyCard(gm2.Save, id)
+                    ? $"Đã mua {def.Name}!"
+                    : "Không đủ Vàng!";
+                gm2.SaveGame();
+                Refresh();
+            };
+            shop.AddChild(buy);
+            _expShopRows[def.Id] = (count, buy);
         }
     }
 
@@ -263,6 +342,13 @@ public partial class RecruitScene : Control
         if (_paperBtn != null) _paperBtn.Disabled = !_drinkActive;
         if (_recruitStatusLabel != null) _recruitStatusLabel.Text = _recruitStatus;
         if (_drinkStatusLabel != null) _drinkStatusLabel.Text = _drinkStatus;
+        // Phase 2.38: refresh shop thẻ EXP.
+        foreach (var def in ExpCardService.Cards)
+        {
+            if (!_expShopRows.TryGetValue(def.Id, out var row)) continue;
+            row.Count.Text = $"Đang có: {ExpCardService.Count(save, def.Id)}";
+            row.Buy.Disabled = save.Gold < def.PriceGold;
+        }
     }
 
     private void OnRecruitCardPressed(string heroId)

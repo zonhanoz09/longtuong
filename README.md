@@ -15,6 +15,16 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.53 — đã làm (thẻ kinh nghiệm)
+
+- Tửu quán (view Chiêu mộ) bán 3 loại thẻ EXP bằng Vàng:
+  Tiểu +1.000/200, Trung +5.000/800, Đại +20.000/3.000 (số Huynh chốt).
+- Popup Võ tướng hiện 3 ô thẻ trong lưới "TRANG BỊ TRONG TÚI"
+  (badge xN, tooltip); chọn tướng + click đúp để ăn — cộng EXP
+  trực tiếp, tự lên cấp, max 180. Không giới hạn mua/ăn mỗi ngày.
+- `ExpCardService` + `SaveData.ExpCards`; test `TestPhase253`;
+  suite xanh; CI thêm 2.53.
+
 ## Phase 2.40–2.52 — đã làm (chiến dịch 8 chương + 4 chế độ PvE)
 
 - **Chiến dịch 8 chương / 70 ải** theo cốt truyện (Hoàng Cân → Hán Trung),

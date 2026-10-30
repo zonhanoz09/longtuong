@@ -52,7 +52,8 @@ public partial class TestPhase26 : Node
         gridButtons[0].EmitSignal(Control.SignalName.MouseExited);
         Check(tooltipPanel.Visible == false, "mouse exit hides tooltip");
         // Hover on an empty cell shows no tooltip (empty cells have no handlers).
-        gridButtons[6].EmitSignal(Control.SignalName.MouseEntered);
+        // (2.53: EXP card cells occupy indices 6-8, so pick the first disabled cell.)
+        gridButtons.First(b => b.Disabled).EmitSignal(Control.SignalName.MouseEntered);
         Check(tooltipPanel.Visible == false, "hover on empty cell shows no tooltip");
         hub.ClosePopup();
         hub.QueueFree();

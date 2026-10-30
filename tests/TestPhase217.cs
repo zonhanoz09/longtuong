@@ -75,8 +75,8 @@ public partial class TestPhase217 : Node
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
         Check(gridButtons.Count == 28, "bag grid stays fixed at 28 cells");
-        Check(gridButtons.Count(b => !b.Disabled) == gm.Save.BagEquipment.Count,
-            "filled grid cells match the bag item count");
+        Check(gridButtons.Count(b => !b.Disabled) == gm.Save.BagEquipment.Count + ExpCardService.Cards.Count,
+            "filled grid cells match bag items + 3 EXP cards");
 
         hub.ClosePopup();
         hub.QueueFree();

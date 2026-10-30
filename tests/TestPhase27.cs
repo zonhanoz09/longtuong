@@ -33,7 +33,7 @@ public partial class TestPhase27 : Node
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         Check(grid.Columns == 4 && grid.GetChildCount() == 28, "grid is 4 columns x 7 rows = 28 cells");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
-        Check(gridButtons.Count(b => b.Disabled == false) == 6, "grid has 6 filled cells from seed");
+        Check(gridButtons.Count(b => b.Disabled == false) == 6 + ExpCardService.Cards.Count, "grid has 6 equipment + 3 EXP cards from seed");
         // Equip to the selected owned hero, then reopen: item leaves the grid.
         // (2.19 removed equipping to locked heroes: they have no tab anymore.)
         gridButtons[0].EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, DoubleClick = true });
@@ -42,7 +42,7 @@ public partial class TestPhase27 : Node
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var grid2 = heroList2.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
-        Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == 5, "equipped item is gone from the grid after reopen");
+        Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == 5 + ExpCardService.Cards.Count, "equipped item is gone from the grid after reopen");
         // Beyond 28 items: grid grows rows and scrolls (approved 2.7 option).
         for (int i = 0; i < 27; i++)
             gm.Save.BagEquipment.Add(new BagEquipmentItem { SlotId = "weapon", Level = 0, RefineIndex = 0 });
@@ -53,7 +53,7 @@ public partial class TestPhase27 : Node
         var heroList3 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var grid3 = heroList3.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var scroll3 = heroList3.GetNode<ScrollContainer>("GridPanel/GridScroll");
-        Check(grid3.GetChildCount() == 32, "grid grows to 32 cells (8 rows) for 32 items");
+        Check(grid3.GetChildCount() == 36, "grid grows to 36 cells for 32 items + 3 EXP cards");
         Check(grid3.Size.Y > scroll3.Size.Y, "grid content is taller than its scroll viewport (scrolls)");
         hub.ClosePopup();
         hub.QueueFree();

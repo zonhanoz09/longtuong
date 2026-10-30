@@ -35,6 +35,8 @@ public class SaveData
     public int RefineStones { get; set; } = 0;
     // Phase 2.33: gem pouch (gemId -> count).
     public Dictionary<string, int> GemInventory { get; set; } = new();
+    // Phase 2.38: thẻ kinh nghiệm (cardId -> số lượng).
+    public Dictionary<string, int> ExpCards { get; set; } = new();
     // Phase 2.34: forge — learned blueprints + materials.
     public Dictionary<string, bool> Blueprints { get; set; } = new();
     public Dictionary<string, int> Materials { get; set; } = new();

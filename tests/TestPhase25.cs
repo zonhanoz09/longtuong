@@ -105,7 +105,7 @@ public partial class TestPhase25 : Node
         if (heroList == null) { hub.QueueFree(); return; }
         var grid = heroList.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
         var gridButtons = grid.GetChildren().OfType<Button>().ToList();
-        Check(gridButtons.Count == 28 && gridButtons.Count(b => b.Disabled == false) == 6, "grid has 28 cells, 6 filled from seed");
+        Check(gridButtons.Count == 28 && gridButtons.Count(b => b.Disabled == false) == 6 + ExpCardService.Cards.Count, "grid has 28 cells, 6 equipment + 3 EXP cards from seed");
         if (gridButtons.Count == 0) { hub.ClosePopup(); hub.QueueFree(); return; }
         int bagBefore = gm.Save.BagEquipment.Count;
         // Single click on a grid item must NOT equip.
@@ -119,7 +119,7 @@ public partial class TestPhase25 : Node
         hub.OpenPopup("res://features/hero/scenes/HeroListScene.tscn", HubScene.HeroListPopupSize);
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var grid2 = heroList2.GetNode<GridContainer>("GridPanel/GridScroll/EquipmentGrid");
-        Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == bagBefore - 1, "equipped item is no longer in the grid");
+        Check(grid2.GetChildren().OfType<Button>().Count(b => b.Disabled == false) == bagBefore - 1 + ExpCardService.Cards.Count, "equipped item is no longer in the grid");
         // Phase 2.16: equipped slots flank the portrait, 3 left + 3 right.
         var left2 = heroList2.GetNode<VBoxContainer>("DetailBox/PortraitRow/LeftEquippedBox").GetChildren().OfType<Button>().ToList();
         var right2 = heroList2.GetNode<VBoxContainer>("DetailBox/PortraitRow/RightEquippedBox").GetChildren().OfType<Button>().ToList();

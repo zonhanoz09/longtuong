@@ -1313,6 +1313,20 @@ tẩy cố định để kết quả tất định.
 | Cân bằng paywall | Công thức tăng trưởng công khai trong data; test free-run: tài khoản không nạp phải qua hết chương 1–2 |
 | Bản quyền | Không dùng tên thương mại, art, nhạc, text gốc; mọi asset ghi nguồn trong `assets/CREDITS.md` |
 
+### Phase 2.53 — Thẻ kinh nghiệm (2026-10-30)
+
+Chốt của Huynh (2026-10-30): Tửu quán bán thẻ EXP; giữ số đề xuất;
+bán bằng Vàng; UI mua trong view Chiêu mộ; ăn ở popup Võ tướng
+(chọn tướng + click đúp ô thẻ); không giới hạn mua/ăn mỗi ngày.
+
+- 3 loại: Tiểu +1.000 EXP/200 Vàng, Trung +5.000/800,
+  Đại +20.000/3.000.
+- `ExpCardService` (`TryBuyCard`, `TryFeedCard` qua `AddExp`,
+  max cấp 180) + `SaveData.ExpCards`.
+- Shop ở nửa phải view Chiêu mộ; 3 ô thẻ trong lưới Võ tướng
+  (badge xN, tooltip), click đúp cho tướng hiện tại ăn.
+- Test `TestPhase253`; suite xanh.
+
 ## 8. Việc cần Huynh chốt trước khi code (chọn 1 mỗi dòng)
 
 - **Đã chốt 2026-10-26:** Godot 4.7+ .NET (C#).

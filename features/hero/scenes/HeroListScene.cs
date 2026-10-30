@@ -401,7 +401,9 @@ public partial class HeroListScene : Control
         ClearBox(_grid);
         if (_gridTitle != null) _gridTitle.Text = $"TRANG BỊ TRONG TÚI ({gm.Save.BagEquipment.Count})";
         // 4 columns x 7 rows = 28 cells; beyond 28 items, rows grow (scroll).
-        int totalCells = Math.Max(28, ((gm.Save.BagEquipment.Count + 3) / 4) * 4);
+        // Phase 2.38: +3 ô thẻ EXP sau trang bị.
+        int itemCount = gm.Save.BagEquipment.Count + ExpCardService.Cards.Count;
+        int totalCells = Math.Max(28, ((itemCount + 3) / 4) * 4);
         var gridButtons = new List<Button>();
         for (int i = 0; i < totalCells; i++)
         {
@@ -421,6 +423,61 @@ public partial class HeroListScene : Control
                         {
                             // Equip to the hero of the current tab — any hero, including locked.
                             if (EquipmentService.EquipFromBag(gm.Save, CurrentHeroId(), bagIndex)) { gm.SaveGame(); CallDeferred("RebuildAll"); }
+                        }
+                        else
+                        {
+                            foreach (var b in gridButtons) b.Modulate = Colors.White;
+                            btn.Modulate = UiTheme.Gold;
+                        }
+                    }
+                };
+                gridButtons.Add(btn);
+                _grid.AddChild(btn);
+            }
+            else if (i - gm.Save.BagEquipment.Count < ExpCardService.Cards.Count)
+            {
+                // Phase 2.38: ô thẻ EXP — click đơn chọn, click đúp cho tướng hiện tại ăn.
+                var def = ExpCardService.Cards[i - gm.Save.BagEquipment.Count];
+                var cardId = def.Id;
+                int n = ExpCardService.Count(gm.Save, cardId);
+                var btn = MakeIconButton(new Color(0.75f, 0.55f, 0.15f), true, "EXP");
+                var badge = new Label
+                {
+                    Text = $"x{n}",
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Bottom,
+                };
+                badge.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+                badge.AddThemeFontSizeOverride("font_size", 13);
+                badge.AddThemeColorOverride("font_color", Colors.White);
+                badge.AddThemeColorOverride("font_shadow_color", Colors.Black);
+                badge.AddThemeConstantOverride("shadow_offset_x", 1);
+                badge.AddThemeConstantOverride("shadow_offset_y", 1);
+                badge.MouseFilter = Control.MouseFilterEnum.Ignore;
+                btn.AddChild(badge);
+                var heroName = HeroDatabase.Get(CurrentHeroId())?.Name ?? CurrentHeroId();
+                string tip = $"{def.Name}: +{def.Exp:N0} EXP\nClick đúp để cho {heroName} ăn (đang có: {n})";
+                btn.MouseEntered += () => ShowTooltip(btn, tip);
+                btn.MouseExited += HideTooltip;
+                btn.GuiInput += (InputEvent e) =>
+                {
+                    if (e is InputEventMouseButton mb && mb.Pressed)
+                    {
+                        if (mb.DoubleClick)
+                        {
+                            var (res, exp, oldLv, newLv) = ExpCardService.TryFeedCard(gm.Save, CurrentHeroId(), cardId);
+                            var hName = HeroDatabase.Get(CurrentHeroId())?.Name ?? CurrentHeroId();
+                            string msg = res switch
+                            {
+                                ExpCardService.FeedResult.Success => newLv > oldLv
+                                    ? $"Ăn {def.Name}: +{exp:N0} EXP ({hName} Lv{oldLv} → Lv{newLv})!"
+                                    : $"Ăn {def.Name}: +{exp:N0} EXP cho {hName}!",
+                                ExpCardService.FeedResult.MaxLevel => $"{hName} đã max cấp!",
+                                _ => $"Hết {def.Name}! Mua ở Tửu quán.",
+                            };
+                            gm.SaveGame();
+                            CallDeferred("RebuildAll");
+                            ShowTooltip(btn, msg);
                         }
                         else
                         {

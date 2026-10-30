@@ -321,3 +321,55 @@ tạm để code trước rồi sửa số sau.
   Tướng": https://gamelandvn.com/tuyet-chieu-giup-chieu-mo-vo-tuong-xin-trong-long-tuong/
 - Việt Giải Trí, "Long Tướng: Bắt người chơi đọc quá nhiều":
   http://Vietgiaitri.com/long-tuong-bat-nguoi-choi-doc-qua-nhieu-20120429i381953/
+
+---
+
+## 6. Thẻ kinh nghiệm (plan theo yêu cầu Huynh, 2026-10-30)
+
+Tửu quán bán **thẻ EXP**, dùng là cộng EXP trực tiếp cho tướng
+(qua `ProgressionService.AddExp`, tự lên cấp, tối đa 180).
+
+### 6.1. Data
+- `SaveData.ExpCards`: `Dictionary<string,int>` (cardId → số lượng).
+- `ExpCardService` (mới, `core/progression/`):
+  - Định nghĩa thẻ: id, tên, lượng EXP, giá, loại tiền.
+  - Đề xuất 3 loại (số Pax setup, Huynh chỉnh):
+    - `exp_small` "Thẻ EXP (Tiểu)": +1.000 EXP — 200 Vàng
+    - `exp_mid` "Thẻ EXP (Trung)": +5.000 EXP — 800 Vàng
+    - `exp_big` "Thẻ EXP (Đại)": +20.000 EXP — 3.000 Vàng
+  - `TryBuyCard(save, cardId)` → bool (trừ tiền, +1 thẻ).
+  - `TryFeedCard(save, heroId, cardId)` → `(bool ok, int levelsGained)`
+    (trừ 1 thẻ, cộng EXP; tướng max cấp thì báo đầy).
+
+### 6.2. UI (popup Tửu quán)
+- **Mua**: view "Cửa hàng" thứ 3 trong popup (tab chuyển
+  Chiêu mộ | Cửa hàng; Đối tửu vẫn vào từ Chiêu mộ như cũ).
+  Mỗi dòng thẻ: icon + tên + "+X EXP" + đang có N + nút Mua + nút Dùng.
+- **Ăn** ("ăn trực tiếp cho tướng"): bấm Dùng → lưới chọn tướng
+  (tướng đã sở hữu: avatar + tên + cấp) → bấm tướng là ăn ngay,
+  hiện "+X EXP (Lv a → Lv b)".
+- Áp dụng cho mọi tướng đã sở hữu (tướng tự tạo = lên cấp người chơi).
+
+### 6.3. Kỹ thuật
+- Không field mới ngoài `SaveData.ExpCards`.
+- Test: TestPhase238 (mua/ăn/lên cấp/max cấp/gate tiền).
+- Câu hỏi chờ Huynh chốt: §6.4.
+
+### 6.4. Chốt của Huynh (2026-10-30) → ĐÃ LÀM Phase 2.53
+1. Giữ đề xuất: Tiểu +1.000/200 Vàng, Trung +5.000/800 Vàng,
+   Đại +20.000/3.000 Vàng.
+2. Bán bằng Vàng.
+3. UI mua trong view Chiêu mộ (shop ở nửa phải RecruitBox).
+4. Ăn ở popup Võ tướng: thẻ hiện trong lưới "TRANG BỊ TRONG TÚI",
+   chọn tướng + click đúp ô thẻ để ăn (đúng pattern click đúp
+   trang bị cho tướng).
+5. (a) Không giới hạn mua/ăn mỗi ngày.
+
+### 6.5. Triển khai 2.53
+- `core/progression/ExpCardService.cs`: defs + `TryBuyCard`
+  (Vàng) + `TryFeedCard` (trừ thẻ, `AddExp`, max 180).
+- `SaveData.ExpCards`.
+- `RecruitScene.BuildExpShop`: 3 dòng thẻ + nút Mua (Vàng).
+- `HeroListScene.BuildGrid`: 3 ô thẻ EXP sau trang bị, badge xN,
+  tooltip, click đúp cho tướng hiện tại ăn.
+- TestPhase238 (mua/ăn/lên cấp/max/hết thẻ/UI).
