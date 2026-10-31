@@ -23,9 +23,9 @@ public partial class TestPhase229 : Node
         var hubScene = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn");
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        Check(hub.GetNode<Button>("FunctionBar/EnhanceButton").Text == "Trang bị", "hub button renamed to Trang bị");
-        var starBtn = hub.GetNodeOrNull<Button>("FunctionBar/StarChartButton");
-        Check(starBtn != null && starBtn.Text.Contains("Tướng"), "hub has Tướng Tinh button");
+        Check(hub.GetNode<Label>("FunctionBar/EnhanceButtonIcon/Label").Text == "Trang bị", "hub button renamed to Trang bị");
+        var starBtn = hub.GetNodeOrNull<Button>("FunctionBar/StarChartButtonIcon/StarChartButton");
+        Check(starBtn != null && hub.GetNode<Label>("FunctionBar/StarChartButtonIcon/Label").Text.Contains("Tướng"), "hub has Tướng Tinh button");
         Check(HubScene.StarChartPopupSize == new Vector2(520, 400), "star chart popup size 520x400");
 
         // Equipment screen layout.
@@ -90,7 +90,7 @@ public partial class TestPhase229 : Node
         hub.ClosePopup();
 
         // Hub Chiêu mộ button still opens the tavern (recruit moved out of hero screen).
-        hub.GetNode<Button>("FunctionBar/RecruitButton").EmitSignal(BaseButton.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/RecruitButtonIcon/RecruitButton").EmitSignal(BaseButton.SignalName.Pressed);
         Check(hub.IsPopupOpen, "hub Chiêu mộ opens the tavern");
 
         if (_fails == 0) GD.Print("TEST PHASE 2.29: ALL PASS");

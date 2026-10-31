@@ -40,8 +40,8 @@ public partial class TestPhase231 : Node
         var hubScene = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn");
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        var treeBtn = hub.GetNodeOrNull<Button>("FunctionBar/MoneyTreeButton");
-        Check(treeBtn != null && treeBtn.Text.Contains("Tiền"), "hub has Cây Tiền button");
+        var treeBtn = hub.GetNodeOrNull<Button>("FunctionBar/MoneyTreeButtonIcon/MoneyTreeButton");
+        Check(treeBtn != null && hub.GetNode<Label>("FunctionBar/MoneyTreeButtonIcon/Label").Text.Contains("Tiền"), "hub has Cây Tiền button");
         Check(HubScene.MoneyTreePopupSize == new Vector2(440, 360), "money tree popup size 440x360");
         gm.Save.MoneyTreeDate = "2000-01-02"; // fresh day for the UI flow
         gm.Save.MoneyTreeUsed = 0;

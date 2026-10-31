@@ -25,7 +25,7 @@ public partial class TestPhase215 : Node
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
 
-        var voTuong = hub.GetNode<Button>("FunctionBar/HeroListButton");
+        var voTuong = hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton");
         Check(voTuong.Text.Contains("Võ"), "bottom button renamed to Vo tuong");
 
         // ESC with no popup open: nothing happens, no crash.

@@ -15,6 +15,14 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.57 — đã làm (icon Hub nhỏ, 2 hàng trên/dưới)
+
+- Icon 64×64 vuông bo góc 12px, viền vàng, ký hiệu + nhãn 12px bên dưới.
+- Hàng trên (căn phải, dưới TopBar): Hoạt Động, Vào ải.
+- Hàng dưới (căn giữa, cách đều 80px): Tướng Tinh, Cây Tiền, Võ tướng,
+  Túi đồ, Bày trận, Trang bị, Chiêu mộ.
+- Đăng xuất: nút chữ nhỏ 94×36 góc phải TopBar.
+
 ## Phase 2.56 — đã làm (layout Hub slim)
 
 - TopBar gọn từ 306px → 110px: avatar + tên/Lv + Vàng/Bạc (bỏ dòng status).

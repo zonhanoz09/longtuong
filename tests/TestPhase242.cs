@@ -60,10 +60,10 @@ public partial class TestPhase242 : Node
         gm.CreateSeededSave("t242b");
         var hub = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn").Instantiate<HubScene>();
         AddChild(hub);
-        var btn = hub.GetNodeOrNull<Button>("TopBar/ActivityButton");
-        Check(btn != null && btn.Text == "Hoạt Động", "hub has the Hoạt Động button");
-        Check(btn != null && !btn.GetGlobalRect().Intersects(hub.GetNode<Button>("TopBar/StageButton").GetGlobalRect()), "button does not overlap Vào ải");
-        Check(hub.GetNode<Control>("FunctionBar").GetChildren().OfType<Button>().Count() == 7, "bottom bar unchanged (7 buttons)");
+        var btn = hub.GetNodeOrNull<Button>("ActivityButtonIcon/ActivityButton");
+        Check(btn != null && hub.GetNode<Label>("ActivityButtonIcon/Label").Text == "Hoạt Động", "hub has the Hoạt Động button");
+        Check(btn != null && !btn.GetGlobalRect().Intersects(hub.GetNode<Button>("StageButtonIcon/StageButton").GetGlobalRect()), "button does not overlap Vào ải");
+        Check(hub.GetNode<Control>("FunctionBar").GetChildren().OfType<VBoxContainer>().Count() == 7, "bottom bar unchanged (7 icons)");
         var sizes = new[] { HubScene.HeroListPopupSize, HubScene.BagPopupSize, HubScene.HeroPopupSize, HubScene.FormationPopupSize,
             HubScene.StagePopupSize, HubScene.RecruitPopupSize, HubScene.StarChartPopupSize, HubScene.MoneyTreePopupSize, HubScene.ActivityPopupSize };
         Check(sizes.Distinct().Count() == sizes.Length, "every popup size is different (incl. Hoạt Động)");

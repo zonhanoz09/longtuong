@@ -90,7 +90,7 @@ public partial class TestPhase248 : Node
         // The Hoạt Động card opens this popup.
         var hub = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn").Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("TopBar/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
+        hub.GetNode<Button>("ActivityButtonIcon/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
         var content = hub.GetNode<Control>("PopupFrame/PopupContent");
         (content.GetChild(0) as ActivityScene)!.GetNode<Button>("CardGrid/Card_Duel").EmitSignal(BaseButton.SignalName.Pressed);
         var duel = content.GetChildren().OfType<DuelTowerScene>().FirstOrDefault();

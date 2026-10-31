@@ -35,7 +35,7 @@ public partial class TestPhase217 : Node
         if (hubScene == null) { Finish(); return; }
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         Check(hub.IsPopupOpen, "Vo tuong button opens the popup");
         Check(HubScene.HeroListPopupSize == new Vector2(1000, 600), "hero list popup size is fixed 1000x600 (2.18)");
         var frame = hub.GetNode<Control>("PopupFrame");

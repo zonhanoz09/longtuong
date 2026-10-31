@@ -86,7 +86,7 @@ public partial class TestPhase246 : Node
         var gm = SetupAccount("t246c", 30);
         var hub = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn").Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("TopBar/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
+        hub.GetNode<Button>("ActivityButtonIcon/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
         var content = hub.GetNode<Control>("PopupFrame/PopupContent");
         var activity = content.GetChild(0) as ActivityScene;
         var card = activity?.GetNode<Button>("CardGrid/Card_Dungeon");

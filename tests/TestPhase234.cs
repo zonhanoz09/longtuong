@@ -43,7 +43,7 @@ public partial class TestPhase234 : Node
         var hubScene = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn");
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("FunctionBar/EnhanceButton").EmitSignal(BaseButton.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/EnhanceButtonIcon/EnhanceButton").EmitSignal(BaseButton.SignalName.Pressed);
         Check(hub.IsPopupOpen, "Trang bị popup opens");
         var heroScreen = hub.GetNode("PopupFrame/PopupContent").GetChild(0);
         Check(heroScreen.FindChild("ForgeOpenButton", true, false) == null, "Lo ren button removed (2.37b)");

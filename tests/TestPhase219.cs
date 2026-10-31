@@ -26,7 +26,7 @@ public partial class TestPhase219 : Node
         if (hubScene == null) { Finish(); return; }
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "popup widget is the hero list scene");
         if (heroList == null) { hub.QueueFree(); Finish(); return; }
@@ -44,7 +44,7 @@ public partial class TestPhase219 : Node
         gm.Save.TeamIds = new List<string> { "custom_hero", "quan_vu" };
         gm.SelectedTeamIds = new List<string>(gm.Save.TeamIds);
         hub.ClosePopup();
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns2 = heroList2.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
         Check(tabBtns2.Count == 2 && tabBtns2.Any(b => b.Text.Contains("Quan Vũ")),
@@ -60,7 +60,7 @@ public partial class TestPhase219 : Node
         dismiss.EmitSignal(Button.SignalName.Pressed);
         Check(!gm.Save.OwnedHeroIds.Contains("quan_vu"), "dismiss removes the hero from the owned list");
         hub.ClosePopup();
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList3 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns3 = heroList3.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
         Check(tabBtns3.Count == 1 && !tabBtns3.Any(b => b.Text.Contains("Quan Vũ")),

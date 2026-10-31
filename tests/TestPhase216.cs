@@ -26,7 +26,7 @@ public partial class TestPhase216 : Node
         if (hubScene == null) { Finish(); return; }
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         Check(hub.IsPopupOpen, "Vo tuong button opens the popup");
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "popup widget is the hero list scene");

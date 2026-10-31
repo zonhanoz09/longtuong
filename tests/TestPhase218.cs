@@ -55,7 +55,7 @@ public partial class TestPhase218 : Node
         if (hubScene == null) { Finish(); return; }
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         Check(heroList != null, "popup widget is the hero list scene");
         if (heroList == null) { hub.QueueFree(); Finish(); return; }
@@ -105,7 +105,7 @@ public partial class TestPhase218 : Node
         save.TeamIds = new List<string> { "custom_hero", "quan_vu" };
         gm.SelectedTeamIds = new List<string>(save.TeamIds);
         hub.ClosePopup();
-        hub.GetNode<Button>("FunctionBar/HeroListButton").EmitSignal(Button.SignalName.Pressed);
+        hub.GetNode<Button>("FunctionBar/HeroListButtonIcon/HeroListButton").EmitSignal(Button.SignalName.Pressed);
         var heroList2 = hub.GetNode<Control>("PopupFrame/PopupContent").GetChild(0) as Control;
         var tabBtns = heroList2.GetNode<VBoxContainer>("TabButtons").GetChildren().OfType<Button>().ToList();
         var dismiss2 = heroList2.GetNode<Button>("DetailBox/DismissRow/DismissButton");

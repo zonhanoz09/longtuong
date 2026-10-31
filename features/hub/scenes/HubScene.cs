@@ -92,36 +92,7 @@ public partial class HubScene : Control
 			CornerRadiusTopLeft = 12, CornerRadiusTopRight = 12, CornerRadiusBottomLeft = 12, CornerRadiusBottomRight = 12,
 		};
 		avatarPanel.AddThemeStyleboxOverride("panel", panelStyle);
-		var topActions = new (string Node, string Text, bool Primary)[]
-		{
-			("StageButton", "Vào ải", true),
-			("LogoutButton", "Đăng xuất", false),
-		};
-		foreach (var (node, text, primary) in topActions)
-		{
-			var btn = GetNode<Button>($"TopBar/{node}");
-			btn.Text = text;
-			UiTheme.StyleButton(btn, primary);
-		}
-		var activityBtn = GetNode<Button>("TopBar/ActivityButton");
-		activityBtn.Text = "Hoạt Động";
-		UiTheme.StyleButton(activityBtn, true);
-		var functions = new (string Node, string Text, bool Primary)[]
-		{
-			("HeroListButton", "Võ\ntướng", false),
-			("BagButton", "Túi đồ", false),
-			("FormationButton", "Bày trận", true),
-			("EnhanceButton", "Trang bị", false),
-			("RecruitButton", "Chiêu mộ", false),
-			("StarChartButton", "Tướng\nTinh", false),
-			("MoneyTreeButton", "Cây\nTiền", false),
-		};
-		foreach (var (node, text, primary) in functions)
-		{
-			var btn = GetNode<Button>($"FunctionBar/{node}");
-			btn.Text = text;
-			UiTheme.StyleButton(btn, primary);
-		}
+		BuildIconRows();
 		_character = GetNode<Control>("Courtyard/HubCharacter");
 		_characterBody = GetNode<ColorRect>("Courtyard/HubCharacter/CharacterBody");
 		_characterName = GetNode<Label>("Courtyard/HubCharacter/CharacterNameLabel");
@@ -245,6 +216,102 @@ public partial class HubScene : Control
 		}
 		GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarCurrencyLabel").Text =
 			$"Vàng: {gm.Save.Gold:N0}  |  Bạc: {gm.Save.Silver:N0}";
+	}
+
+	// Phase 2.57: icon rows (top/bottom) like the reference — 64x64 rounded
+	// square buttons with symbol + 12px label below.
+	private void BuildIconRows()
+	{
+		// Đăng xuất: small button top-right of the slim bar.
+		var logout = new Button { Name = "LogoutButton", Text = "Đăng xuất" };
+		logout.Position = new Vector2(1170, 37);
+		logout.Size = new Vector2(94, 36);
+		UiTheme.StyleButton(logout, false);
+		logout.CustomMinimumSize = new Vector2(0, 0);
+		logout.Size = new Vector2(94, 36);
+		logout.AddThemeFontSizeOverride("font_size", 13);
+		logout.Pressed += OnLogoutPressed;
+		GetNode<Control>("TopBar").AddChild(logout);
+
+		// Top row (right-aligned, below TopBar): Hoạt Động, Vào ải.
+		var topIcons = new (string Name, string Label, string Symbol, string Method)[]
+		{
+			("ActivityButton", "Hoạt Động", "HĐ", "OnActivityPressed"),
+			("StageButton", "Vào ải", "Ải", "OnStagePressed"),
+		};
+		for (int i = 0; i < topIcons.Length; i++)
+		{
+			var (name, label, symbol, method) = topIcons[i];
+			var icon = MakeIcon(name, symbol, label);
+			icon.Position = new Vector2(1104 + i * 80, 120);
+			AddChild(icon);
+			var btn = icon.GetNode<Button>(name);
+			if (method == "OnActivityPressed") btn.Pressed += OnActivityPressed;
+			else btn.Pressed += OnStagePressed;
+		}
+
+		// Bottom row (centered): 7 functions.
+		var bottomIcons = new (string Name, string Label, string Symbol, string Method)[]
+		{
+			("StarChartButton", "Tướng Tinh", "★", "OnStarChartPressed"),
+			("MoneyTreeButton", "Cây Tiền", "$", "OnMoneyTreePressed"),
+			("HeroListButton", "Võ tướng", "Võ", "OnHeroListPressed"),
+			("BagButton", "Túi đồ", "Túi", "OnBagPressed"),
+			("FormationButton", "Bày trận", "Trận", "OnFormationPressed"),
+			("EnhanceButton", "Trang bị", "Bị", "OnEnhancePressed"),
+			("RecruitButton", "Chiêu mộ", "Mộ", "OnRecruitPressed"),
+		};
+		var bar = GetNode<Control>("FunctionBar");
+		float startX = (1280 - (bottomIcons.Length * 80 - 16)) / 2;
+		for (int i = 0; i < bottomIcons.Length; i++)
+		{
+			var (name, label, symbol, method) = bottomIcons[i];
+			var icon = MakeIcon(name, symbol, label);
+			icon.Position = new Vector2(startX + i * 80, 8);
+			bar.AddChild(icon);
+			var btn = icon.GetNode<Button>(name);
+			switch (method)
+			{
+				case "OnStarChartPressed": btn.Pressed += OnStarChartPressed; break;
+				case "OnMoneyTreePressed": btn.Pressed += OnMoneyTreePressed; break;
+				case "OnHeroListPressed": btn.Pressed += OnHeroListPressed; break;
+				case "OnBagPressed": btn.Pressed += OnBagPressed; break;
+				case "OnFormationPressed": btn.Pressed += OnFormationPressed; break;
+				case "OnEnhancePressed": btn.Pressed += OnEnhancePressed; break;
+				case "OnRecruitPressed": btn.Pressed += OnRecruitPressed; break;
+			}
+		}
+	}
+
+	// 64x64 rounded-square icon button + 12px label below.
+	private static VBoxContainer MakeIcon(string name, string symbol, string label)
+	{
+		var box = new VBoxContainer { Name = name + "Icon" };
+		box.AddThemeConstantOverride("separation", 2);
+		var btn = new Button { Name = name, CustomMinimumSize = new Vector2(64, 64), Text = symbol };
+		btn.AddThemeFontSizeOverride("font_size", 22);
+		var normal = new StyleBoxFlat
+		{
+			BgColor = UiTheme.Panel,
+			BorderColor = UiTheme.Gold,
+			BorderWidthLeft = 2, BorderWidthTop = 2, BorderWidthRight = 2, BorderWidthBottom = 2,
+			CornerRadiusTopLeft = 12, CornerRadiusTopRight = 12,
+			CornerRadiusBottomLeft = 12, CornerRadiusBottomRight = 12,
+		};
+		var hover = (StyleBoxFlat)normal.Duplicate();
+		hover.BgColor = UiTheme.Background;
+		btn.AddThemeStyleboxOverride("normal", normal);
+		btn.AddThemeStyleboxOverride("hover", hover);
+		btn.AddThemeStyleboxOverride("pressed", normal);
+		btn.AddThemeStyleboxOverride("disabled", normal);
+		btn.AddThemeColorOverride("font_color", UiTheme.Gold);
+		box.AddChild(btn);
+		var lab = new Label { Name = "Label", Text = label, HorizontalAlignment = HorizontalAlignment.Center };
+		lab.AddThemeFontSizeOverride("font_size", 12);
+		lab.AddThemeColorOverride("font_color", UiTheme.Text);
+		lab.CustomMinimumSize = new Vector2(64, 0);
+		box.AddChild(lab);
+		return box;
 	}
 
 	private void SetupPopupHost()

@@ -127,7 +127,7 @@ public partial class TestPhase251 : Node
         var gm = Setup("t251d", 40);
         var hub = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn").Instantiate<HubScene>();
         AddChild(hub);
-        hub.GetNode<Button>("TopBar/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
+        hub.GetNode<Button>("ActivityButtonIcon/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
         var content = hub.GetNode<Control>("PopupFrame/PopupContent");
         (content.GetChild(0) as ActivityScene)!.GetNode<Button>("CardGrid/Card_Party").EmitSignal(BaseButton.SignalName.Pressed);
         Check(content.GetChildren().OfType<PartyScene>().FirstOrDefault()?.Size == HubScene.PartyPopupSize, "Tổ Đội card opens the 860x540 popup");

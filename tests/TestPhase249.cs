@@ -120,7 +120,7 @@ public partial class TestPhase249 : Node
         var hub = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn").Instantiate<HubScene>();
         AddChild(hub);
         gm.Save.Heroes["custom_hero"].Level = 25;
-        hub.GetNode<Button>("TopBar/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
+        hub.GetNode<Button>("ActivityButtonIcon/ActivityButton").EmitSignal(BaseButton.SignalName.Pressed);
         var content = hub.GetNode<Control>("PopupFrame/PopupContent");
         (content.GetChild(0) as ActivityScene)!.GetNode<Button>("CardGrid/Card_Trial").EmitSignal(BaseButton.SignalName.Pressed);
         Check(content.GetChildren().OfType<TrialTowerScene>().FirstOrDefault()?.Size == HubScene.TrialPopupSize, "Thí Luyện card opens the 700x500 popup");

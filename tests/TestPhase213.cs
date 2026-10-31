@@ -46,10 +46,15 @@ public partial class TestPhase213 : Node
         var heroLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarHeroLabel");
         Check(heroLabel.Text.Contains("testhub"), "avatar hero is the owned default (custom hero = username)");
         var topBtns = hub.GetNode<Control>("TopBar").GetChildren().OfType<Button>().ToList();
-        Check(topBtns.Count == 3, "top-right holds 3 actions (Hoat Dong, Vao ai, Dang xuat)");
-        var functionBtns = hub.GetNode<Control>("FunctionBar").GetChildren().OfType<Button>().ToList();
-        Check(functionBtns.Count == 7, "bottom bar holds 7 function buttons (2.31 adds Cây Tiền)");
-        Check(topBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 10, "all 10 buttons present (3 + 7)");
+        Check(topBtns.Count == 1 && topBtns[0].Name == "LogoutButton", "top bar holds the small Dang xuat button (2.57)");
+        Check(hub.GetNodeOrNull<Button>("ActivityButtonIcon/ActivityButton") != null
+            && hub.GetNodeOrNull<Button>("StageButtonIcon/StageButton") != null, "top row holds Hoat Dong + Vao ai icons (2.57)");
+        var functionBtns = hub.GetNode<Control>("FunctionBar").GetChildren().OfType<VBoxContainer>().ToList();
+        Check(functionBtns.Count == 7, "bottom bar holds 7 function icons (2.57)");
+        var allBtnNames = hub.GetNode<Control>("TopBar").GetChildren().OfType<Button>().Select(b => b.Name.ToString())
+            .Concat(new[] { "ActivityButton", "StageButton" })
+            .Concat(functionBtns.Select(v => v.GetChild<Button>(0).Name.ToString()));
+        Check(allBtnNames.Distinct().Count() == 10, "all 10 actions present (2.57)");
         Check(hub.GetNodeOrNull<Button>("TopBar/FeatureIcons/EquipmentButton") == null
             && hub.GetNodeOrNull<Button>("FunctionBar/EquipmentButton") == null, "duplicate Trang bi button removed");
 
