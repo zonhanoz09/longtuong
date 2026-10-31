@@ -139,14 +139,14 @@ public partial class TestPhase227 : Node
         var scene = ResourceLoader.Load<PackedScene>("res://features/hub/scenes/HubScene.tscn");
         var hub = scene.Instantiate<HubScene>();
         AddChild(hub);
-        var portrait = hub.GetNode<ColorRect>("TopBar/AvatarPanel/AvatarBox/AvatarPortrait");
+        var portrait = hub.GetNode<ColorRect>("TopBar/AvatarPanel/AvatarHBox/AvatarPortrait");
         var charLabel = portrait.GetNodeOrNull<Label>("AvatarPortraitChar");
         Check(charLabel != null, "hub avatar has portrait char label");
         Check(charLabel?.Text == "T", "hub avatar char T for tester227");
-        var heroLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel");
+        var heroLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarHeroLabel");
         Check(heroLabel.Text.Contains("tester227"), "hub hero label shows custom hero");
         // Currency label still text (kept), with Bạc shown and no KNB.
-        var cur = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel").Text;
+        var cur = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarCurrencyLabel").Text;
         Check(cur.Contains("Bạc") && !cur.Contains("KNB"), "hub currency text Bạc, no KNB");
     }
 

@@ -28,28 +28,28 @@ public partial class TestPhase213 : Node
         AddChild(hub);
 
         var top = hub.GetNode<Control>("TopBar");
-        Check(top.Position == new Vector2(0, 0) && top.Size == new Vector2(1280, 306), "top zone is 0-306");
+        Check(top.Position == new Vector2(0, 0) && top.Size == new Vector2(1280, 110), "top zone is slim 0-110 (2.56)");
         var yard = hub.GetNode<Control>("Courtyard");
-        Check(yard.Position == new Vector2(0, 306) && yard.Size == new Vector2(1280, 306), "middle zone is 306-612");
+        Check(yard.Position == new Vector2(0, 110) && yard.Size == new Vector2(1280, 502), "middle zone is 110-612");
         var bar = hub.GetNode<Control>("FunctionBar");
         Check(bar.Position == new Vector2(0, 612) && bar.Size == new Vector2(1280, 108), "bottom zone is 612-720");
-        Check(HubScene.TopBarRect == new Rect2(0, 0, 1280, 306)
-            && HubScene.CourtyardRect == new Rect2(0, 306, 1280, 306)
+        Check(HubScene.TopBarRect == new Rect2(0, 0, 1280, 110)
+            && HubScene.CourtyardRect == new Rect2(0, 110, 1280, 502)
             && HubScene.FunctionBarRect == new Rect2(0, 612, 1280, 108), "zone constants match the scene");
 
         Check(hub.GetNodeOrNull<Control>("WidgetBox") == null
             && hub.GetNodeOrNull<Label>("TitleLabel") == null
-            && hub.GetNodeOrNull<Label>("StatusLabel") == null, "old WidgetBox/Title/Status layout removed");
+            && hub.GetNodeOrNull<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarStatusLabel") == null, "old WidgetBox/Title/Status layout removed (2.56 drops avatar status)");
         Check(hub.GetNodeOrNull<Panel>("TopBar/AvatarPanel") != null, "avatar panel in top-left");
-        var nameLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarNameLabel");
+        var nameLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarNameLabel");
         Check(nameLabel.Text.Contains("testhub"), "avatar shows the username");
-        var heroLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel");
+        var heroLabel = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarHeroLabel");
         Check(heroLabel.Text.Contains("testhub"), "avatar hero is the owned default (custom hero = username)");
-        var topBtns = hub.GetNode<Control>("TopBar/TopActions").GetChildren().OfType<Button>().ToList();
-        Check(topBtns.Count == 2, "top-right holds 2 actions (Vao ai, Dang xuat)");
+        var topBtns = hub.GetNode<Control>("TopBar").GetChildren().OfType<Button>().ToList();
+        Check(topBtns.Count == 3, "top-right holds 3 actions (Hoat Dong, Vao ai, Dang xuat)");
         var functionBtns = hub.GetNode<Control>("FunctionBar").GetChildren().OfType<Button>().ToList();
         Check(functionBtns.Count == 7, "bottom bar holds 7 function buttons (2.31 adds Cây Tiền)");
-        Check(topBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 9, "all 9 sketched buttons present (2 + 7)");
+        Check(topBtns.Concat(functionBtns).Select(b => b.Name).Distinct().Count() == 10, "all 10 buttons present (3 + 7)");
         Check(hub.GetNodeOrNull<Button>("TopBar/FeatureIcons/EquipmentButton") == null
             && hub.GetNodeOrNull<Button>("FunctionBar/EquipmentButton") == null, "duplicate Trang bi button removed");
 

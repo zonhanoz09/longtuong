@@ -62,7 +62,7 @@ public partial class TestPhase242 : Node
         AddChild(hub);
         var btn = hub.GetNodeOrNull<Button>("TopBar/ActivityButton");
         Check(btn != null && btn.Text == "Hoạt Động", "hub has the Hoạt Động button");
-        Check(btn != null && !btn.GetGlobalRect().Intersects(hub.GetNode<Button>("TopBar/TopActions/StageButton").GetGlobalRect()), "button does not overlap Vào ải");
+        Check(btn != null && !btn.GetGlobalRect().Intersects(hub.GetNode<Button>("TopBar/StageButton").GetGlobalRect()), "button does not overlap Vào ải");
         Check(hub.GetNode<Control>("FunctionBar").GetChildren().OfType<Button>().Count() == 7, "bottom bar unchanged (7 buttons)");
         var sizes = new[] { HubScene.HeroListPopupSize, HubScene.BagPopupSize, HubScene.HeroPopupSize, HubScene.FormationPopupSize,
             HubScene.StagePopupSize, HubScene.RecruitPopupSize, HubScene.StarChartPopupSize, HubScene.MoneyTreePopupSize, HubScene.ActivityPopupSize };

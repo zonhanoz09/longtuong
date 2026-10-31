@@ -33,7 +33,7 @@ public partial class TestPhase226 : Node
         {
             var hub = hubScene.Instantiate<HubScene>();
             AddChild(hub);
-            var cur = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel").Text;
+            var cur = hub.GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarCurrencyLabel").Text;
             Check(cur.Contains("Bạc") && !cur.Contains("KNB") && !cur.Contains("Kim Nguyên Bảo"), "hub currency shows silver, never KNB");
             hub.QueueFree();
         }

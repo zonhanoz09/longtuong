@@ -26,10 +26,10 @@ public partial class TestPhase214 : Node
         var hub = hubScene.Instantiate<HubScene>();
         AddChild(hub);
 
-        var stage = hub.GetNode<Button>("TopBar/TopActions/StageButton");
-        Check(stage.GlobalPosition == new Vector2(918, 30) && stage.Size == new Vector2(148, 81), "Vao ai at top-right (918,30) 148x81");
-        var logout = hub.GetNode<Button>("TopBar/TopActions/LogoutButton");
-        Check(logout.GlobalPosition == new Vector2(1101, 30) && logout.Size == new Vector2(148, 81), "Dang xuat at top-right (1101,30) 148x81");
+        var stage = hub.GetNode<Button>("TopBar/StageButton");
+        Check(stage.GlobalPosition == new Vector2(952, 27) && stage.Size == new Vector2(148, 56), "Vao ai at top-right (952,27) 148x56 (2.56 slim)");
+        var logout = hub.GetNode<Button>("TopBar/LogoutButton");
+        Check(logout.GlobalPosition == new Vector2(1116, 27) && logout.Size == new Vector2(148, 56), "Dang xuat at top-right (1116,27) 148x56 (2.56 slim)");
         Check(stage.Text.Contains("Vào ải") && logout.Text.Contains("Đăng xuất"), "top buttons labelled Vao ai / Dang xuat");
 
         var cases = new (string Node, float X, float W)[]

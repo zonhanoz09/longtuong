@@ -19,103 +19,83 @@ layout_mode = 0
 offset_left = 0.0
 offset_top = 0.0
 offset_right = 1280.0
-offset_bottom = 306.0
+offset_bottom = 110.0
 
 [node name="AvatarPanel" type="Panel" parent="TopBar"]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 16.0
-offset_right = 272.0
-offset_bottom = 290.0
+offset_top = 12.0
+offset_right = 640.0
+offset_bottom = 98.0
 
-[node name="AvatarBox" type="VBoxContainer" parent="TopBar/AvatarPanel"]
+[node name="AvatarHBox" type="HBoxContainer" parent="TopBar/AvatarPanel"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 240.0
-offset_bottom = 272.0
+offset_left = 12.0
+offset_top = 11.0
+offset_right = 612.0
+offset_bottom = 75.0
+theme_override_constants/separation = 12
 
-[node name="AvatarPortrait" type="ColorRect" parent="TopBar/AvatarPanel/AvatarBox"]
+[node name="AvatarPortrait" type="ColorRect" parent="TopBar/AvatarPanel/AvatarHBox"]
 layout_mode = 0
-custom_minimum_size = Vector2(80, 80)
+custom_minimum_size = Vector2(64, 64)
 color = Color(0.2, 0.35, 0.6, 1)
 
-[node name="AvatarNameLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
+[node name="AvatarVBox" type="VBoxContainer" parent="TopBar/AvatarPanel/AvatarHBox"]
 layout_mode = 0
-autowrap_mode = 3
-theme_override_font_sizes/font_size = 22
+theme_override_constants/separation = 2
+
+[node name="AvatarNameLabel" type="Label" parent="TopBar/AvatarPanel/AvatarHBox/AvatarVBox"]
+layout_mode = 0
+theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.91, 0.72, 0.29, 1)
 text = "Nguoi choi"
 
-[node name="AvatarHeroLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
+[node name="AvatarHeroLabel" type="Label" parent="TopBar/AvatarPanel/AvatarHBox/AvatarVBox"]
 layout_mode = 0
-autowrap_mode = 3
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.95, 0.95, 0.96, 1)
 text = "Tuong dai dien"
 
-[node name="AvatarCurrencyLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
+[node name="AvatarCurrencyLabel" type="Label" parent="TopBar/AvatarPanel/AvatarHBox/AvatarVBox"]
 layout_mode = 0
-autowrap_mode = 3
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.91, 0.72, 0.29, 1)
 text = "Vang: 0 | Bac: 0"
-
-[node name="AvatarStatusLabel" type="Label" parent="TopBar/AvatarPanel/AvatarBox"]
-layout_mode = 0
-autowrap_mode = 3
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
-text = "So huu: 0 tuong"
-
-[node name="AvatarDivider" type="ColorRect" parent="TopBar"]
-layout_mode = 0
-offset_left = 272.0
-offset_top = 16.0
-offset_right = 274.0
-offset_bottom = 290.0
-color = Color(0.91, 0.72, 0.29, 1)
-
-[node name="TopActions" type="Control" parent="TopBar"]
-layout_mode = 0
-offset_left = 288.0
-offset_top = 16.0
-offset_right = 1264.0
-offset_bottom = 290.0
-
-[node name="StageButton" type="Button" parent="TopBar/TopActions"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 0
-offset_left = 630.0
-offset_top = 14.0
-offset_right = 778.0
-offset_bottom = 95.0
-text = "Vao ai"
-
-[node name="LogoutButton" type="Button" parent="TopBar/TopActions"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 0
-offset_left = 813.0
-offset_top = 14.0
-offset_right = 961.0
-offset_bottom = 95.0
-text = "Dang xuat"
 
 [node name="ActivityButton" type="Button" parent="TopBar"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 0
-offset_left = 735.0
-offset_top = 30.0
-offset_right = 883.0
-offset_bottom = 111.0
+offset_left = 788.0
+offset_top = 27.0
+offset_right = 936.0
+offset_bottom = 83.0
 text = "Hoat Dong"
+
+[node name="StageButton" type="Button" parent="TopBar"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 952.0
+offset_top = 27.0
+offset_right = 1100.0
+offset_bottom = 83.0
+text = "Vao ai"
+
+[node name="LogoutButton" type="Button" parent="TopBar"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 0
+offset_left = 1116.0
+offset_top = 27.0
+offset_right = 1264.0
+offset_bottom = 83.0
+text = "Dang xuat"
 
 [node name="TopSeparator" type="ColorRect" parent="."]
 layout_mode = 0
 offset_left = 0.0
-offset_top = 304.0
+offset_top = 108.0
 offset_right = 1280.0
-offset_bottom = 306.0
+offset_bottom = 110.0
 color = Color(0.91, 0.72, 0.29, 1)
 
 ; ---- Vung 2 (giua, y 306-612): san nhan vat di chuyen ----
@@ -123,7 +103,7 @@ color = Color(0.91, 0.72, 0.29, 1)
 [node name="Courtyard" type="Control" parent="."]
 layout_mode = 0
 offset_left = 0.0
-offset_top = 306.0
+offset_top = 110.0
 offset_right = 1280.0
 offset_bottom = 612.0
 
@@ -133,7 +113,7 @@ layout_mode = 0
 offset_left = 0.0
 offset_top = 0.0
 offset_right = 1280.0
-offset_bottom = 306.0
+offset_bottom = 502.0
 color = Color(0.1, 0.16, 0.1, 1)
 
 [node name="CourtyardHintLabel" type="Label" parent="Courtyard"]
@@ -256,8 +236,8 @@ offset_right = 1243.0
 offset_bottom = 92.0
 text = "Chieu mo"
 
-[connection signal="pressed" from="TopBar/TopActions/StageButton" to="." method="OnStagePressed"]
-[connection signal="pressed" from="TopBar/TopActions/LogoutButton" to="." method="OnLogoutPressed"]
+[connection signal="pressed" from="TopBar/StageButton" to="." method="OnStagePressed"]
+[connection signal="pressed" from="TopBar/LogoutButton" to="." method="OnLogoutPressed"]
 [connection signal="pressed" from="TopBar/ActivityButton" to="." method="OnActivityPressed"]
 [connection signal="pressed" from="FunctionBar/HeroListButton" to="." method="OnHeroListPressed"]
 [connection signal="pressed" from="FunctionBar/BagButton" to="." method="OnBagPressed"]

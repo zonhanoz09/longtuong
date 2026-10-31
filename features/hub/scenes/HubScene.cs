@@ -50,15 +50,15 @@ public partial class HubScene : Control
 
 	// Zone bounds on the 1280x720 viewport, from the second sketch:
 	// top 42.5%, middle 42.5%, bottom 14.9%; avatar column 21.3%.
-	public static readonly Rect2 TopBarRect = new(0, 0, 1280, 306);
-	public static readonly Rect2 CourtyardRect = new(0, 306, 1280, 306);
+	public static readonly Rect2 TopBarRect = new(0, 0, 1280, 110);
+	public static readonly Rect2 CourtyardRect = new(0, 110, 1280, 502);
 	public static readonly Rect2 FunctionBarRect = new(0, 612, 1280, 108);
 
 	// Walk area, in Courtyard-local coordinates, for the character's
 	// top-left corner (character body is 64x96 + name label to +124;
 	// courtyard is 306 tall, so max top-left y is 174).
-	public static readonly Rect2 WalkArea = new(80, 40, 1056, 134);
-	public static readonly Vector2 CharacterStart = new(608, 105);
+	public static readonly Rect2 WalkArea = new(80, 40, 1056, 330);
+	public static readonly Vector2 CharacterStart = new(608, 180);
 	public const float CharacterSpeed = 140f;
 
 	public bool IsPopupOpen { get; private set; }
@@ -99,7 +99,7 @@ public partial class HubScene : Control
 		};
 		foreach (var (node, text, primary) in topActions)
 		{
-			var btn = GetNode<Button>($"TopBar/TopActions/{node}");
+			var btn = GetNode<Button>($"TopBar/{node}");
 			btn.Text = text;
 			UiTheme.StyleButton(btn, primary);
 		}
@@ -202,15 +202,14 @@ public partial class HubScene : Control
 	private void RefreshAvatar()
 	{
 		var gm = GetNode<GameManager>("/root/GameManager");
-		var teamNames = string.Join(", ", gm.SelectedTeamIds.Select(id => HeroDatabase.Get(id).Name));
 		var heroId = gm.SelectedHeroId;
 		if (string.IsNullOrEmpty(heroId) || !gm.Save.OwnedHeroIds.Contains(heroId))
 			heroId = gm.Save.OwnedHeroIds.Count > 0 ? gm.Save.OwnedHeroIds[0] : "";
-		GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarNameLabel").Text =
+		GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarNameLabel").Text =
 			string.IsNullOrEmpty(gm.CurrentUsername) ? "Chưa đăng nhập" : gm.CurrentUsername;
 		// Phase 2.27: procedural portrait — the AvatarPortrait ColorRect
 		// gets a tier-tinted background plus the hero's given-name char.
-		var portrait = GetNode<ColorRect>("TopBar/AvatarPanel/AvatarBox/AvatarPortrait");
+		var portrait = GetNode<ColorRect>("TopBar/AvatarPanel/AvatarHBox/AvatarPortrait");
 		var charLabel = portrait.GetChildren().OfType<Label>().FirstOrDefault();
 		if (charLabel == null)
 		{
@@ -227,7 +226,7 @@ public partial class HubScene : Control
 		{
 			var hero = HeroDatabase.Get(heroId);
 			var prog = ProgressionService.ProgressOf(gm.Save, heroId);
-			GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text =
+			GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarHeroLabel").Text =
 				$"Tướng: {hero.Name} · Lv {prog.Level}";
 			if (_characterName != null) _characterName.Text = hero.Name;
 			var tier = TavernData.TierOf(heroId);
@@ -236,18 +235,16 @@ public partial class HubScene : Control
 			charLabel.Text = AssetIcons.PortraitChar(heroId);
 			charLabel.AddThemeColorOverride("font_color", color);
 			charLabel.AddThemeFontSizeOverride("font_size", AssetIcons.PortraitChar(heroId).Length <= 2 ? 28 : 20);
-			GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").AddThemeColorOverride("font_color", color);
+			GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarHeroLabel").AddThemeColorOverride("font_color", color);
 		}
 		else
 		{
-			GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarHeroLabel").Text = "Chưa có tướng";
+			GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarHeroLabel").Text = "Chưa có tướng";
 			if (_characterName != null) _characterName.Text = "—";
 			charLabel.Text = "";
 		}
-		GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarCurrencyLabel").Text =
-			$"Vàng: {gm.Save.Gold}  |  Bạc: {gm.Save.Silver}";
-		GetNode<Label>("TopBar/AvatarPanel/AvatarBox/AvatarStatusLabel").Text =
-			$"Sở hữu: {gm.Save.OwnedHeroIds.Count}/{HeroDatabase.Heroes.Count} tướng | Thắng: {gm.Save.Wins} | Ải cao nhất: {gm.Save.LastStage} | Đội hình: {teamNames}";
+		GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarCurrencyLabel").Text =
+			$"Vàng: {gm.Save.Gold:N0}  |  Bạc: {gm.Save.Silver:N0}";
 	}
 
 	private void SetupPopupHost()

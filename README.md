@@ -15,6 +15,12 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Phase 2.56 — đã làm (layout Hub slim)
+
+- TopBar gọn từ 306px → 110px: avatar + tên/Lv + Vàng/Bạc (bỏ dòng status).
+- 3 nút căn phải thẳng hàng: Hoạt Động | Vào ải | Đăng xuất.
+- Sân nhân vật mở rộng (196px thêm).
+
 ## Phase 2.55 — đã làm (càn quét Phó Bản)
 
 - Nút "Càn quét ải X (50 Vàng)" cạnh "Vào trận" trong màn Phó Bản.
