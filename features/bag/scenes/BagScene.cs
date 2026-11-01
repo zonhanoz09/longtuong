@@ -204,6 +204,7 @@ public partial class BagScene : Control
         symbol.AddThemeFontSizeOverride("font_size", 26);
         symbol.AddThemeColorOverride("font_color", Colors.White);
         btn.AddChild(symbol);
+        AssetIcons.ApplyIcon(btn, "equipment", item.SlotId, symbol, 7);
         // Enhancement badge, bottom-right (screenshot style).
         var badge = new Label
         {

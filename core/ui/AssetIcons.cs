@@ -5,6 +5,31 @@ namespace LongTuong;
 /// <summary>Shared icon fallbacks and portrait presentation. PNGs are optional.</summary>
 public static class AssetIcons
 {
+    /// <summary>Overlay art without affecting layout, badges, or input.</summary>
+    public static bool ApplyIcon(Control host, string group, string id, Label? fallback = null, int padding = 4)
+    {
+        var texture = AssetCatalog.Icon(group, id);
+        var image = host.GetNodeOrNull<TextureRect>("AssetIcon");
+        if (image == null && texture != null)
+        {
+            image = new TextureRect
+            {
+                Name = "AssetIcon", MouseFilter = Control.MouseFilterEnum.Ignore,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                TextureFilter = CanvasItem.TextureFilterEnum.Linear,
+            };
+            // Internal children are ignored by Container layout and render behind badges.
+            host.AddChild(image, false, Node.InternalMode.Front);
+            image.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            image.OffsetLeft = image.OffsetTop = padding;
+            image.OffsetRight = image.OffsetBottom = -padding;
+        }
+        if (image != null) { image.Texture = texture; image.Visible = texture != null; }
+        if (fallback != null) fallback.Visible = texture == null;
+        return texture != null;
+    }
+
     public static string SlotSymbol(string slotId) => slotId switch
     {
         "weapon" => "VK",
@@ -50,6 +75,8 @@ public static class AssetIcons
         label.AddThemeFontSizeOverride("font_size", size - 10);
         label.AddThemeColorOverride("font_color", UiTheme.DarkText);
         panel.AddChild(label);
+        if (ApplyIcon(panel, "currency", gold ? "gold" : "silver", label, 0))
+            panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         return panel;
     }
 

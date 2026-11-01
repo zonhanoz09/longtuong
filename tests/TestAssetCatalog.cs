@@ -51,6 +51,27 @@ public partial class TestAssetCatalog : Node
                 image.FillRect(new Rect2I(32, 32, 180, 448), UiTheme.Gold);
                 Check(image.SavePng(portraitPath) == Error.Ok, "technical portrait PNG created in temporary directory");
             }
+            Check(AssetCatalog.Icon("equipment", "weapon") == null, "missing icon uses text fallback");
+            Check(AssetCatalog.Icon("../heroes", "quan_vu") == null
+                && AssetCatalog.Icon("equipment", "../weapon") == null, "icon IDs cannot escape their group");
+            string iconDir = Path.Combine(root, "icons", "equipment");
+            Directory.CreateDirectory(iconDir);
+            string iconPath = Path.Combine(iconDir, "weapon.png");
+            File.Copy(bodyPath, iconPath);
+            var iconHost = new PanelContainer { CustomMinimumSize = new Vector2(64, 64) };
+            var iconFallback = new Label { Text = "VK" };
+            iconHost.AddChild(iconFallback);
+            AddChild(iconHost);
+            Check(AssetIcons.ApplyIcon(iconHost, "equipment", "weapon", iconFallback)
+                && !iconFallback.Visible, "PNG icon replaces placeholder");
+            Check(iconHost.GetCombinedMinimumSize() == new Vector2(64, 64)
+                && iconHost.GetNode<TextureRect>("AssetIcon").MouseFilter == Control.MouseFilterEnum.Ignore,
+                "icon preserves container size and mouse input");
+            File.Delete(iconPath);
+            Check(!AssetIcons.ApplyIcon(iconHost, "equipment", "weapon", iconFallback)
+                && iconFallback.Visible && !iconHost.GetNode<TextureRect>("AssetIcon").Visible,
+                "deleting icon restores placeholder");
+            iconHost.QueueFree();
             var body = AssetCatalog.Body("quan_vu");
             var portrait = AssetCatalog.Portrait("quan_vu");
             Check(body?.GetWidth() == 512 && portrait?.GetHeight() == 512 && !File.Exists(bodyPath + ".import"), "new PNGs load without editor import");

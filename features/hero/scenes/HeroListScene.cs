@@ -368,6 +368,8 @@ public partial class HeroListScene : Control
             // Equipped icons are 56x56 (grid cells stay 64x64): 3x56 + 2x6 gap
             // = 180, exactly the portrait height, so all three columns line up.
             slotBtn.CustomMinimumSize = new Vector2(UiTheme.IconEquippedSize, UiTheme.IconEquippedSize);
+            if (!eq.IsEmpty) AssetIcons.ApplyIcon(slotBtn, "equipment", slot.Id,
+                slotBtn.GetNodeOrNull<Label>("IconSymbolLabel"));
             var heroId = _selectedHeroId; var slotId = slot.Id;
             string slotDetail = EquipmentTooltip.ForEquipped(eq, slotId, $"Đang mang: {heroDef.Name}");
             slotBtn.MouseEntered += () => ShowTooltip(slotBtn, slotDetail);
@@ -412,6 +414,7 @@ public partial class HeroListScene : Control
             {
                 var item = gm.Save.BagEquipment[i];
                 var btn = MakeIconButton(UiTheme.SlotColors[item.SlotId], true, AssetIcons.SlotSymbol(item.SlotId));
+                AssetIcons.ApplyIcon(btn, "equipment", item.SlotId, btn.GetNodeOrNull<Label>("IconSymbolLabel"));
                 var bagIndex = i;
                 string detail = EquipmentTooltip.ForBagItem(item, "Trạng thái: Trong túi");
                 btn.MouseEntered += () => ShowTooltip(btn, detail);

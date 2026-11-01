@@ -314,6 +314,15 @@ public partial class HubScene : Control
 		var box = new VBoxContainer { Name = name + "Icon" };
 		box.AddThemeConstantOverride("separation", 2);
 		var btn = new Button { Name = name, CustomMinimumSize = new Vector2(64, 64), Text = symbol };
+		string iconId = name switch
+		{
+			"ActivityButton" => "activity", "StageButton" => "stage",
+			"StarChartButton" => "star_chart", "MoneyTreeButton" => "money_tree",
+			"HeroListButton" => "hero_list", "BagButton" => "bag",
+			"FormationButton" => "formation", "EnhanceButton" => "equipment",
+			"RecruitButton" => "recruit", _ => "",
+		};
+		if (AssetIcons.ApplyIcon(btn, "features", iconId)) btn.Text = "";
 		btn.AddThemeFontSizeOverride("font_size", 22);
 		var normal = new StyleBoxFlat
 		{

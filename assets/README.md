@@ -9,7 +9,8 @@ trận đấu, tự lật cho phe địch và giữ điểm chân. Ảnh thiếu
 
 **Đã dùng được clip PNG:** `idle`, `attack`, `hit`, `ultimate`, `death` và
 VFX `normal`, `ultimate`, `projectile`, `cast`. Clip/VFX thiếu dùng fallback.
-Đã có aura dưới chân. Chưa có tự reload trên màn đang mở, victory, nền và icon PNG.
+Đã có aura dưới chân và bộ 17 icon PNG (trang bị, tiền tệ, chức năng).
+Chưa có tự reload trên màn đang mở, victory và nền PNG.
 
 Chi tiết timeline: [idle/attack/hit, tiến/lùi và VFX](../docs/KE_HOACH_ANIMATION_CHIEN_DAU.md).
 **Gia Cát Lượng đã có bộ thật:** 5 clip × 8 frame và 5 VFX × 8 frame,
@@ -151,7 +152,7 @@ Các tùy chọn nâng cao `regions`, `canvas`, `offsets`, `pivots`,
 không đều. Bộ Gia Cát Lượng đã có metadata này; giữ nguyên khi copy bộ.
 PNG nguồn được giữ nguyên, không cần export một ảnh riêng cho từng ô.
 
-## Nền và icon (quy ước, chưa nạp PNG)
+## Nền (quy ước) và icon PNG (đã nối UI)
 
 ```text
 assets/
@@ -193,6 +194,14 @@ assets/
     ├── heal/000.png
     └── projectile/000.png
 ```
+
+Bộ icon hiện có: 6 trang bị, 2 tiền tệ và 9 chức năng. Trang bị/chức năng
+là PNG RGBA 128×128; tiền tệ 64×64. Hub, Túi đồ, Võ tướng, màn Trang bị
+và icon tiền tệ Chiêu mộ dùng ảnh mới; thiếu ảnh sẽ hiện chữ dự phòng.
+Khung ô, nhãn và huy hiệu cường hóa do UI vẽ. Mở lại màn sau khi thay ảnh.
+
+Xem [toàn bộ icon](../docs/previews/ui-icons.png) và
+[prompt tạo ảnh](icons/PROMPTS.md). Nền PNG bên dưới vẫn chưa được nạp.
 
 Nền trận vẽ trên toàn canvas 1280×720. Phần trên/dưới sẽ bị HUD che một
 phần; mặt đất phải có dưới các điểm đứng của cả ba hàng tướng. Dùng

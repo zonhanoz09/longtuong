@@ -21,6 +21,20 @@ public static partial class AssetCatalog
     public static Texture2D? Portrait(string id) => LoadCombatant(id, "portrait.png");
     public static Texture2D? Body(string id) => LoadCombatant(id, "body.png");
 
+    /// <summary>Optional UI art, using the same loose/packed policy as portraits.</summary>
+    public static Texture2D? Icon(string group, string id)
+    {
+        if (group is not ("equipment" or "currency" or "features")
+            || string.IsNullOrEmpty(id) || id.Any(c => !(c is >= 'a' and <= 'z' or '_')))
+            return null;
+        string relative = $"icons/{group}/{id}.png";
+        var loose = LoadLoose(Path.Combine(LooseDirectory, relative));
+        if (loose != null) return loose;
+        if (_testDirectory != null || OS.HasFeature("editor")) return null;
+        string resource = "res://assets/" + relative;
+        return ResourceLoader.Exists(resource) ? ResourceLoader.Load<Texture2D>(resource) : null;
+    }
+
     private static Texture2D? LoadCombatant(string id, string file)
     {
         // Resolve known IDs only; display names and filesystem paths are never IDs.

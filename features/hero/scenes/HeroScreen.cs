@@ -128,6 +128,7 @@ public partial class HeroScreen : Control
             row.AddThemeConstantOverride("separation", 10);
             var icon = new PanelContainer { Name = "RowIconPanel", CustomMinimumSize = new Vector2(72, 72), MouseFilter = MouseFilterEnum.Ignore };
             icon.AddChild(CenteredLabel(AssetIcons.SlotSymbol(slotId), 24, Colors.White, "RowIcon"));
+            AssetIcons.ApplyIcon(icon, "equipment", slotId, icon.GetNode<Label>("RowIcon"));
             row.AddChild(icon);
             var texts = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
             texts.AddChild(new Label { Name = "RowName", MouseFilter = MouseFilterEnum.Ignore });
@@ -356,6 +357,7 @@ public partial class HeroScreen : Control
             CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
         });
         icon.AddChild(CenteredLabel(AssetIcons.SlotSymbol(_selectedSlot), 34, Colors.White, "PanelIcon"));
+        AssetIcons.ApplyIcon(icon, "equipment", _selectedSlot, icon.GetNode<Label>("PanelIcon"));
         top.AddChild(icon);
         var info = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         info.AddThemeConstantOverride("separation", 6);
@@ -689,6 +691,7 @@ public partial class HeroScreen : Control
             CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
         });
         icon.AddChild(CenteredLabel(AssetIcons.SlotSymbol(_selectedSlot), 26, Colors.White, "PanelIcon"));
+        AssetIcons.ApplyIcon(icon, "equipment", _selectedSlot, icon.GetNode<Label>("PanelIcon"));
         top.AddChild(icon);
         var info = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         info.AddThemeConstantOverride("separation", 2);
