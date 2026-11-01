@@ -23,15 +23,22 @@ Xem [hướng dẫn thư mục asset](assets/README.md) và
 `assets/heroes/quan_vu/body.png` hoặc `portrait.png` để thay đúng phần đó.
 Đã nạp được PNG tĩnh `body.png`/`portrait.png` mà không cần import thủ công:
 body dùng trong trận; portrait dùng ở Võ tướng, avatar Hub và Bày trận.
-Copy ảnh rồi mở game hoặc mở lại màn/vào trận mới. Runtime reload,
-animation/VFX/nền/icon PNG sẽ triển khai tiếp.
+Copy ảnh rồi mở game hoặc mở lại màn/vào trận mới. Đã tự nhận clip PNG
+`idle/attack/hit/ultimate/death` và VFX PNG; đồng bộ mốc phóng/chạm, HP,
+tiến/lùi và x1/x2/x3. Runtime reload, nền/icon PNG và clip PCK làm tiếp.
+Gia Cát Lượng đã có [bộ hoàn chỉnh](assets/heroes/gia_cat_luong/README.md):
+5 clip × 8 frame, 5 VFX × 8 frame, body/portrait và hình ở sân Hub.
+Xem [GIF](docs/previews/gia_cat_luong_full.gif) hoặc chạy
+`godot --path . res://tests/PreviewGiaCatLuong.tscn`.
 Test: `godot --headless --path . res://tests/TestAssetCatalog.tscn`.
+Thiết kế và tiến độ: [idle/attack/hit, tiến/lùi và VFX](docs/KE_HOACH_ANIMATION_CHIEN_DAU.md).
 
 ## Đồ họa chiến đấu — bản mẫu roster (01/11/2026)
 
 - Sân doanh trại nhiều lớp, cờ hai phe, bóng chân và hình tướng bằng code.
 - Đủ 15 danh tướng + tướng tự tạo có preset màu, vũ khí và hiệu ứng;
-  lính/boss chưa có preset dùng fallback theo vai trò. Chưa có portrait/art bitmap.
+  lính/boss chưa có preset dùng fallback theo vai trò. Quan Vũ/Gia Cát Lượng
+  đã có body/portrait PNG; Gia Cát Lượng có thêm bộ animation và VFX riêng.
 - Cận chiến tiến tới đối thủ rồi về chỗ, đòn xa phóng tới từng mục tiêu.
   Phát hành động theo nhịp chuẩn bị → chạm → trở về; HP đổi lúc chạm,
   số damage/hồi máu/né/đỡ/bạo xuất hiện trên đúng mục tiêu; x1/x2/x3.

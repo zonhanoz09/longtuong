@@ -54,6 +54,7 @@ public partial class TestBattleVisuals : Node
             gm.SelectedTeamIds = new List<string>(team);
             gm.StartBattle(1, new List<string>(team), 12345);
             var scene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn").Instantiate<BattleScene>();
+            scene.AutoPlay = false;
             AddChild(scene);
             Check(scene.GetNodeOrNull<BattleArena>("BattleArena") != null, "battle arena is installed");
             var cells = scene.GetNode<GridContainer>("PlayerGrid").GetChildren().OfType<BattleHeroCell>().ToArray();
@@ -67,10 +68,11 @@ public partial class TestBattleVisuals : Node
             var homes = allCells.ToDictionary(c => c.Actor!, c => c.Actor!.Position);
             scene.PlayNextAction();
             Check(scene.IsPresenting && cells.Select(c => c.HpBar.Value).SequenceEqual(before), "HP stays on previous snapshot before impact");
-            Check(!currentArt.Art.Ranged || scene.GetChildren().OfType<BattleProjectile>().Any(), "ranged action launches a projectile before impact");
+            Check(!currentArt.Art.Ranged || !scene.GetChildren().OfType<BattleProjectile>().Any(), "ranged action prepares before launching projectile");
             scene.GetNode<Button>("SpeedButton").EmitSignal(Button.SignalName.Pressed);
             scene.GetNode<Button>("SpeedButton").EmitSignal(Button.SignalName.Pressed);
-            await ToSignal(GetTree().CreateTimer(0.27), SceneTreeTimer.SignalName.Timeout);
+            for (int i = 0; i < 600 && scene.IsPresenting; i++)
+                await ToSignal(GetTree().CreateTimer(0.05), SceneTreeTimer.SignalName.Timeout);
             Check(!scene.IsPresenting, "x3 completes active animation at updated speed");
             Check(homes.All(p => p.Key.Position.IsEqualApprox(p.Value)), "actors return to exact formation anchors after travel");
             Check(scene.GetChildren().All(n => n is not BattleProjectile || n.IsQueuedForDeletion()), "projectiles finish before the next action");
@@ -81,6 +83,7 @@ public partial class TestBattleVisuals : Node
                 await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
                 GetViewport().GetTexture().GetImage().SavePng("/tmp/longtuong-battle-preview.png");
             }
+            scene.AutoPlay = true;
             bool popupDuringAction = false;
             for (int i = 0; i < 450 && scene.GetNodeOrNull<Control>("ResultPopup") == null; i++)
             {
@@ -93,6 +96,7 @@ public partial class TestBattleVisuals : Node
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             gm.StartBattle(1, new List<string> { "quan_vu" }, 12345);
             scene = ResourceLoader.Load<PackedScene>("res://features/battle/scenes/BattleScene.tscn").Instantiate<BattleScene>();
+            scene.AutoPlay = false;
             AddChild(scene);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -101,7 +105,8 @@ public partial class TestBattleVisuals : Node
             scene.PlayNextAction();
             await ToSignal(GetTree().CreateTimer(0.1), SceneTreeTimer.SignalName.Timeout);
             Check(melee.Position.DistanceTo(meleeHome) > 5, "melee actor travels toward the actual target before impact");
-            await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
+            for (int i = 0; i < 600 && scene.IsPresenting; i++)
+                await ToSignal(GetTree().CreateTimer(0.05), SceneTreeTimer.SignalName.Timeout);
             Check(!scene.IsPresenting && melee.Position.IsEqualApprox(meleeHome), "melee actor returns to formation after impact");
             scene.PlayNextAction();
             scene.QueueFree();

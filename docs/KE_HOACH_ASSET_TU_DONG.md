@@ -2,7 +2,7 @@
 
 Ngày: 01/11/2026. Yêu cầu đã chốt: người dùng tự vẽ, copy ảnh đúng chỗ là
 game nhận; không đăng ký từng đường dẫn, không sửa code khi thay art.
-Trạng thái: đã hoàn thành đợt 1 cho PNG tĩnh; reload và các nhóm asset khác đang chờ triển khai.
+Trạng thái: đã có PNG tĩnh và clip/VFX PNG vật lý; reload, nền/icon và inventory export còn chờ triển khai.
 
 ## 1. Phạm vi và nguồn quy ước
 
@@ -124,7 +124,7 @@ cho từng PNG hoặc sửa JSON mới dùng được asset.
 | 0 — Đã làm | Thư mục, chuẩn xuất và bảng ID | Tìm được đúng thư mục cho 16 tướng và bảng 35 ID địch |
 | 1 — Đã làm | Catalog + PNG body/portrait + fallback; nối BattleActor, HeroList, Hub, Formation | Copy hai PNG Quan Vũ, mở game thấy đúng ở trận và các màn chân dung; không sửa code |
 | 2 | Reload ảnh rời + công cụ xem/chẩn đoán | Ghi đè/xóa/thêm lại khi game đang chạy; hình đổi ở thời điểm an toàn |
-| 3 | Chuỗi frame nhân vật, VFX và projectile | Copy các frame là chạy; cùng điểm chân ở cả hai phe; x3 và HP khớp |
+| 3 — Đã có runtime | Chuỗi frame nhân vật, VFX và projectile | Copy các frame là chạy; cùng điểm chân ở cả hai phe; x3 và HP khớp |
 | 4 | Nền chương/chế độ + icon trang bị, Hub và tiền tệ | Chỉ cần đúng tên file, tự áp dụng ở mọi màn dùng chung |
 | 5 | Import/export inventory + loose overrides | Bản xuất sạch nhận asset đóng gói; copy thư mục cạnh executable thay được art mà không build lại |
 
@@ -180,3 +180,19 @@ AssetCatalog). Test mới và battle test đều qua; bốn lỗi layout cũ ở
 214/216/217/244 và log RID khi thoát 227 giữ nguyên như baseline đã xác
 nhận trước đó. Đã xem thêm ảnh render Võ tướng, Hub, Bày trận; portrait
 trong ô Bày trận chừa khoảng đệm để không lấn viền vòng tròn hoặc tên.
+
+
+## 9. Kế hoạch chi tiết đợt clip
+
+Xem [đăng ký animation và VFX](KE_HOACH_ANIMATION_CHIEN_DAU.md): tự nhận
+thư mục idle/attack/hit, controller dùng đồng hồ chung, mốc Release/Contact,
+phản ứng mục tiêu, tiến/lùi, projectile và asset VFX. Đã tạo thư mục trống
+cho Gia Cát Lượng. Đã triển khai bộ phát frame và timeline; đã có bộ frame art Gia Cát Lượng hoàn chỉnh. Aura đã chạy; reload và clip PCK còn chờ.
+
+
+## 10. Gia Cát Lượng đầy đủ — 02/11/2026
+
+Đã giao [bộ Gia Cát Lượng](../assets/heroes/gia_cat_luong/README.md), gồm
+5 clip và 5 VFX, mỗi nhóm 8 frame, cùng idle/aura cho nhân vật sân Hub.
+Có atlas, metadata căn frame, preview PNG/GIF và test trực tiếp bộ thật.
+Quy trình thay PNG rời vẫn giữ nguyên: copy 000… sẽ được ưu tiên trước atlas.

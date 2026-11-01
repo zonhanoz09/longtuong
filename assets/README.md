@@ -7,9 +7,13 @@ Copy đúng tên rồi mở game, vào trận mới hoặc mở lại màn liên
 Chân dung đã nối vào Võ tướng, avatar Hub và ô Bày trận. Body đã nối vào
 trận đấu, tự lật cho phe địch và giữ điểm chân. Ảnh thiếu dùng mẫu bằng code.
 
-**Chưa triển khai:** tự reload trên màn đang mở, animation PNG, VFX PNG,
-nền và icon PNG. Cây thư mục cho những phần này bên dưới là quy ước để
-chuẩn bị vẽ; game chưa đọc các file đó. Theo dõi [kế hoạch](../docs/KE_HOACH_ASSET_TU_DONG.md).
+**Đã dùng được clip PNG:** `idle`, `attack`, `hit`, `ultimate`, `death` và
+VFX `normal`, `ultimate`, `projectile`, `cast`. Clip/VFX thiếu dùng fallback.
+Đã có aura dưới chân. Chưa có tự reload trên màn đang mở, victory, nền và icon PNG.
+
+Chi tiết timeline: [idle/attack/hit, tiến/lùi và VFX](../docs/KE_HOACH_ANIMATION_CHIEN_DAU.md).
+**Gia Cát Lượng đã có bộ thật:** 5 clip × 8 frame và 5 VFX × 8 frame,
+bao gồm hào quang. [Hướng dẫn bộ đầy đủ](heroes/gia_cat_luong/README.md).
 
 ## Bắt đầu với một tướng
 
@@ -69,15 +73,85 @@ Khung phẩm, tên, HP/nộ vẫn do game vẽ.
 
 Tất cả frame trong một clip có cùng kích thước. Tên frame là `000.png`,
 `001.png`, `002.png`… liên tục, không bỏ số. Một frame vẫn dùng được như
-hiệu ứng tĩnh. Không dùng tên `1.png`, `frame_1.png` hoặc sprite sheet ở
-phiên bản đầu của bộ nạp.
+hiệu ứng tĩnh. Không dùng tên `1.png`, `frame_1.png` hoặc trộn sprite sheet chưa khai báo vào thư mục frame rời.
 
 Các clip tướng được hỗ trợ theo kế hoạch: `idle`, `attack`, `ultimate`,
-`hit`, `death`, `victory`. Chưa có clip nào thì game dùng ảnh tĩnh hoặc
+`hit`, `death`, `victory`. Thiếu clip nào thì game dùng ảnh tĩnh hoặc
 chuyển động bằng code. `idle` lặp ở 8 FPS; các clip còn lại mặc định 12 FPS,
 không lặp. Game điều phối clip theo nhịp đòn đánh và tốc độ x1/x2/x3.
 
-## Nền và icon
+## Đăng ký clip để game phát
+
+Copy các frame PNG sạch vào `animations/idle/`, `animations/attack/`,
+`animations/hit/` của tướng, đánh số liên tục `000.png`, `001.png`…
+Mở game hoặc vào trận mới là nhận. Không cần tạo SpriteFrames hay sửa code.
+Idle lặp 8 FPS; attack/hit 12 FPS. Ultimate thiếu clip riêng sẽ mượn attack.
+Death thiếu clip riêng dùng ngã bằng code. `victory` chưa được nối vào trận.
+
+Trong mỗi clip, canvas phải giống nhau. Tối đa 120 frame, 10 giây và tổng
+16 triệu pixel (khoảng 64 MiB texture RGBA mỗi clip, chưa tính overhead).
+Frame thiếu số/hỏng/sai canvas sẽ dùng cả clip tốt trước đó hoặc fallback;
+không trộn nửa bộ cũ và nửa bộ mới. Bỏ `.gitkeep` cũng được.
+
+Mốc đánh mặc định là frame giữa, đánh số từ 0: clip 8 frame dùng `004.png`.
+Cận chiến tiến tới rồi đánh tại mốc này; đòn xa phóng projectile tại mốc,
+HP chỉ đổi khi đạn tới. `hit` phát khi nhận damage, né/heal không phát hit.
+Toàn bộ frame, tiến/lùi và VFX chạy cùng tốc độ x1/x2/x3.
+
+Không cần cấu hình nếu dùng mặc định. Muốn đổi mốc, tạo `animation.json`
+trong thư mục tướng (ví dụ dưới đây dành cho attack có ít nhất 5 frame):
+
+```json
+{
+  "version": 1,
+  "clips": {
+    "idle": { "fps": 8 },
+    "attack": { "fps": 12, "event_frame": 4 },
+    "hit": { "fps": 12 }
+  },
+  "effects": { "ultimate": { "fps": 12 } },
+  "anchors": { "cast": [0.65, 0.55], "hit": [0.5, 0.55] }
+}
+```
+
+FPS hợp lệ 1–60; event_frame phải nằm trong clip. Anchor là tọa độ chuẩn
+hóa trên canvas, tự lật theo phe. Cấu hình sai dùng mặc định và báo console.
+
+VFX cũng là chuỗi `000.png`…: `effects/normal` và `effects/ultimate` tại mục
+tiêu; `effects/cast` ở tay caster khi phóng; `effects/projectile` bay từ tay
+tới mục tiêu. Projectile vẽ hướng gốc sang phải; effect va chạm đặt tâm ảnh
+ở giữa. Có thể dùng một frame cho VFX tĩnh. Shared hit/heal/projectile trong
+`vfx/shared/` được dùng khi thiếu mẫu riêng tương ứng. VFX PNG và VFX code
+không phát chồng nhau cho cùng một impact. `effects/aura` lặp dưới chân khi còn sống.
+
+Bộ clip hiện đọc từ thư mục vật lý: source project hoặc `assets/` cạnh
+executable desktop. Clip nằm hoàn toàn trong PCK chưa có inventory loader;
+đóng gói clip theo PCK sẽ làm ở đợt export. Body/portrait vẫn có nhánh packed.
+
+## Sprite sheet (tùy chọn)
+
+Ảnh rời vẫn tự nhận theo tên. Bộ Gia Cát Lượng dùng thêm `atlas.png` với
+khai báo trong `animation.json`, ví dụ một clip 8 frame trên sheet 3×3:
+
+```json
+{
+  "version": 1,
+  "clips": {
+    "idle": { "sheet": "atlas.png", "columns": 3, "rows": 3, "frames": 8, "fps": 8 }
+  }
+}
+```
+
+Sheet đọc từ trái qua phải, trên xuống dưới; ô cuối không dùng. Mỗi clip
+có thư mục riêng và một atlas. Nếu có `000.png`, game ưu tiên chuỗi PNG rời,
+bỏ qua atlas cùng thư mục, nên bạn có thể thay art mà không sửa JSON.
+
+Các tùy chọn nâng cao `regions`, `canvas`, `offsets`, `pivots`,
+`display_scale`, `source_polygons` dùng để căn những sheet có khoảng trống
+không đều. Bộ Gia Cát Lượng đã có metadata này; giữ nguyên khi copy bộ.
+PNG nguồn được giữ nguyên, không cần export một ảnh riêng cho từng ô.
+
+## Nền và icon (quy ước, chưa nạp PNG)
 
 ```text
 assets/
@@ -143,7 +217,7 @@ thư mục tạm riêng, không được copy vào các thư mục tướng củ
 
 ## Copy và thay ảnh tự động trên màn đang mở (bước tiếp theo)
 
-Sau khi triển khai reload và các nhóm asset còn lại:
+Các bước sau áp dụng khi triển khai reload, hiện chưa cập nhật ngay trên màn đang mở:
 
 1. Xuất **PNG** đúng tên ở thư mục tương ứng. Tên thư mục/file dùng chữ
    thường, không dấu; Linux phân biệt chữ hoa/chữ thường.

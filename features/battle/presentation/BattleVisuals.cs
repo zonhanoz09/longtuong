@@ -1,4 +1,6 @@
 using Godot;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace LongTuong;
 
@@ -7,34 +9,105 @@ public partial class BattleActor : Node2D
 {
     public Fighter Fighter { get; set; } = null!;
     public bool Current { get; set; }
+    public bool? FacingRightOverride { get; set; }
+    public bool FacesRight => FacingRightOverride ?? Fighter.IsPlayer;
     public float Motion { get; set; }
     public BattleArt Art => BattleArtCatalog.For(Fighter.Def, Fighter.IsPlayer);
     public Color Accent => Art.Accent;
     public Texture2D? BodyTexture { get; private set; }
-    // 512px canvas, feet at (256,460), matching assets/README.md.
-    public Rect2 BodyDrawRect => BodyTexture == null ? default : new Rect2(
-        -BodyTexture.GetWidth() * 112f / BodyTexture.GetHeight() * 0.5f,
-        -112f * 460f / 512f,
-        BodyTexture.GetWidth() * 112f / BodyTexture.GetHeight(), 112f);
+    private readonly Dictionary<string, FrameClip?> _clips = new();
+    public string Pose { get; private set; } = "idle";
+    public double PoseTime { get; private set; }
+    public bool DisplayAlive { get; set; } = true;
+    public Vector2 Recoil { get; set; }
+    private Vector2 _castAnchor, _hitAnchor;
+    private FrameClip? _aura;
+    private double _auraTime;
+    public FrameClip? PoseClip(string name) => _clips.GetValueOrDefault(name)
+        ?? (name == "ultimate" ? _clips.GetValueOrDefault("attack") : null);
+    public Texture2D? FrameTexture => PoseClip(Pose)?.Sample(PoseTime)
+        ?? (Pose == "idle" ? null : BodyTexture)
+        ?? _clips.GetValueOrDefault("idle")?.Sample(0) ?? BodyTexture;
+    public int FrameIndex => PoseClip(Pose)?.FrameIndex(PoseTime) ?? 0;
+    public Vector2 FramePivot => PoseClip(Pose)?.Pivot(PoseTime)
+        ?? ((Pose == "idle" || BodyTexture == null) ? _clips.GetValueOrDefault("idle")?.Pivot(0) : null)
+        ?? new Vector2(0.5f, 460f/512f);
+    private float PoseScale => PoseClip(Pose)?.DisplayScale ?? ((BodyTexture == null || Pose == "idle") ? _clips.GetValueOrDefault("idle")?.DisplayScale ?? 1 : 1);
+    // Per-frame author pivots align atlas poses without altering the artwork.
+    public Rect2 BodyDrawRect => FrameTexture == null ? default : new Rect2(
+        -FrameTexture.GetWidth() * 112f * PoseScale / FrameTexture.GetHeight() * FramePivot.X,
+        -112f * PoseScale * FramePivot.Y,
+        FrameTexture.GetWidth() * 112f * PoseScale / FrameTexture.GetHeight(), 112f * PoseScale);
 
     public override void _Ready()
     {
         TextureFilter = TextureFilterEnum.Linear;
         BodyTexture = AssetCatalog.Body(Fighter.Def.Id);
+        foreach (var name in new[] { "idle", "attack", "ultimate", "hit", "death" })
+            _clips[name] = AssetCatalog.Clip(Fighter.Def.Id, name);
+        _aura = AssetCatalog.Effect(Fighter.Def.Id, "aura");
+        _castAnchor = AssetCatalog.Anchor(Fighter.Def.Id, "cast");
+        _hitAnchor = AssetCatalog.Anchor(Fighter.Def.Id, "hit");
+        DisplayAlive = Fighter.Alive;
         QueueRedraw();
+    }
+
+    public void SamplePose(string pose, double time)
+    {
+        Pose = pose;
+        PoseTime = System.Math.Max(0, time);
+        QueueRedraw();
+    }
+    public void Idle()
+    {
+        Recoil = Vector2.Zero;
+        if (DisplayAlive && Pose != "idle") SamplePose("idle", 0);
+    }
+    public void SampleAura(double time)
+    {
+        _auraTime = System.Math.Max(0, time);
+        QueueRedraw();
+    }
+    public void AdvanceIdle(double delta)
+    {
+        _auraTime += delta;
+        if (Pose == "idle") SamplePose("idle", PoseTime + delta);
+    }
+    public Vector2 AnchorWorld(string name)
+    {
+        var point = name == "cast" ? _castAnchor : _hitAnchor;
+        var texture = FrameTexture;
+        float width = (texture == null ? 112 : texture.GetWidth() * 112f / texture.GetHeight()) * PoseScale;
+        var local = new Vector2((point.X - FramePivot.X) * width * (FacesRight ? 1 : -1), (point.Y - FramePivot.Y) * 112 * PoseScale);
+        return ToGlobal(local);
     }
 
     public override void _Draw()
     {
         DrawSetTransform(Vector2.Zero, 0, new Vector2(1.4f, 0.35f));
         DrawCircle(new Vector2(0, 2), 25, UiTheme.Shadow);
-        if (Current) DrawArc(new Vector2(0, 2), 29, 0, Mathf.Tau, 48, UiTheme.Gold, 2, true);
-        DrawSetTransform(new Vector2(Motion * (Fighter.IsPlayer ? 1 : -1), 0),
-            Fighter.Alive ? 0 : (Fighter.IsPlayer ? -0.9f : 0.9f),
-            new Vector2(Fighter.IsPlayer ? 1 : -1, 1));
-        if (BodyTexture != null)
+        if (_aura != null && DisplayAlive)
         {
-            DrawTextureRect(BodyTexture, BodyDrawRect, false);
+            DrawSetTransform(Vector2.Zero, 0, new Vector2(1, 0.36f));
+            DrawTextureRect(_aura.Sample(_auraTime), new Rect2(-52, -52, 104, 104), false);
+        }
+        DrawSetTransform(Vector2.Zero, 0, new Vector2(1.4f, 0.35f));
+        if (Current) DrawArc(new Vector2(0, 2), 29, 0, Mathf.Tau, 48, UiTheme.Gold, 2, true);
+        DrawSetTransform(new Vector2(Motion * (FacesRight ? 1 : -1), 0) + Recoil,
+            DisplayAlive || PoseClip("death") != null ? 0 : (FacesRight ? -0.9f : 0.9f),
+            new Vector2(FacesRight ? 1 : -1, 1));
+        if (FrameTexture != null)
+        {
+            var clip = PoseClip(Pose);
+            var source = clip?.SourcePolygons[clip.FrameIndex(PoseTime)];
+            if (source != null && FrameTexture is AtlasTexture atlas && atlas.Atlas != null)
+            {
+                var size = FrameTexture.GetSize();
+                var points = source.Select(p => (p-atlas.Region.Position+atlas.Margin.Position)/size*BodyDrawRect.Size+BodyDrawRect.Position).ToArray();
+                var uv = source.Select(p => p/atlas.Atlas.GetSize()).ToArray();
+                DrawColoredPolygon(points, Colors.White, uv, atlas.Atlas);
+            }
+            else DrawTextureRect(FrameTexture, BodyDrawRect, false);
             DrawSetTransform(Vector2.Zero);
             return;
         }
@@ -256,14 +329,40 @@ public partial class BattleProjectile : Node2D
     public Color Tint { get; set; }
     public BattleWeapon Weapon { get; set; }
     public Vector2 Direction { get; set; }
+    public FrameClip? Clip { get; set; }
+    public double Time { get; set; }
     public override void _Draw()
     {
         var d = Direction.Normalized();
+        if (Clip != null)
+        {
+            var texture = Clip.Sample(Time, true);
+            DrawSetTransform(Vector2.Zero, d.Angle());
+            float width = 40f * texture.GetWidth() / texture.GetHeight();
+            var pivot = Clip.Pivot(Time);
+            DrawTextureRect(texture, new Rect2(-width*pivot.X, -40*pivot.Y, width, 40), false);
+            DrawSetTransform(Vector2.Zero);
+            return;
+        }
         DrawLine(-d*30, Vector2.Zero, Tint.Darkened(0.35f), 4, true);
         DrawCircle(Vector2.Zero, 6, Tint);
         if (Weapon == BattleWeapon.Knives)
             DrawColoredPolygon(new[] { d*14, -d*6+d.Orthogonal()*5, -d*6-d.Orthogonal()*5 }, UiTheme.SilverCoin);
         else
             DrawArc(Vector2.Zero, 11, 0, Mathf.Tau, 24, Tint, 2, true);
+    }
+}
+
+
+public partial class BattleFrameEffect : Node2D
+{
+    public FrameClip Clip { get; set; } = null!;
+    public double Time { get; set; }
+    public override void _Draw()
+    {
+        var texture = Clip.Sample(Time);
+        float width = 100f * texture.GetWidth() / texture.GetHeight();
+        var pivot = Clip.Pivot(Time);
+        DrawTextureRect(texture, new Rect2(-width*pivot.X, -100*pivot.Y, width, 100), false);
     }
 }

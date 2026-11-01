@@ -71,6 +71,7 @@ public partial class HubScene : Control
 	private Button? _closeButton;
 	private Control? _character;
 	private ColorRect? _characterBody;
+	private BattleActor? _characterActor;
 	private Label? _characterName;
 	private Vector2 _target;
 	private bool _hasTarget;
@@ -122,9 +123,11 @@ public partial class HubScene : Control
 	public void StepCharacter(float delta)
 	{
 		if (_character == null) return;
+		_characterActor?.AdvanceIdle(delta);
 		if (_hasTarget)
 		{
 			var toTarget = _target - _character.Position;
+			if (_characterActor != null && Math.Abs(toTarget.X)>0.1f) _characterActor.FacingRightOverride=toTarget.X>=0;
 			var dist = toTarget.Length();
 			var step = CharacterSpeed * delta;
 			if (dist <= Math.Max(step, 2f))
@@ -133,6 +136,7 @@ public partial class HubScene : Control
 				_hasTarget = false;
 				_idleTimer = 2f + (float)_random.NextDouble() * 3f; // idle 2-5s, then wander
 				if (_characterBody != null) _characterBody.Position = Vector2.Zero;
+				if (_characterActor != null) _characterActor.Recoil=Vector2.Zero;
 			}
 			else
 			{
@@ -140,6 +144,7 @@ public partial class HubScene : Control
 				// Walk bob (idle placeholder has no walk animation yet):
 				// bounce only the body sprite, never the tracked position.
 				_bobTime += delta * 10f;
+				if (_characterActor != null) _characterActor.Recoil=new Vector2(0,(float)Math.Sin(_bobTime)*2f);
 				if (_characterBody != null)
 					_characterBody.Position = new Vector2(0, (float)Math.Sin(_bobTime) * 3f);
 			}
@@ -215,8 +220,27 @@ public partial class HubScene : Control
 			charLabel.Text = "";
 		}
 		AssetIcons.ApplyPortrait(portrait, heroId, charLabel);
+		RefreshCharacterArt(heroId);
 		GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarCurrencyLabel").Text =
 			$"Vàng: {gm.Save.Gold:N0}  |  Bạc: {gm.Save.Silver:N0}";
+	}
+
+	private void RefreshCharacterArt(string heroId)
+	{
+		if (_character==null || _characterBody==null) return;
+		if (_characterActor?.Fighter.Def.Id==heroId) return;
+		if (_characterActor!=null)
+		{
+			_character.RemoveChild(_characterActor);
+			_characterActor.QueueFree();
+			_characterActor=null;
+		}
+		bool hasArt=!string.IsNullOrEmpty(heroId) && (AssetCatalog.Body(heroId)!=null || AssetCatalog.Clip(heroId,"idle")!=null);
+		_characterBody.Visible=!hasArt;
+		if (!hasArt) return;
+		_characterActor=new BattleActor { Name="CharacterActor", Fighter=new Fighter(HeroDatabase.Get(heroId),true), Position=new Vector2(32,96) };
+		_character.AddChild(_characterActor);
+		_character.MoveChild(_characterActor,0);
 	}
 
 	// Phase 2.57: icon rows (top/bottom) like the reference — 64x64 rounded

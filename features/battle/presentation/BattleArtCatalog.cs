@@ -17,7 +17,7 @@ public static class BattleArtCatalog
         ["quan_vu"] = new(UiTheme.Jade, BattleWeapon.Glaive, BattleMotif.Dragon),
         ["truong_phi"] = new(UiTheme.Iron.Lightened(0.4f), BattleWeapon.Spear, BattleMotif.Roar),
         ["trieu_van"] = new(UiTheme.SilverCoin, BattleWeapon.Spear, BattleMotif.Thrust, Plumes: true),
-        ["gia_cat_luong"] = new(UiTheme.PlayerBlue, BattleWeapon.Fan, BattleMotif.Trigram, true),
+        ["gia_cat_luong"] = new(UiTheme.GoldHover, BattleWeapon.Fan, BattleMotif.Trigram, true),
         ["dieu_thuyen"] = new(UiTheme.Petal, BattleWeapon.Ribbon, BattleMotif.Petals, true),
         ["lu_bo"] = new(UiTheme.EnemyRed, BattleWeapon.Halberd, BattleMotif.Cross, Plumes: true),
         ["ton_kien"] = new(UiTheme.GoldHover, BattleWeapon.Glaive, BattleMotif.Tiger),

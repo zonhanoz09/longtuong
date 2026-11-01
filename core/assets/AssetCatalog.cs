@@ -7,9 +7,9 @@ using System.Linq;
 namespace LongTuong;
 
 /// <summary>Convention-based PNG loading. Loose files do not need Godot import.</summary>
-public static class AssetCatalog
+public static partial class AssetCatalog
 {
-    private sealed record Entry(long Modified, long Length, Texture2D? Texture);
+    private sealed record Entry(long Modified, long Length, Texture2D? Texture, bool Valid);
     private static readonly Dictionary<string, Entry> Cache = new(StringComparer.Ordinal);
     private static readonly HashSet<string> Warnings = new(StringComparer.Ordinal);
     private static string? _testDirectory;
@@ -37,7 +37,7 @@ public static class AssetCatalog
         return ResourceLoader.Exists(resource) ? ResourceLoader.Load<Texture2D>(resource) : null;
     }
 
-    private static Texture2D? LoadLoose(string path)
+    private static Texture2D? LoadLoose(string path, bool keepLastGood = true)
     {
         try
         {
@@ -45,7 +45,7 @@ public static class AssetCatalog
             if (!info.Exists) { Cache.Remove(path); return null; }
             long modified = info.LastWriteTimeUtc.Ticks, length = info.Length;
             Cache.TryGetValue(path, out var old);
-            if (old != null && old.Modified == modified && old.Length == length) return old.Texture;
+            if (old != null && old.Modified == modified && old.Length == length) return old.Valid || keepLastGood ? old.Texture : null;
             Texture2D? texture = null;
             // Validate PNG canvas before decoding. Export art should normally be 512².
             if (length <= 32 * 1024 * 1024 && length >= 33)
@@ -67,14 +67,15 @@ public static class AssetCatalog
             if (texture == null)
                 WarnOnce(path + modified + length, $"Asset PNG không hợp lệ (tối đa 4096×4096, 32 MB): {path}");
             // A broken replacement keeps the most recent good image for this process.
+            bool valid = texture != null;
             texture ??= old?.Texture;
-            Cache[path] = new Entry(modified, length, texture);
-            return texture;
+            Cache[path] = new Entry(modified, length, texture, valid);
+            return valid || keepLastGood ? texture : null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             WarnOnce(path + ex.GetType().Name, $"Không đọc được asset {path}: {ex.Message}");
-            return Cache.TryGetValue(path, out var old) ? old.Texture : null;
+            return keepLastGood && Cache.TryGetValue(path, out var old) ? old.Texture : null;
         }
     }
 
@@ -87,6 +88,7 @@ public static class AssetCatalog
     internal static void UseTestDirectory(string? directory)
     {
         if (!GameManager.IsTestRun) throw new InvalidOperationException("Test asset root is only available in test scenes.");
+        ClipCache.Clear();
         Cache.Clear();
         Warnings.Clear();
         _testDirectory = directory;

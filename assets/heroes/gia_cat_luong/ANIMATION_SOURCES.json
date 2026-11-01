@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-02",
+  "generator": "image_gen built-in",
+  "selected": [
+    {
+      "asset": "animations/idle/atlas.png",
+      "source": "exec-ed943402-6a1b-46cc-8410-abc77bf8bf9a.png"
+    },
+    {
+      "asset": "animations/attack/atlas.png",
+      "source": "exec-c18ece3d-f92a-4a92-b74d-f260a469a16c.png"
+    },
+    {
+      "asset": "animations/hit/atlas.png",
+      "source": "exec-b3e45760-af2a-404c-add7-fe0a0457e914.png"
+    },
+    {
+      "asset": "animations/ultimate/atlas.png",
+      "source": "exec-9bc1539e-3e73-48d9-8c64-c72f36b7486d.png"
+    },
+    {
+      "asset": "animations/death/atlas.png",
+      "source": "exec-8a75482c-d699-463c-8c81-f9180e02cf89.png"
+    },
+    {
+      "asset": "effects/projectile/atlas.png",
+      "source": "exec-deb4b037-664f-433c-bbc7-3bed48755c71.png"
+    },
+    {
+      "asset": "effects/normal/atlas.png",
+      "source": "exec-3f11800f-7e02-4fb1-bbc8-b64e403a76b3.png"
+    },
+    {
+      "asset": "effects/cast/atlas.png",
+      "source": "exec-543c17c0-3527-4563-9d5b-551ee5a705df.png"
+    },
+    {
+      "asset": "effects/ultimate/atlas.png",
+      "source": "exec-9992db59-299b-4e9b-bc3f-7be1d0665142.png"
+    },
+    {
+      "asset": "effects/aura/atlas.png",
+      "source": "exec-2fc5057e-ea43-4509-9c4f-478bb7858826.png"
+    }
+  ]
+}

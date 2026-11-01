@@ -63,31 +63,34 @@ public partial class BattleHeroCell : PanelContainer
         });
     }
 
-    public void Refresh(Fighter f, bool isCurrent)
+    public void Refresh(Fighter f, bool isCurrent, int? displayHp = null, int? displayRage = null)
     {
         if (Actor == null)
         {
             Actor = new BattleActor { Fighter = f, Position = new Vector2(66, 70), Scale = Vector2.One * 0.7f };
             GetChild(0).GetChild(0).AddChild(Actor);
         }
-        Actor.Current = isCurrent && f.Alive;
+        int hp = displayHp ?? f.Hp;
+        bool alive = hp > 0;
+        Actor.DisplayAlive = alive;
+        Actor.Current = isCurrent && alive;
         Actor.QueueRedraw();
         NameLabel.Text = f.Name;
         // Phase 2.27: hero name in the tier color (gold for tierless).
         var tier = TavernData.TierOf(f.Def.Id);
         NameLabel.AddThemeColorOverride("font_color", tier == null ? UiTheme.Gold : UiTheme.TierColor(tier.Value));
         HpBar.MaxValue = f.MaxHp;
-        HpBar.Value = f.Hp;
+        HpBar.Value = hp;
         RageBar.MaxValue = 100;
-        RageBar.Value = f.Rage;
-        Modulate = f.Alive ? Colors.White : UiTheme.DeadGrey;
-        SetBorder(isCurrent && f.Alive);
+        RageBar.Value = displayRage ?? f.Rage;
+        Modulate = alive ? Colors.White : UiTheme.DeadGrey;
+        SetBorder(isCurrent && alive);
     }
 }
 
 /// <summary>
 /// Automatic battle presentation over the deterministic C# engine.
-/// Timer playback reveals HP at impact and waits for the final effect before
+/// One presentation clock reveals HP at impact and waits for the final effect before
 /// rewards or Party team changes. StepBattle is the synchronous simulation path.
 /// Formation grids retain their slot mapping and host procedural actor art.
 /// </summary>
@@ -98,13 +101,13 @@ public partial class BattleScene : Control
     private readonly Dictionary<Fighter, BattleHeroCell> _cells = new();
     private Label? _turnLabel;
     private Button? _speedButton;
-    private Timer? _timer;
+    private double _waitRemaining = 1;
     private int _speed = 1;
     private bool _finished;
     private bool _presenting;
-    private Tween? _actionTween;
-    private readonly List<Node> _effects = new();
+    private BattlePresentationController? _presentation;
     public bool IsPresenting => _presenting;
+    public bool AutoPlay { get; set; } = true;
     private Control? _resultPopup;
 
     // Enemy grid cells in row-major order, columns = Tiền / Trung / Hậu
@@ -150,10 +153,6 @@ public partial class BattleScene : Control
             BuildEnemyGrid();
         }
 
-        _timer = new Timer { WaitTime = 1.0, OneShot = true, Autostart = false };
-        _timer.Timeout += OnBattleTick;
-        AddChild(_timer);
-        _timer.Start();
         Refresh();
     }
 
@@ -263,8 +262,7 @@ public partial class BattleScene : Control
     }
 
     // One visible turn: the current actor acts (ultimate if rage is full),
-    // then the engine advances to the next actor. Shared by the timer tick
-    // and by tests (which drive the battle without waiting for real time).
+    // then the engine advances. Synchronous path for simulation/tests.
     public void StepBattle()
     {
         if (_engine == null || _engine.IsOver || _finished || _presenting) return;
@@ -277,8 +275,6 @@ public partial class BattleScene : Control
 
     // Interactive playback waits for impact before revealing the engine snapshot.
     // StepBattle remains the synchronous path for simulation/test callers.
-    private void OnBattleTick() => PlayNextAction();
-
     public void PlayNextAction()
     {
         if (_engine == null || _engine.IsOver || _finished || _presenting) return;
@@ -290,99 +286,45 @@ public partial class BattleScene : Control
         _presenting = true;
         if (_turnLabel != null)
             _turnLabel.Text = $"{actor.Name} — {(action.Ultimate ? actor.Def.UltName : actor.Def.NormalName)}";
-        _actionTween?.Kill();
-        _actionTween = CreateTween().SetSpeedScale(_speed);
-        _actionTween.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
-        var art = _cells[actor].Actor!;
-        var home = art.Position;
-        var start = art.GlobalPosition;
-        var targets = action.Impacts.Select(i => _cells[i.Target].Actor!).ToArray();
-        bool ranged = art.Art.Ranged || (action.Ultimate && actor.Def.UltKind != UltKind.SingleDamage);
-        var destination = start;
-        if (!ranged && targets.Length > 0)
-            destination = targets[0].GlobalPosition - new Vector2(actor.IsPlayer ? 65 : -65, 0);
-        art.ZIndex = 3;
-        var bolts = new List<(BattleProjectile Bolt, Vector2 From, Vector2 To)>();
-        if (ranged)
-        {
-            foreach (var target in targets)
-            {
-                var from = start - GlobalPosition - new Vector2(0, 35);
-                var to = target.GlobalPosition - GlobalPosition - new Vector2(0, 35);
-                var bolt = new BattleProjectile { Position = from, Tint = art.Accent, Weapon = art.Art.Weapon, Direction = to-from, ZIndex = 3 };
-                AddChild(bolt);
-                bolts.Add((bolt, from, to));
-                _effects.Add(bolt);
-            }
-        }
-        _actionTween.TweenMethod(Callable.From<float>(v =>
-        {
-            art.GlobalPosition = start.Lerp(destination, v);
-            art.Motion = ranged ? 10 * Mathf.Sin(v*Mathf.Pi) : 0;
-            art.QueueRedraw();
-            foreach (var (bolt, from, to) in bolts) bolt.Position = from.Lerp(to, v);
-        }), 0f, 1f, 0.22);
-        _actionTween.TweenCallback(Callable.From(() =>
-        {
-            foreach (var (bolt, _, _) in bolts) { _effects.Remove(bolt); bolt.QueueFree(); }
-            Refresh();
-            foreach (var impact in action.Impacts) ShowImpact(impact, art.Art, action.Ultimate);
-        }));
-        _actionTween.TweenMethod(Callable.From<float>(v =>
-        {
-            art.GlobalPosition = destination.Lerp(start, v);
-            art.Motion = 0;
-            art.QueueRedraw();
-            foreach (var node in _effects)
-            {
-                if (node is BattleImpactVisual effect) { effect.Progress = v; effect.QueueRedraw(); }
-                else if (node is Label label) { label.Position = label.Position with { Y = (float)label.GetMeta("start_y") - 30 * v }; label.Modulate = Colors.White.Lerp(Colors.Transparent, v); }
-            }
-        }), 0f, 1f, 0.42);
-        _actionTween.TweenCallback(Callable.From(() =>
-        {
-            art.Position = home;
-            art.ZIndex = 0;
-            ClearEffects();
-            _presenting = false;
-            FinishIfOver();
-            if (!_finished) _timer?.Start(0.36 / _speed);
-        }));
+        _presentation?.Dispose();
+        _presentation = new BattlePresentationController(this, _cells, action, CommitSnapshot);
     }
 
-    private void ShowImpact(BattleImpact impact, BattleArt art, bool ultimate)
+    private void CommitSnapshot(FighterSnapshot snapshot)
     {
-        if (!_cells.TryGetValue(impact.Target, out var cell)) return;
-        var point = cell.Actor!.GlobalPosition - GlobalPosition - new Vector2(0, 50);
-        if (!impact.Dodged)
-        {
-            var effect = new BattleImpactVisual { Position = point, Tint = impact.Healing ? art.Accent.Lightened(0.2f) : art.Accent, Healing = impact.Healing, Ultimate = ultimate, HeroId = _engine!.LastAction!.Actor.Def.Id, Motif = art.Motif };
-            AddChild(effect);
-            _effects.Add(effect);
-        }
-        var text = impact.Dodged ? "NÉ" : impact.Healing ? $"+{impact.Amount}" : $"−{impact.Amount}";
-        if (impact.Critical) text += " BẠO!";
-        if (impact.Blocked) text += " ĐỠ";
-        var label = new Label { Text = text, Position = point - new Vector2(45, 50), ZIndex = 5 };
-        UiTheme.StyleBody(label, impact.Critical ? UiTheme.FontTitle : UiTheme.FontHeading);
-        label.AddThemeColorOverride("font_color", impact.Healing ? UiTheme.HpColor : UiTheme.GoldHover);
-        label.AddThemeColorOverride("font_outline_color", UiTheme.Background);
-        label.AddThemeConstantOverride("outline_size", 5);
-        label.SetMeta("start_y", label.Position.Y);
-        AddChild(label);
-        _effects.Add(label);
+        _cells[snapshot.Fighter].Refresh(snapshot.Fighter, false, snapshot.Hp, snapshot.Rage);
+        if (_bossHpLabel != null && _engine?.EnemyFighters.FirstOrDefault() == snapshot.Fighter)
+            _bossHpLabel.Text = $"HP boss: {snapshot.Hp:N0} / {_partyBossMaxHp:N0}";
     }
 
-    private void ClearEffects()
+    public override void _Process(double delta)
     {
-        foreach (var node in _effects) node.QueueFree();
-        _effects.Clear();
+        if (_finished) return;
+        double elapsed = delta * _speed;
+        foreach (var cell in _cells.Values) cell.Actor?.AdvanceIdle(elapsed);
+        if (_presentation != null)
+        {
+            _presentation.Advance(elapsed);
+            if (_presentation.Completed)
+            {
+                _presentation = null;
+                _presenting = false;
+                Refresh();
+                FinishIfOver();
+                _waitRemaining = 0.36;
+            }
+        }
+        else if (AutoPlay)
+        {
+            _waitRemaining -= elapsed;
+            if (_waitRemaining <= 0) PlayNextAction();
+        }
     }
 
     public override void _ExitTree()
     {
-        _actionTween?.Kill();
-        _actionTween = null;
+        _presentation?.Dispose();
+        _presentation = null;
     }
 
     private void OnSpeedPressed()
@@ -390,13 +332,6 @@ public partial class BattleScene : Control
         if (_finished) return;
         _speed = _speed % 3 + 1;
         if (_speedButton != null) _speedButton.Text = $"Tăng tốc x{_speed}";
-        _actionTween?.SetSpeedScale(_speed);
-        if (_timer != null && !_presenting)
-        {
-            _timer.WaitTime = 1.0 / _speed;
-            _timer.Stop();
-            _timer.Start();
-        }
     }
 
     private void FinishIfOver()
@@ -419,7 +354,6 @@ public partial class BattleScene : Control
             }
         }
         _finished = true;
-        _timer?.Stop();
         if (_speedButton != null) _speedButton.Disabled = true;
         int stars = gm.CurrentMode == BattleMode.Party ? (won ? 3 : 0) : _engine.Stars();
         // Rewards are applied immediately on win; the popup is display-only.
