@@ -161,7 +161,7 @@ public partial class HeroListScene : Control
             ring.SetAnchorsPreset(Control.LayoutPreset.FullRect);
             _portraitRect.AddChild(ring);
         }
-        if (string.IsNullOrEmpty(heroId)) { charLabel.Text = ""; return; }
+        if (string.IsNullOrEmpty(heroId)) { charLabel.Text = ""; AssetIcons.ApplyPortrait(_portraitRect, "", charLabel); return; }
         var color = AssetIcons.PortraitBorderColor(heroId);
         _portraitRect.Color = UiTheme.Panel;
         charLabel.Text = AssetIcons.PortraitChar(heroId);
@@ -176,6 +176,7 @@ public partial class HeroListScene : Control
             CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
             ContentMarginLeft = 0, ContentMarginRight = 0, ContentMarginTop = 0, ContentMarginBottom = 0,
         });
+        AssetIcons.ApplyPortrait(_portraitRect, heroId, charLabel);
     }
 
     private static void ClearBox(Node box)

@@ -17,6 +17,8 @@ public class BattleEngine
     public int Seed { get; }
     public StageDef Stage { get; }
 
+    public BattleAction? LastAction { get; private set; }
+    private readonly List<BattleImpact> _impacts = new();
     private readonly Random _rng;
     private List<Fighter> _order = new();
     private int _orderIndex;
@@ -210,6 +212,17 @@ public class BattleEngine
 
     private void Execute(Fighter actor, bool isUlt)
     {
+        var before = PlayerFighters.Concat(EnemyFighters)
+            .Select(f => new FighterSnapshot(f, f.Hp, f.Rage)).ToArray();
+        _impacts.Clear();
+        ExecuteCore(actor, isUlt);
+        LastAction = new BattleAction(actor, isUlt, before,
+            PlayerFighters.Concat(EnemyFighters).Select(f => new FighterSnapshot(f, f.Hp, f.Rage)).ToArray(),
+            _impacts.ToArray());
+    }
+
+    private void ExecuteCore(Fighter actor, bool isUlt)
+    {
         TurnCount++;
         double power = isUlt ? actor.Def.UltPower : 1.0;
         if (isUlt)
@@ -222,7 +235,9 @@ public class BattleEngine
                 if (target != null)
                 {
                     int heal = (int)Math.Round(target.MaxHp * actor.Def.UltPower);
+                    int oldHp = target.Hp;
                     target.Hp = Math.Min(target.MaxHp, target.Hp + heal);
+                    _impacts.Add(new BattleImpact(target, target.Hp - oldHp, true, false, false, false));
                     Log.Add($"{target.Name} hồi {heal} HP.");
                 }
                 return;
@@ -256,6 +271,7 @@ public class BattleEngine
         bool blocked = !dodged && blockChance > 0 && _rng.NextDouble() < blockChance;
         double variance = VarianceMin + _rng.NextDouble() * (VarianceMax - VarianceMin);
         int dmg = CalculateDamage(actor, target, power, crit, dodged, variance, blocked);
+        _impacts.Add(new BattleImpact(target, dmg, false, dodged, crit, blocked));
         if (dodged)
         {
             Log.Add($"{actor.Name} đánh {target.Name} nhưng bị NÉ!");

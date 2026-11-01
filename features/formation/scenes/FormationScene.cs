@@ -206,6 +206,24 @@ public partial class FormationScene : Control
             btn.AddThemeStyleboxOverride("normal", box);
             btn.AddThemeStyleboxOverride("hover", box);
             btn.AddThemeStyleboxOverride("pressed", box);
+            bool hasPortrait = AssetIcons.ApplyPortrait(btn, heroId ?? "", bottomInset: 24, padding: 10);
+            var caption = btn.GetNodeOrNull<Label>("AssetPortraitCaption");
+            if (hasPortrait && caption == null)
+            {
+                caption = new Label
+                {
+                    Name = "AssetPortraitCaption", HorizontalAlignment = HorizontalAlignment.Center,
+                    MouseFilter = MouseFilterEnum.Ignore, ClipText = true,
+                };
+                btn.AddChild(caption);
+                caption.AnchorRight = caption.AnchorTop = caption.AnchorBottom = 1;
+                caption.OffsetTop = -24;
+                UiTheme.StyleBody(caption, UiTheme.FontSmall);
+                caption.AddThemeColorOverride("font_outline_color", UiTheme.Background);
+                caption.AddThemeConstantOverride("outline_size", 4);
+            }
+            if (caption != null) { caption.Text = btn.Text; caption.Visible = hasPortrait; }
+            if (hasPortrait) btn.Text = "";
         }
     }
 

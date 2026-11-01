@@ -8,13 +8,14 @@ namespace LongTuong;
 // border turns gold for the current actor; dead heroes are greyed out.
 public partial class BattleHeroCell : PanelContainer
 {
+    public BattleActor? Actor { get; private set; }
     public Label NameLabel { get; private set; } = null!;
     public ProgressBar HpBar { get; private set; } = null!;
     public ProgressBar RageBar { get; private set; } = null!;
 
     public BattleHeroCell()
     {
-        CustomMinimumSize = new Vector2(140, 64);
+        CustomMinimumSize = new Vector2(140, 150);
         var box = new VBoxContainer();
         box.AddThemeConstantOverride("separation", 2);
         NameLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center };
@@ -22,6 +23,8 @@ public partial class BattleHeroCell : PanelContainer
         NameLabel.AddThemeColorOverride("font_color", UiTheme.Text);
         HpBar = MakeBar(UiTheme.HpColor, UiTheme.HpBarSize);
         RageBar = MakeBar(UiTheme.PlayerBlue, UiTheme.RageBarSize);
+        var art = new Control { CustomMinimumSize = new Vector2(132, 70), MouseFilter = Control.MouseFilterEnum.Ignore };
+        box.AddChild(art);
         box.AddChild(NameLabel);
         box.AddChild(HpBar);
         box.AddChild(RageBar);
@@ -47,12 +50,12 @@ public partial class BattleHeroCell : PanelContainer
     {
         AddThemeStyleboxOverride("panel", new StyleBoxFlat
         {
-            BgColor = UiTheme.Panel,
+            BgColor = Colors.Transparent,
             BorderColor = current ? UiTheme.Gold : UiTheme.Muted,
-            BorderWidthLeft = current ? 3 : 1,
-            BorderWidthRight = current ? 3 : 1,
-            BorderWidthTop = current ? 3 : 1,
-            BorderWidthBottom = current ? 3 : 1,
+            BorderWidthLeft = 0,
+            BorderWidthRight = 0,
+            BorderWidthTop = 0,
+            BorderWidthBottom = 0,
             CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
             CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
             ContentMarginLeft = 4, ContentMarginRight = 4,
@@ -62,6 +65,13 @@ public partial class BattleHeroCell : PanelContainer
 
     public void Refresh(Fighter f, bool isCurrent)
     {
+        if (Actor == null)
+        {
+            Actor = new BattleActor { Fighter = f, Position = new Vector2(66, 70), Scale = Vector2.One * 0.7f };
+            GetChild(0).GetChild(0).AddChild(Actor);
+        }
+        Actor.Current = isCurrent && f.Alive;
+        Actor.QueueRedraw();
         NameLabel.Text = f.Name;
         // Phase 2.27: hero name in the tier color (gold for tierless).
         var tier = TavernData.TierOf(f.Def.Id);
@@ -76,20 +86,10 @@ public partial class BattleHeroCell : PanelContainer
 }
 
 /// <summary>
-/// Phase 2.21 battle screen ("ĐẤU TRƯỜNG") from Huynh's sketch.
-/// Fully automatic: the battle runs turn by turn for viewing (one action
-/// per tick, ~1s at x1), ultimates auto-cast at 100 rage, and the only
-/// button during battle is Tăng tốc (x1 → x2 → x3 → x1). No battle log.
-/// Left: the player's formation grid (Hậu / Trung / Tiền columns, 7 slots,
-/// empty slots blank); right: the enemy grid mirrored (Tiền closest to the
-/// middle). Phase 2.39: enemies are drawn on their real engine slots
-/// (StageDef.EnemySlot: Tiền giữa, Trung trên, Trung dưới, Hậu giữa,
-/// Trung giữa) and the win popup shows Bạc + drops in the reward squares.
-/// A "Thú cưỡi" placeholder circle sits above each side (no mount system
-/// yet). When the battle ends, a result popup appears (Thắng/Thua trận);
-/// the win popup shows stars, the reward text and 5 empty reward-item
-/// squares (no item drops yet); Thoát returns to the Hub. Rewards are
-/// applied immediately on win, the popup is display-only.
+/// Automatic battle presentation over the deterministic C# engine.
+/// Timer playback reveals HP at impact and waits for the final effect before
+/// rewards or Party team changes. StepBattle is the synchronous simulation path.
+/// Formation grids retain their slot mapping and host procedural actor art.
 /// </summary>
 [GlobalClass]
 public partial class BattleScene : Control
@@ -101,6 +101,10 @@ public partial class BattleScene : Control
     private Timer? _timer;
     private int _speed = 1;
     private bool _finished;
+    private bool _presenting;
+    private Tween? _actionTween;
+    private readonly List<Node> _effects = new();
+    public bool IsPresenting => _presenting;
     private Control? _resultPopup;
 
     // Enemy grid cells in row-major order, columns = Tiền / Trung / Hậu
@@ -111,6 +115,11 @@ public partial class BattleScene : Control
     public override void _Ready()
     {
         UiTheme.ApplyBackground(this);
+        var arena = new BattleArena { Name = "BattleArena" };
+        AddChild(arena);
+        MoveChild(arena, 1);
+        GetNode<Control>("PlayerMount").Hide();
+        GetNode<Control>("EnemyMount").Hide();
         var gm = GetNode<GameManager>("/root/GameManager");
         UiTheme.StyleTitle(GetNode<Label>("TitleLabel"));
         _turnLabel = GetNode<Label>("TurnLabel");
@@ -141,7 +150,7 @@ public partial class BattleScene : Control
             BuildEnemyGrid();
         }
 
-        _timer = new Timer { WaitTime = 1.0, OneShot = false, Autostart = false };
+        _timer = new Timer { WaitTime = 1.0, OneShot = true, Autostart = false };
         _timer.Timeout += OnBattleTick;
         AddChild(_timer);
         _timer.Start();
@@ -211,7 +220,7 @@ public partial class BattleScene : Control
             if (cell == null || !formation.TryGetValue(cell, out var heroId)
                 || string.IsNullOrEmpty(heroId) || !byId.TryGetValue(heroId, out var fighter))
             {
-                grid.AddChild(new Control { CustomMinimumSize = new Vector2(140, 64) });
+                grid.AddChild(new Control { CustomMinimumSize = new Vector2(140, 150) });
                 continue;
             }
             var heroCell = new BattleHeroCell();
@@ -231,7 +240,7 @@ public partial class BattleScene : Control
         {
             if (cell == null || !placed.TryGetValue(cell, out var fighter))
             {
-                grid.AddChild(new Control { CustomMinimumSize = new Vector2(140, 64) });
+                grid.AddChild(new Control { CustomMinimumSize = new Vector2(140, 150) });
                 continue;
             }
             var heroCell = new BattleHeroCell();
@@ -258,7 +267,7 @@ public partial class BattleScene : Control
     // and by tests (which drive the battle without waiting for real time).
     public void StepBattle()
     {
-        if (_engine == null || _engine.IsOver || _finished) return;
+        if (_engine == null || _engine.IsOver || _finished || _presenting) return;
         var cur = _engine.Current;
         if (cur == null) return;
         if (cur.Rage >= 100) _engine.ActCurrentUltimate(); else _engine.ActCurrentNormal();
@@ -266,14 +275,123 @@ public partial class BattleScene : Control
         FinishIfOver();
     }
 
-    private void OnBattleTick() => StepBattle();
+    // Interactive playback waits for impact before revealing the engine snapshot.
+    // StepBattle remains the synchronous path for simulation/test callers.
+    private void OnBattleTick() => PlayNextAction();
+
+    public void PlayNextAction()
+    {
+        if (_engine == null || _engine.IsOver || _finished || _presenting) return;
+        var actor = _engine.Current;
+        if (actor == null) return;
+        if (actor.Rage >= 100) _engine.ActCurrentUltimate(); else _engine.ActCurrentNormal();
+        var action = _engine.LastAction;
+        if (action == null) return;
+        _presenting = true;
+        if (_turnLabel != null)
+            _turnLabel.Text = $"{actor.Name} — {(action.Ultimate ? actor.Def.UltName : actor.Def.NormalName)}";
+        _actionTween?.Kill();
+        _actionTween = CreateTween().SetSpeedScale(_speed);
+        _actionTween.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        var art = _cells[actor].Actor!;
+        var home = art.Position;
+        var start = art.GlobalPosition;
+        var targets = action.Impacts.Select(i => _cells[i.Target].Actor!).ToArray();
+        bool ranged = art.Art.Ranged || (action.Ultimate && actor.Def.UltKind != UltKind.SingleDamage);
+        var destination = start;
+        if (!ranged && targets.Length > 0)
+            destination = targets[0].GlobalPosition - new Vector2(actor.IsPlayer ? 65 : -65, 0);
+        art.ZIndex = 3;
+        var bolts = new List<(BattleProjectile Bolt, Vector2 From, Vector2 To)>();
+        if (ranged)
+        {
+            foreach (var target in targets)
+            {
+                var from = start - GlobalPosition - new Vector2(0, 35);
+                var to = target.GlobalPosition - GlobalPosition - new Vector2(0, 35);
+                var bolt = new BattleProjectile { Position = from, Tint = art.Accent, Weapon = art.Art.Weapon, Direction = to-from, ZIndex = 3 };
+                AddChild(bolt);
+                bolts.Add((bolt, from, to));
+                _effects.Add(bolt);
+            }
+        }
+        _actionTween.TweenMethod(Callable.From<float>(v =>
+        {
+            art.GlobalPosition = start.Lerp(destination, v);
+            art.Motion = ranged ? 10 * Mathf.Sin(v*Mathf.Pi) : 0;
+            art.QueueRedraw();
+            foreach (var (bolt, from, to) in bolts) bolt.Position = from.Lerp(to, v);
+        }), 0f, 1f, 0.22);
+        _actionTween.TweenCallback(Callable.From(() =>
+        {
+            foreach (var (bolt, _, _) in bolts) { _effects.Remove(bolt); bolt.QueueFree(); }
+            Refresh();
+            foreach (var impact in action.Impacts) ShowImpact(impact, art.Art, action.Ultimate);
+        }));
+        _actionTween.TweenMethod(Callable.From<float>(v =>
+        {
+            art.GlobalPosition = destination.Lerp(start, v);
+            art.Motion = 0;
+            art.QueueRedraw();
+            foreach (var node in _effects)
+            {
+                if (node is BattleImpactVisual effect) { effect.Progress = v; effect.QueueRedraw(); }
+                else if (node is Label label) { label.Position = label.Position with { Y = (float)label.GetMeta("start_y") - 30 * v }; label.Modulate = Colors.White.Lerp(Colors.Transparent, v); }
+            }
+        }), 0f, 1f, 0.42);
+        _actionTween.TweenCallback(Callable.From(() =>
+        {
+            art.Position = home;
+            art.ZIndex = 0;
+            ClearEffects();
+            _presenting = false;
+            FinishIfOver();
+            if (!_finished) _timer?.Start(0.36 / _speed);
+        }));
+    }
+
+    private void ShowImpact(BattleImpact impact, BattleArt art, bool ultimate)
+    {
+        if (!_cells.TryGetValue(impact.Target, out var cell)) return;
+        var point = cell.Actor!.GlobalPosition - GlobalPosition - new Vector2(0, 50);
+        if (!impact.Dodged)
+        {
+            var effect = new BattleImpactVisual { Position = point, Tint = impact.Healing ? art.Accent.Lightened(0.2f) : art.Accent, Healing = impact.Healing, Ultimate = ultimate, HeroId = _engine!.LastAction!.Actor.Def.Id, Motif = art.Motif };
+            AddChild(effect);
+            _effects.Add(effect);
+        }
+        var text = impact.Dodged ? "NÉ" : impact.Healing ? $"+{impact.Amount}" : $"−{impact.Amount}";
+        if (impact.Critical) text += " BẠO!";
+        if (impact.Blocked) text += " ĐỠ";
+        var label = new Label { Text = text, Position = point - new Vector2(45, 50), ZIndex = 5 };
+        UiTheme.StyleBody(label, impact.Critical ? UiTheme.FontTitle : UiTheme.FontHeading);
+        label.AddThemeColorOverride("font_color", impact.Healing ? UiTheme.HpColor : UiTheme.GoldHover);
+        label.AddThemeColorOverride("font_outline_color", UiTheme.Background);
+        label.AddThemeConstantOverride("outline_size", 5);
+        label.SetMeta("start_y", label.Position.Y);
+        AddChild(label);
+        _effects.Add(label);
+    }
+
+    private void ClearEffects()
+    {
+        foreach (var node in _effects) node.QueueFree();
+        _effects.Clear();
+    }
+
+    public override void _ExitTree()
+    {
+        _actionTween?.Kill();
+        _actionTween = null;
+    }
 
     private void OnSpeedPressed()
     {
         if (_finished) return;
         _speed = _speed % 3 + 1;
         if (_speedButton != null) _speedButton.Text = $"Tăng tốc x{_speed}";
-        if (_timer != null)
+        _actionTween?.SetSpeedScale(_speed);
+        if (_timer != null && !_presenting)
         {
             _timer.WaitTime = 1.0 / _speed;
             _timer.Stop();

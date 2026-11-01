@@ -214,6 +214,7 @@ public partial class HubScene : Control
 			if (_characterName != null) _characterName.Text = "—";
 			charLabel.Text = "";
 		}
+		AssetIcons.ApplyPortrait(portrait, heroId, charLabel);
 		GetNode<Label>("TopBar/AvatarPanel/AvatarHBox/AvatarVBox/AvatarCurrencyLabel").Text =
 			$"Vàng: {gm.Save.Gold:N0}  |  Bạc: {gm.Save.Silver:N0}";
 	}

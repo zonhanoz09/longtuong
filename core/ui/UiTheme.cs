@@ -18,6 +18,18 @@ public static class UiTheme
     public static readonly Color PlayerBlue = new(0.20f, 0.60f, 1.00f);
     public static readonly Color EnemyRed = new(1.00f, 0.25f, 0.25f);
 
+    // Procedural battle art palette.
+    public static readonly Color Jade = new(0.22f, 0.8f, 0.57f);
+    public static readonly Color Petal = new(0.95f, 0.47f, 0.73f);
+    public static readonly Color Skin = new(0.80f, 0.62f, 0.43f);
+    public static readonly Color Iron = new(0.16f, 0.20f, 0.24f);
+    public static readonly Color Wood = new(0.29f, 0.23f, 0.18f);
+    public static readonly Color Shadow = new(0.05f, 0.06f, 0.08f, 0.4f);
+    public static readonly Color ArenaSky = new(0.19f, 0.25f, 0.30f);
+    public static readonly Color ArenaMountains = new(0.23f, 0.29f, 0.30f);
+    public static readonly Color ArenaGround = new(0.32f, 0.29f, 0.24f);
+    public static readonly Color ArenaDust = new(0.44f, 0.39f, 0.29f);
+
     // --- Phase 2.27: centralized palette (moved from scene-local colors) ---
     public static readonly Color HpColor = new(0.25f, 0.75f, 0.30f);
     public static readonly Color BarBackground = new(0.15f, 0.15f, 0.20f);
@@ -52,6 +64,7 @@ public static class UiTheme
 
     // --- Phase 2.27: font scale ---
     public const int FontTitle = 28;
+    public const int FontHeading = 20;
     public const int FontBody = 16;
     public const int FontSmall = 13;
     public const int FontButton = 17;

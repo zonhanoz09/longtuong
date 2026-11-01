@@ -1,5 +1,10 @@
 # Kế hoạch chuẩn hoá asset game (icon, button, asset tướng...)
 
+> Cập nhật 01/11/2026: người dùng chọn **tự vẽ và copy asset**. Quy ước
+> hiện hành ở [assets/README.md](../assets/README.md), triển khai tiếp theo
+> theo [kế hoạch tự nạp](KE_HOACH_ASSET_TU_DONG.md). Chốt chỉ dùng code
+> bên dưới là lịch sử Phase 2.27; hình code nay giữ vai trò fallback.
+
 > Trạng thái: **HUỲNH ĐÃ CHỐT (29/10/2026)** — 1c (giữ placeholder vẽ bằng
 > code, không art thật), 2 giữ nguyên style tối + gold, 3 làm cả icon lẫn
 > chân dung, 4 chân dung VUÔNG (bo góc 8, không cắt tròn), 5 commit thẳng

@@ -49,29 +49,29 @@ text = "Thú cưỡi"
 [node name="PlayerGrid" type="GridContainer" parent="."]
 layout_mode = 0
 offset_left = 40.0
-offset_top = 200.0
+offset_top = 125.0
 offset_right = 492.0
-offset_bottom = 424.0
+offset_bottom = 610.0
 columns = 3
 theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 16
+theme_override_constants/v_separation = 4
 
 [node name="EnemyGrid" type="GridContainer" parent="."]
 layout_mode = 0
 offset_left = 788.0
-offset_top = 200.0
+offset_top = 125.0
 offset_right = 1240.0
-offset_bottom = 424.0
+offset_bottom = 610.0
 columns = 3
 theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 16
+theme_override_constants/v_separation = 4
 
 [node name="TurnLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 0.0
-offset_top = 450.0
+offset_top = 605.0
 offset_right = 1280.0
-offset_bottom = 490.0
+offset_bottom = 637.0
 horizontal_alignment = 1
 text = "Lượt..."
 

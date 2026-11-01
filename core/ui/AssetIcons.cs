@@ -2,18 +2,7 @@ using Godot;
 
 namespace LongTuong;
 
-/// <summary>
-/// Phase 2.27: procedural "assets" (Huynh chose option 1c — no real art
-/// files, improve placeholders by code). Everything here is drawn with
-/// panels, borders and representative characters, so the game never
-/// depends on image files and headless tests keep passing.
-/// - SlotSymbol: 2-letter abbreviation per equipment slot.
-/// - PortraitChar: the hero's given name (last word of the Vietnamese
-///   name; custom hero = first character of the username, uppercased).
-/// - MakeCoinIcon: gold/silver coin (circle + "V"/"B" letter).
-/// - MakePortrait: SQUARE portrait (Huynh chose square) — tier-colored
-///   border + big given-name character, gold for the tierless custom hero.
-/// </summary>
+/// <summary>Shared icon fallbacks and portrait presentation. PNGs are optional.</summary>
 public static class AssetIcons
 {
     public static string SlotSymbol(string slotId) => slotId switch
@@ -88,6 +77,40 @@ public static class AssetIcons
         label.AddThemeFontSizeOverride("font_size", (int)(size.Y / 3));
         label.AddThemeColorOverride("font_color", color);
         panel.AddChild(label);
+        ApplyPortrait(panel, heroId, label);
         return panel;
+    }
+
+    /// <summary>Fits a portrait without changing the host's minimum size or layout.</summary>
+    public static bool ApplyPortrait(Control host, string heroId, Label? fallback = null, int bottomInset = 0, int padding = 4)
+    {
+        var texture = AssetCatalog.Portrait(heroId);
+        var view = host.GetNodeOrNull<Control>("AssetPortrait");
+        if (view == null && texture != null)
+        {
+            view = new Control { Name = "AssetPortrait", MouseFilter = Control.MouseFilterEnum.Ignore, ClipContents = true };
+            host.AddChild(view);
+            host.MoveChild(view, 0);
+            view.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            view.OffsetBottom = -bottomInset;
+            var image = new TextureRect
+            {
+                Name = "Image", MouseFilter = Control.MouseFilterEnum.Ignore,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                TextureFilter = CanvasItem.TextureFilterEnum.Linear,
+            };
+            view.AddChild(image);
+            image.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            image.OffsetLeft = image.OffsetTop = padding;
+            image.OffsetRight = image.OffsetBottom = -padding;
+        }
+        if (view != null)
+        {
+            view.GetNode<TextureRect>("Image").Texture = texture;
+            view.Visible = texture != null;
+        }
+        if (fallback != null) fallback.Visible = texture == null;
+        return texture != null;
     }
 }

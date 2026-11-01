@@ -15,6 +15,38 @@ Không dùng code, art, nhạc hay text của game gốc; mọi nội dung tự 
 Xem [docs/KE_HOACH_LONGTUONG.md](docs/KE_HOACH_LONGTUONG.md) — đây là bản plan
 chính, sửa trực tiếp trong repo khi cần, không sửa bản copy ngoài repo.
 
+## Tự vẽ và thay asset
+
+Xem [hướng dẫn thư mục asset](assets/README.md) và
+[kế hoạch bộ nạp tự động](docs/KE_HOACH_ASSET_TU_DONG.md).
+Đã có sẵn thư mục 16 tướng và bảng ID tướng/địch. Quy ước: copy
+`assets/heroes/quan_vu/body.png` hoặc `portrait.png` để thay đúng phần đó.
+Đã nạp được PNG tĩnh `body.png`/`portrait.png` mà không cần import thủ công:
+body dùng trong trận; portrait dùng ở Võ tướng, avatar Hub và Bày trận.
+Copy ảnh rồi mở game hoặc mở lại màn/vào trận mới. Runtime reload,
+animation/VFX/nền/icon PNG sẽ triển khai tiếp.
+Test: `godot --headless --path . res://tests/TestAssetCatalog.tscn`.
+
+## Đồ họa chiến đấu — bản mẫu roster (01/11/2026)
+
+- Sân doanh trại nhiều lớp, cờ hai phe, bóng chân và hình tướng bằng code.
+- Đủ 15 danh tướng + tướng tự tạo có preset màu, vũ khí và hiệu ứng;
+  lính/boss chưa có preset dùng fallback theo vai trò. Chưa có portrait/art bitmap.
+- Cận chiến tiến tới đối thủ rồi về chỗ, đòn xa phóng tới từng mục tiêu.
+  Phát hành động theo nhịp chuẩn bị → chạm → trở về; HP đổi lúc chạm,
+  số damage/hồi máu/né/đỡ/bạo xuất hiện trên đúng mục tiêu; x1/x2/x3.
+- Engine xuất snapshot và impact theo từng thực thể, giữ công thức/RNG;
+  popup và chuyển đội Tổ Đội chờ hiệu ứng kết thúc.
+- [Kế hoạch chi tiết](docs/KE_HOACH_DO_HOA_CHIEN_DAU.md).
+- Xem thử bằng `godot --path . res://tests/PreviewBattle.tscn`
+  (cần Godot .NET, chạy `dotnet build` trước). Scene dùng dữ liệu test riêng.
+- Kiểm tra mới: `godot --headless --path . res://tests/TestBattleVisuals.tscn`.
+- Xem bảng roster: `godot --path . res://tests/PreviewBattleArtGallery.tscn`.
+- Ảnh đã render bằng Godot: [sân đấu](docs/previews/battle-arena.png),
+  [tướng và tuyệt kỹ](docs/previews/battle-art-gallery.png).
+- Đã build/test và chụp ảnh trên Godot 4.3 .NET + GL Compatibility thực tế;
+  chưa đo FPS/VRAM trên cấu hình máy đích.
+
 ## Phase 2.57 — đã làm (icon Hub nhỏ, 2 hàng trên/dưới)
 
 - Icon 64×64 vuông bo góc 12px, viền vàng, ký hiệu + nhãn 12px bên dưới.
